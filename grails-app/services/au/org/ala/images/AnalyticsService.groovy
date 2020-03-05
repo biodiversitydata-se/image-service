@@ -3,11 +3,19 @@ package au.org.ala.images
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.services.analytics.AnalyticsScopes
 import groovy.json.JsonSlurper
+import groovyx.net.http.HTTPBuilder
+
+import java.util.concurrent.Executors
+
+import static groovyx.net.http.ContentType.URLENC
+import static groovyx.net.http.Method.POST
 
 class AnalyticsService {
 
     def collectoryService
     def grailsApplication
+
+    final analyticsExecutor = Executors.newSingleThreadExecutor()
 
     def REPORT_PERIODS = [
         "thisMonth": "30daysAgo",
@@ -80,6 +88,50 @@ class AnalyticsService {
             return credential.getAccessToken()
         } else {
             null
+        }
+    }
+
+    /**
+     * POST event data to google analytics.
+     *
+     * @param imageInstance
+     * @param eventCategory
+     * @return
+     */
+    def sendAnalytics(Image imageInstance, String eventCategory, String userAgent) {
+        final analyticsId = grailsApplication.config.getProperty('analytics.ID')
+        if (imageInstance && analyticsId) {
+            final queryURL =  grailsApplication.config.getProperty('analytics.URL')
+            final requestBody = [
+                    'v': 1,
+                    'tid': analyticsId,
+                    'cid': UUID.randomUUID().toString(),  //anonymous client ID
+                    't': 'event',
+                    'ec': eventCategory, // event category
+                    'ea': imageInstance.dataResourceUid, //event value
+                    'ua' : userAgent
+            ]
+
+            analyticsExecutor.execute {
+                def http = new HTTPBuilder(queryURL)
+                try {
+                    http.request( POST ) {
+                        uri.path = '/collect'
+                        requestContentType = URLENC
+                        body =  requestBody
+
+                        response.success = { resp ->
+                            log.debug("Analytics POST response status: {}", resp.statusLine)
+                        }
+
+                        response.failure = { resp ->
+                            log.error("analytics request failed = {}", resp.status)
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error('Unable to send analytics for {}', requestBody, e)
+                }
+            }
         }
     }
 }

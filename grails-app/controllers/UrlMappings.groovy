@@ -34,11 +34,11 @@ class UrlMappings {
         // legacy URLS
         "/image/imageTooltipFragment"(controller: "image", action: "imageTooltipFragment")
         "/image/proxyImageThumbnail"(controller: "image", action: "proxyImageThumbnail")
-        "/image/proxyImageThumbnailLarge"(controller: "image", action: "proxyImageThumbnailLarge")
+        "/image/proxyImageThumbnailLarge"(controller: "image", action: "proxyImageThumbnailType")
         "/image/proxyImageTile"(controller: "image", action: "proxyImageTile")
         "/image/proxyImage"(controller: "image", action: "proxyImage")
         "/proxyImageThumbnail"(controller: "image", action: "proxyImageThumbnail")
-        "/proxyImageThumbnailLarge"(controller: "image", action: "proxyImageThumbnailLarge")
+        "/proxyImageThumbnailLarge"(controller: "image", action: "proxyImageThumbnailType")
         "/proxyImageTile"(controller: "image", action: "proxyImageTile")
         "/proxyImage"(controller: "image", action: "proxyImage")
 
@@ -48,9 +48,16 @@ class UrlMappings {
 
         // homogeneous URLs
         "/image/$id/thumbnail"(controller: "image", action: "proxyImageThumbnail")
-        "/image/$id/large"(controller: "image", action: "proxyImageThumbnailLarge")
-        "/image/$id/tms"(controller: "image", action: "proxyImageTile")
+        "/image/$id/large"(controller: "image", action: "proxyImageThumbnailType", params: ['thumbnailType': 'large'])
+        "/image/$id/tms/$z/$x/${y}.png"(controller: "image", action: "proxyImageTile")
         "/image/$id/original"(controller: "image", action: "getOriginalFile")
+
+        // take over old apache paths
+        "/store/staging/$path**"(controller: "staging", action: "serve")
+        "/store/$a/$b/$c/$d/$id/thumbnail"(controller: "image", action: "proxyImageThumbnail")
+        "/store/$a/$b/$c/$d/$id/thumbnail_$thumbnailType"(controller: "image", action: "proxyImageThumbnailType")
+        "/store/$a/$b/$c/$d/$id/tms/$z/$x/${y}.png"(controller: "image", action: "proxyImageTile")
+        "/store/$a/$b/$c/$d/$id/original"(controller: "image", action: "getOriginalFile")
 
         "/admin/image/$imageId"(controller: "admin", action: "image")
         "/image/details"(controller: "image", action: "details")
@@ -60,7 +67,7 @@ class UrlMappings {
         "/ws/analytics/$dataResourceUID"(controller: "analytics", action: "byDataResource")
         "/ws/analytics/dataResource/$dataResourceUID"(controller: "analytics", action: "byDataResource")
 
-        name image_url: "/image/$imageId"(controller: "image", action: "details")
+        name image_url: "/image/$imageId(.$format)?"(controller: "image", action: "details")
         name image_ws_url: "/ws/image/$imageId"(controller: "webService", action: "getImageInfo")
 
         //tags

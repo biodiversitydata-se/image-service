@@ -1,6 +1,6 @@
 package au.org.ala.images
 
-import grails.transaction.Transactional
+import grails.gorm.transactions.Transactional
 import org.codehaus.groovy.runtime.StackTraceUtils
 
 import java.lang.reflect.Method
@@ -39,6 +39,16 @@ class SettingService {
         return getIntSetting()
     }
 
+    @ImageServiceSetting(name = 'storage.location.default', description = "The ID of the default storage location", defaultValue = '1')
+    Long getStorageLocationDefault() {
+        return getLongSetting()
+    }
+
+    void setStorageLocationDefault(Long value) {
+        setSettingValue('storage.location.default', value.toString())
+    }
+
+    @Transactional
     void setSettingValue(String name, String value) {
         def setting = Setting.findByName(name)
         if (!setting) {
@@ -50,6 +60,7 @@ class SettingService {
             Boolean.parseBoolean(value)
         }
         setting.value = value
+        setting.save()
     }
 
     /**
@@ -102,6 +113,12 @@ class SettingService {
         def setting = getSettingFromStack()
 
         return Integer.parseInt(setting.value)
+    }
+
+    private Long getLongSetting() {
+        def setting = getSettingFromStack()
+
+        return Long.parseLong(setting.value)
     }
 
     private synchronized Setting getOrCreateSetting(String key, SettingType type, String defaultValue, String description) {

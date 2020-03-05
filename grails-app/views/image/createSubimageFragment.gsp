@@ -23,7 +23,7 @@
 
     $("#btnCreateSubimage2").on('click', function(e) {
         e.preventDefault();
-        var url = "${grailsApplication.config.grails.serverURL}${raw(createLink(controller:'webService', action:'createSubimage', id: imageInstance.imageIdentifier,  params:[x: x, y: y, width: width, height: height]))}&description=" + encodeURIComponent($('#description').val());
+        var url = "${raw(createLink(absolute: true, controller:'webService', action:'createSubimage', id: imageInstance.imageIdentifier,  params:[x: x, y: y, width: width, height: height]))}&description=" + encodeURIComponent($('#description').val());
         $.ajax(url).done(function(results) {
             if (results.success) {
                 imgvwr.hideModal();

@@ -7,32 +7,32 @@ import au.org.ala.images.tiling.ImageTiler
 import au.org.ala.images.tiling.ImageTilerConfig
 import au.org.ala.images.tiling.ImageTilerResults
 import au.org.ala.images.tiling.TileFormat
+import au.org.ala.images.tiling.TilerSink
 import au.org.ala.images.util.ImageReaderUtils
-import grails.transaction.Transactional
+import grails.web.mapping.LinkGenerator
+import net.lingala.zip4j.ZipFile
+import net.lingala.zip4j.model.FileHeader
 import org.apache.commons.io.FileUtils
-import org.apache.commons.io.IOUtils
+import org.apache.tika.Tika
 import org.springframework.web.multipart.MultipartFile
 import javax.imageio.ImageIO
 import javax.imageio.ImageReadParam
 import java.awt.Color
 import java.awt.Rectangle
 import java.awt.image.BufferedImage
-import grails.web.context.ServletContextHolder
+import java.nio.file.Files
 
 class ImageStoreService {
 
     def grailsApplication
     def logService
     def auditService
+    LinkGenerator grailsLinkGenerator
 
-    ImageDescriptor storeImage(byte[] imageBytes) {
+    ImageDescriptor storeImage(byte[] imageBytes, StorageLocation sl, String contentType, String contentDisposition = null) {
         def uuid = UUID.randomUUID().toString()
         def imgDesc = new ImageDescriptor(imageIdentifier: uuid)
-        String path = createOriginalPathFromUUID(uuid)
-
-        File f = new File(path)
-        f.parentFile.mkdirs()
-        FileUtils.writeByteArrayToFile(f, imageBytes)
+        sl.store(uuid, imageBytes, contentType, contentDisposition)
         def reader = ImageReaderUtils.findCompatibleImageReader(imageBytes)
         if (reader) {
             imgDesc.height = reader.getHeight(0)
@@ -42,53 +42,16 @@ class ImageStoreService {
         return imgDesc
     }
 
-    File getImageDirectory(String uuid) {
-        def l = [grailsApplication.config.imageservice.imagestore.root]
-        computeAndAppendLocalDirectoryPath(uuid, l)
-        return new File(l.join("/"))
-    }
-
-    String createOriginalPathFromUUID(String uuid) {
-        def l = [grailsApplication.config.imageservice.imagestore.root]
-        computeAndAppendLocalDirectoryPath(uuid, l)
-        l << "original"
-        return l.join('/')
-    }
-
-    String createTilesPathFromUUID(String uuid) {
-        def l = [grailsApplication.config.imageservice.imagestore.root]
-        computeAndAppendLocalDirectoryPath(uuid, l)
-        l << "tms"
-        return l.join('/')
-    }
-
-    File getOriginalImageFile(String imageIdentifier) {
-        def path = createOriginalPathFromUUID(imageIdentifier)
-        return new File(path)
-    }
-
-    private static void computeAndAppendLocalDirectoryPath(String uuid, List bits) {
-        for (int i = 1; i <= 4; ++i) {
-            bits << uuid.charAt(uuid.length() - i);
-        }
-        bits << uuid // each image gets it's own directory
-    }
-
     byte[] retrieveImage(String imageIdentifier) {
-        if (imageIdentifier) {
-            def imageFile = getOriginalImageFile(imageIdentifier)
-            return imageFile.getBytes()
-        }
-        return null
+        return Image.findByImageIdentifier(imageIdentifier).retrieve()
     }
 
-    Map retrieveImageRectangle(String imageIdentifier, int x, int y, int width, int height) {
+    Map retrieveImageRectangle(Image parentImage, int x, int y, int width, int height) {
 
         def results = [bytes: null, contentType: ""]
 
-        if (imageIdentifier) {
-            def imageFile = getOriginalImageFile(imageIdentifier)
-            def imageBytes = FileUtils.readFileToByteArray(imageFile);
+        if (parentImage) {
+            def imageBytes = parentImage.retrieve()
             def reader = ImageReaderUtils.findCompatibleImageReader(imageBytes);
             if (reader) {
                 try {
@@ -119,112 +82,81 @@ class ImageStoreService {
     }
 
     Map getAllUrls(String imageIdentifier) {
-        def root = grailsApplication.config.imageservice.apache.root
         def results = [:]
-        def path = []
-        computeAndAppendLocalDirectoryPath(imageIdentifier, path)
+        // TODO use named URLS?
 
-        results.imageUrl = root + (path + "original").join("/")
-        results.thumbUrl = root + (path + "thumbnail").join("/")
-        results.largeThumbUrl = root + (path + "thumbnail_large").join("/")
-        results.squareThumbUrl = root + (path + "thumbnail_square").join("/")
-        results.tilesUrlPattern = root + (path + "tms").join("/") + "/{z}/{x}/{y}.png"
+        results.imageUrl = getImageUrl(imageIdentifier)
+        results.thumbUrl = getImageThumbUrl(imageIdentifier)
+        results.largeThumbUrl = getImageThumbLargeUrl(imageIdentifier)
+        results.squareThumbUrl = getThumbUrlByName(imageIdentifier, 'square')
+        results.tilesUrlPattern = getImageTilesUrlPattern(imageIdentifier)
 
         return results
     }
 
     String getImageUrl(String imageIdentifier) {
-        def path = []
-        computeAndAppendLocalDirectoryPath(imageIdentifier, path)
-        path << "original"
-        return grailsApplication.config.imageservice.apache.root + path.join("/")
+        def a = imageIdentifier[-1]
+        def b = imageIdentifier[-2]
+        def c = imageIdentifier[-3]
+        def d = imageIdentifier[-4]
+        return grailsLinkGenerator.link(absolute: true, controller: 'image', action: 'getOriginalFile', id: imageIdentifier, params: [a: a, b: b, c: c, d: d])
     }
 
     String getImageThumbUrl(String imageIdentifier) {
-        def path = []
-        computeAndAppendLocalDirectoryPath(imageIdentifier, path)
-        path << "thumbnail"
-        return grailsApplication.config.imageservice.apache.root + path.join("/")
-    }
-
-    String getImageThumbFile(String imageIdentifier) {
-        def path = []
-        computeAndAppendLocalDirectoryPath(imageIdentifier, path)
-        path << "thumbnail"
-        return grailsApplication.config.imageservice.imagestore.root + "/" + path.join("/")
-    }
-
-    String getImageThumbLargeFile(String imageIdentifier) {
-        def path = []
-        computeAndAppendLocalDirectoryPath(imageIdentifier, path)
-        path << "thumbnail_large"
-        return grailsApplication.config.imageservice.imagestore.root + "/" + path.join("/")
-    }
-
-    String getImageOriginalFile(String imageIdentifier) {
-        def path = []
-        computeAndAppendLocalDirectoryPath(imageIdentifier, path)
-        path << "original"
-        return grailsApplication.config.imageservice.imagestore.root + "/" + path.join("/")
-    }
-
-    String getImageThumbUrl(String imageIdentifier,  Integer idx) {
-        def path = []
-        computeAndAppendLocalDirectoryPath(imageIdentifier, path)
-        path << "thumbnail"
-        def roots = grailsApplication.config.imageservice.apache.multiple_roots.split(' ')
-        def root = roots[idx % (roots.length)]
-        return root + path.join("/")
+        def a = imageIdentifier[-1]
+        def b = imageIdentifier[-2]
+        def c = imageIdentifier[-3]
+        def d = imageIdentifier[-4]
+        return grailsLinkGenerator.link(absolute: true, controller: 'image', action: 'proxyImageThumbnail', id: imageIdentifier, params: [a: a, b: b, c: c, d: d])
     }
 
     String getImageThumbLargeUrl(String imageIdentifier) {
-        def path = []
-        computeAndAppendLocalDirectoryPath(imageIdentifier, path)
-        path << "thumbnail_large"
-        return grailsApplication.config.imageservice.apache.root + path.join("/")
+//        def a = imageIdentifier[-1]
+//        def b = imageIdentifier[-2]
+//        def c = imageIdentifier[-3]
+//        def d = imageIdentifier[-4]
+//        return grailsLinkGenerator.link(absolute: true, controller: 'image', action: 'proxyImageThumbnailType', id: imageIdentifier, params: [thumbnailType: 'large', a: a, b: b, c: c, d: d])
+        getThumbUrlByName(imageIdentifier, 'large')
     }
 
     String getThumbUrlByName(String imageIdentifier, String name) {
-        def path = []
-        computeAndAppendLocalDirectoryPath(imageIdentifier, path)
-        path << name
-        return grailsApplication.config.imageservice.apache.root + path.join("/")
+        if (name == 'thumbnail') {
+            return getImageThumbUrl(imageIdentifier)
+        }
+        def a = imageIdentifier[-1]
+        def b = imageIdentifier[-2]
+        def c = imageIdentifier[-3]
+        def d = imageIdentifier[-4]
+        def type = name.startsWith('thumbnail_') ? name.substring('thumbnail_'.length()) : name
+        return grailsLinkGenerator.link(absolute: true, controller: 'image', action: 'proxyImageThumbnailType', id: imageIdentifier, params: [thumbnailType: type, a: a, b: b, c: c, d: d])
     }
 
     String getImageSquareThumbUrl(String imageIdentifier, String backgroundColor) {
-        def path = []
-        computeAndAppendLocalDirectoryPath(imageIdentifier, path)
+        def type
         if (backgroundColor) {
-            path << "thumbnail_square_${backgroundColor}"
+            type = "thumbnail_square_${backgroundColor}"
         } else {
-            path << "thumbnail_square"
+            type = "thumbnail_square"
         }
-        return grailsApplication.config.imageservice.apache.root + path.join("/")
+        return getThumbUrlByName(imageIdentifier, type)
     }
 
-    String getImageTilesRootUrl(String imageIdentifier) {
-        def path = []
-        computeAndAppendLocalDirectoryPath(imageIdentifier, path)
-        path << "tms"
-        return grailsApplication.config.imageservice.apache.root + path.join("/")
+    String getImageTilesUrlPattern(String imageIdentifier) {
+        def a = imageIdentifier[-1]
+        def b = imageIdentifier[-2]
+        def c = imageIdentifier[-3]
+        def d = imageIdentifier[-4]
+        def pattern = grailsLinkGenerator.link(absolute: true, controller: 'image', action: 'proxyImageTile', id: imageIdentifier, params: [x: '{x}', y: '{y}', z: '{z}', a: a, b: b, c: c, d: d])
+        // XXX hack this result to remove the URL encoded placeholders
+        return pattern.replace('%7Bz%7D', '{z}').replace('%7Bx%7D', '{x}').replace('%7By%7D', '{y}')
     }
 
-    List<ThumbnailingResult> generateAudioThumbnails(String imageIdentifier) {
-        URL u = new URL(grailsApplication.config.placeholder.sound.thumbnail)
-        def imageBytes = u.getBytes()
-        if (imageBytes) {
-            return generateThumbnailsImpl(imageBytes, imageIdentifier)
-        }
-        return null
+    List<ThumbnailingResult> generateAudioThumbnails(Image image) {
+        return []
     }
 
-    List<ThumbnailingResult> generateDocumentThumbnails(String imageIdentifier) {
-        URL u = new URL(grailsApplication.config.placeholder.document.thumbnail)
-        def imageBytes = u.getBytes()
-        if (imageBytes) {
-            return generateThumbnailsImpl(imageBytes, imageIdentifier)
-        }
-        return null
+    List<ThumbnailingResult> generateDocumentThumbnails(Image image) {
+        return []
     }
 
     /**
@@ -235,15 +167,14 @@ class ImageStoreService {
      * The first thumbnail (preserved aspect ratio) is of type JPG to conserve disk space, whilst the square thumb is PNG as JPG does not support alpha transparency
      * @param imageIdentifier The id of the image to thumb
      */
-    List<ThumbnailingResult> generateImageThumbnails(String imageIdentifier) {
-        def imageFile = getOriginalImageFile(imageIdentifier)
-        def imageBytes = FileUtils.readFileToByteArray(imageFile)
-        return generateThumbnailsImpl(imageBytes, imageIdentifier)
+    List<ThumbnailingResult> generateImageThumbnails(Image image) {
+        def imageBytes = image.retrieve()
+        return generateThumbnailsImpl(imageBytes, image)
     }
 
-    private List<ThumbnailingResult> generateThumbnailsImpl(byte[] imageBytes, String imageIdentifier) {
+    private List<ThumbnailingResult> generateThumbnailsImpl(byte[] imageBytes, Image image) {
         def t = new ImageThumbnailer()
-        def destinationDirectory = getImageDirectory(imageIdentifier)
+        def imageIdentifier = image.imageIdentifier
         int size = grailsApplication.config.imageservice.thumbnail.size as Integer
         def thumbDefs = [
             new ThumbDefinition(size, false, null, "thumbnail"),
@@ -253,7 +184,7 @@ class ImageStoreService {
             new ThumbDefinition(size, true, Color.darkGray, "thumbnail_square_darkGray"),
             new ThumbDefinition(650, false, null, "thumbnail_large"),
         ]
-        def results = t.generateThumbnails(imageBytes, destinationDirectory, thumbDefs as List<ThumbDefinition>)
+        def results = t.generateThumbnails(imageBytes, image.storageLocation.thumbnailByteSinkFactory(image.imageIdentifier), thumbDefs as List<ThumbDefinition>)
         auditService.log(imageIdentifier, "Thumbnails created", "N/A")
         return results
     }
@@ -261,19 +192,10 @@ class ImageStoreService {
     void generateTMSTiles(String imageIdentifier) {
         logService.log("Generating TMS compatible tiles for image ${imageIdentifier}")
         def ct = new CodeTimer("Tiling image ${imageIdentifier}")
-        def imageFile = getOriginalImageFile(imageIdentifier)
+        def image = Image.findByImageIdentifier(imageIdentifier)
 
-        // Calculate where the tiles will live on the file system
-        def bits = [grailsApplication.config.imageservice.imagestore.root]
-        computeAndAppendLocalDirectoryPath(imageIdentifier, bits)
-        bits << "tms"
-        def tileRootPath = bits.join("/")
-
-        def rootFile = new File(tileRootPath)
-
-        def results = tileImage(imageFile, rootFile)
+        def results = tileImage(image)
         if (results.success) {
-            def image = Image.findByImageIdentifier(imageIdentifier)
             if (image) {
                 image.zoomLevels = results.zoomLevels
                 image.save(flush: true, failOnError: true)
@@ -287,58 +209,35 @@ class ImageStoreService {
         ct.stop(true)
     }
 
-    private static ImageTilerResults tileImage(File imageFile, File destination) {
+    private static ImageTilerResults tileImage(Image image) {
         def config = new ImageTilerConfig(2,2,256, 6, TileFormat.JPEG)
         config.setTileBackgroundColor(new Color(221, 221, 221))
         def tiler = new ImageTiler(config)
-        return tiler.tileImage(imageFile, destination)
+        return tiler.tileImage(image.originalInputStream(), new TilerSink.PathBasedTilerSink(image.storageLocation.tilerByteSinkFactory(image.imageIdentifier)))
     }
 
-    private BufferedImage loadImage(String imageIdentifier) {
-        String path = createOriginalPathFromUUID(imageIdentifier)
-        File f = new File(path)
-        if (f.exists()) {
-            def image = ImageIO.read(f)
-            return image
-        } else {
-            throw new RuntimeException("File not found! ${path}")
-        }
-    }
+    boolean storeTilesArchiveForImage(Image image, MultipartFile zipFile) {
 
-    boolean deleteImage(String imageIdentifier) {
-        if (imageIdentifier) {
-            File f = getOriginalImageFile(imageIdentifier)
-            if (f && f.exists()) {
-                FileUtils.deleteQuietly(f.parentFile)
-                auditService.log(imageIdentifier, "Image deleted from store", "N/A")
-                return true
-            }
-        }
-        return false
-    }
-
-    boolean storeTilesArchiveForImage(String imageIdentifier, MultipartFile zipFile) {
-
-        def original = getOriginalImageFile(imageIdentifier)
-        if (original && original.exists()) {
-            def parent = original.parentFile
-            def stagingFile = new File(parent.absolutePath + "/tiles.zip")
-            if (stagingFile.exists()) {
-                stagingFile.delete()
-            }
+        if (image.stored()) {
+            def stagingFile = Files.createTempFile('image-service', '.zip').toFile()
+            stagingFile.deleteOnExit()
 
             // copy the zip file to the staging area
-            stagingFile.newOutputStream() << zipFile.inputStream
-            def tilesRoot = createTilesPathFromUUID(imageIdentifier)
+            zipFile.inputStream.withStream { stream ->
+                FileUtils.copyInputStreamToFile(stream, stagingFile)
+            }
 
-            def ant = new groovy.util.AntBuilder()
-            ant.unzip(
-                    src: stagingFile.absolutePath,
-                    dest: tilesRoot,
-                    overwrite: true
-            )
+            def szf = new ZipFile(stagingFile)
+            def tika = new Tika()
+            for (FileHeader fh : szf.getFileHeaders()) {
+                szf.getInputStream(fh).withStream { stream ->
+                    def contentType = tika.detect(stream, fh.fileName)
+                    image.storageLocation.storeTileZipInputStream(image.imageIdentifier, fh.fileName, contentType, szf.getInputStream(fh))
+                }
+            }
+
             // TODO: validate the extracted contents
-            auditService.log(imageIdentifier, "Image tiles stored from zip file (outsourced job?)", "N/A")
+            auditService.log(image.imageIdentifier, "Image tiles stored from zip file (outsourced job?)", "N/A")
 
             // Now clean up!
             FileUtils.deleteQuietly(stagingFile)
@@ -347,20 +246,63 @@ class ImageStoreService {
         return false
     }
 
-    long getConsumedSpaceOnDisk(String imageId) {
-        def original = getOriginalImageFile(imageId)
-        if (original && original.exists()) {
-            return FileUtils.sizeOfDirectory(original.parentFile)
-        }
-        return 0
-    }
-
     long getRepositorySizeOnDisk() {
-        def dir = new File(grailsApplication.config.imageservice.imagestore.root)
-        if (dir && dir.exists()) {
-            return FileUtils.sizeOfDirectory(dir)
-        }
-        return 0
+        // TODO replace with per repository size
+        def fssls = FileSystemStorageLocation.list()
+        return fssls.sum {
+            def dir = new File(it.basePath)
+            dir.exists() ? FileUtils.sizeOfDirectory(dir) : 0
+        } ?: 0
     }
 
+    /**
+     * Migrate the given image from its current storageLocation to the given
+     * StorageLocation.
+     * @param image The image to migrate
+     * @param sl The destination storage location
+     */
+    void migrateImage(Image image, StorageLocation sl) {
+        try {
+            image.migrateTo(sl)
+        } catch (Exception e) {
+            log.error("Unable to migrate image {} to storage location {}, rolling back changes...", image.imageIdentifier, sl)
+            // rollback any files migrated
+            sl.deleteStored(image.imageIdentifier)
+            throw e
+        }
+
+    }
+
+    // delegating methods for Unit Testing
+    InputStream originalInputStream(Image image, Range range) {
+        image.originalInputStream(range)
+    }
+
+    long thumbnailStoredLength(Image image) {
+        image.thumbnailStoredLength()
+    }
+
+    InputStream thumbnailInputStream(Image image, Range range) {
+        image.thumbnailInputStream(range)
+    }
+
+    long thumbnailTypeStoredLength(Image image, String type) {
+        image.thumbnailTypeStoredLength(type)
+    }
+
+    InputStream thumbnailTypeInputStream(Image image, String type, Range range) {
+        image.thumbnailTypeInputStream(type, range)
+    }
+
+    long tileStoredLength(Image image, int x, int y, int z) {
+        image.tileStoredLength(x, y, z)
+    }
+
+    InputStream tileInputStream(Image image, Range range, int x, int y, int z) {
+        image.tileInputStream(range, x, y, z)
+    }
+
+    long consumedSpace(Image image) {
+        image.consumedSpace()
+    }
 }

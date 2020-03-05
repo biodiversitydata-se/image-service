@@ -5,24 +5,38 @@ import au.org.ala.web.AlaSecured
 import au.org.ala.web.CASRoles
 import grails.converters.JSON
 import grails.converters.XML
+import groovy.util.logging.Slf4j
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiImplicitParam
 import io.swagger.annotations.ApiImplicitParams
 import io.swagger.annotations.ApiOperation
 import io.swagger.annotations.ApiResponse
 import io.swagger.annotations.ApiResponses
+import org.apache.catalina.connector.ClientAbortException
 import org.apache.commons.io.IOUtils
-import org.springframework.http.MediaType
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.core.io.Resource
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.multipart.MultipartHttpServletRequest
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
-import groovyx.net.http.HTTPBuilder
-import static groovyx.net.http.Method.POST
+import java.util.concurrent.atomic.AtomicLong
+
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND
+import static javax.servlet.http.HttpServletResponse.SC_OK
+import static javax.servlet.http.HttpServletResponse.SC_PARTIAL_CONTENT
+import static javax.servlet.http.HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE
 
 @Api(value = "/image", tags = ["Access to image derivatives (e.g. thumbnails, tiles and originals)"], description = "Image Web Services")
+@Slf4j
 class ImageController {
+
+    private final static NEW_LINE = '\r\n'
+    public static final String HEADER_ETAG = 'ETag'
+    public static final String HEADER_LAST_MODIFIED = 'Last-Modified'
+    public static final String HEADER_CONTENT_RANGE = 'Content-Range'
+    public static final String HEADER_RANGE = 'Range'
 
     def imageService
     def imageStoreService
@@ -31,6 +45,24 @@ class ImageController {
     def batchService
     def collectoryService
     def authService
+    def analyticsService
+
+    @Value('${placeholder.sound.thumbnail}')
+    Resource audioThumbnail
+
+    @Value('${placeholder.sound.large}')
+    Resource audioLargeThumbnail
+
+    @Value('${placeholder.document.thumbnail}')
+    Resource documentThumbnail
+
+    @Value('${placeholder.document.large}')
+    Resource documentLargeThumbnail
+
+    @Value('${placeholder.missing.thumbnail}')
+    Resource missingThumbnail
+
+    static AtomicLong boundaryCounter = new AtomicLong(0)
 
     def index() { }
 
@@ -43,18 +75,13 @@ class ImageController {
      */
     @Deprecated
     def proxyImage() {
-        def imageIdentifier = imageService.getImageGUIDFromParams(params)
-        if (imageIdentifier) {
-            def imageUrl = imageService.getImageUrl(imageIdentifier)
-            boolean contentDisposition = params.boolean("contentDisposition")
-            proxyImageRequest(response, imageUrl, imageIdentifier, "", "", 0, contentDisposition)
-            if (grailsApplication.config.analytics.trackThumbnails.toBoolean()) {
-               def imageInstance = Image.findByImageIdentifier(imageIdentifier)
-               sendAnalytics(imageInstance, 'imageview')
-            }
-        } else {
-            response.sendError(404, "Image not found")
-        }
+        serveImage(
+                { Image image -> image.fileSize },
+                { Image image, Range range -> imageStoreService.originalInputStream(image, range) },
+                { Image image -> image.mimeType },
+                { Image image -> image.extension },
+                grailsApplication.config.getProperty('analytics.trackThumbnails', Boolean, false)
+        )
     }
 
     @ApiOperation(
@@ -64,25 +91,20 @@ class ImageController {
             httpMethod = "GET"
     )
     @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
+            @ApiResponse(code = SC_OK, message = "OK"),
+            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
     )
     @ApiImplicitParams([
             @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
     ])
     def getOriginalFile() {
-        def imageIdentifier = imageService.getImageGUIDFromParams(params)
-        if (imageIdentifier) {
-            def imageInstance = Image.findByImageIdentifier(imageIdentifier)
-            def imageUrl = imageService.getImageUrl(imageIdentifier)
-            boolean contentDisposition = params.boolean("contentDisposition")
-            proxyImageRequest(response, imageUrl, imageIdentifier, imageInstance.extension, imageInstance.mimeType, imageInstance.fileSize.toInteger(), contentDisposition)
-            if (grailsApplication.config.analytics.trackThumbnails.toBoolean()) {
-                sendAnalytics(imageInstance, 'imageview')
-            }
-        } else {
-            response.sendError(404, "Image not found")
-        }
+        serveImage(
+                { Image image -> image.fileSize },
+                { Image image, Range range -> imageStoreService.originalInputStream(image, range) },
+                { Image image -> image.mimeType },
+                { Image image -> image.extension },
+                grailsApplication.config.getProperty('analytics.trackThumbnails', Boolean, false)
+        )
     }
 
     /**
@@ -96,80 +118,36 @@ class ImageController {
             httpMethod = "GET"
     )
     @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
+            @ApiResponse(code = SC_OK, message = "OK"),
+            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
     )
     @ApiImplicitParams([
             @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
     ])
     def proxyImageThumbnail() {
-        def imageIdentifier = imageService.getImageGUIDFromParams(params)
-        boolean addContentDisposition = params.boolean("contentDisposition")
-        if (imageIdentifier) {
-            def imageFilePath = imageStoreService.getImageThumbFile(imageIdentifier)
-            def imageFile = new File(imageFilePath)
-            if (imageFile.exists()){
-                serveImageFile(response, imageFile, imageIdentifier, "image/jpeg", "jpg", addContentDisposition)
-                if (grailsApplication.config.analytics.trackThumbnails.toBoolean()) {
-                    def imageInstance = Image.findByImageIdentifier(imageIdentifier)
-                    sendAnalytics(imageInstance, 'imageview')
-                }
-            } else {
-                //may be sound file or document
-                def imageInstance = Image.findByImageIdentifier(imageIdentifier)
-                if (imageInstance) {
-                    if (imageInstance.mimeType.startsWith('audio')) {
-                        proxyImageRequest(response, grailsApplication.config.placeholder.sound.thumbnail as String, imageIdentifier, imageInstance.extension, imageInstance.mimeType, 0, addContentDisposition)
+        serveImage(
+                { Image image ->
+                    if (image.mimeType.startsWith('image')) {
+                        imageStoreService.thumbnailStoredLength(image)
+                    } else if (image.mimeType.startsWith('audio')) {
+                        audioThumbnail.contentLength()
                     } else {
-                        proxyImageRequest(response, grailsApplication.config.placeholder.document.thumbnail as String, imageIdentifier, imageInstance.extension, imageInstance.mimeType, 0, addContentDisposition)
+                        documentThumbnail.contentLength()
                     }
-                } else {
-                    response.sendError(404, "Resource not found")
-                }
-            }
-        } else {
-            response.sendError(404, "Image not found")
-        }
-    }
-
-    /**
-     * Serve the image file from the file system.
-     *
-     * @param response
-     * @param filePath
-     * @param imageIdentifier
-     * @param contentType
-     * @param extension
-     * @param addContentDisposition
-     * @return
-     */
-    private def serveImageFile(response, String filePath, String imageIdentifier, String contentType, String extension, boolean addContentDisposition){
-        def file = new File(filePath)
-        serveImageFile(response, file, imageIdentifier, contentType, extension, addContentDisposition)
-    }
-
-    /**
-     * Serve image from file system.
-     *
-     * @param response
-     * @param file
-     * @param imageIdentifier
-     * @param contentType
-     * @param extension
-     * @param addContentDisposition
-     * @return
-     */
-    private def serveImageFile(response, File file, String imageIdentifier, String contentType, String extension, boolean addContentDisposition){
-        response.setContentLength(file.size() as int)
-        response.setContentType(contentType)
-        if (addContentDisposition) {
-            response.setHeader("Content-disposition", "attachment;filename=${imageIdentifier}.${extension ?: "jpg"}")
-        }
-        response.status = 200
-        file.withInputStream { stream ->
-            IOUtils.copy(stream, response.outputStream)
-            response.flushBuffer()
-        }
+                },
+                { Image image, Range range ->
+                    if (image.mimeType.startsWith('image')) {
+                        imageStoreService.thumbnailInputStream(image, range)
+                    } else if (image.mimeType.startsWith('audio')) {
+                        range.wrapInputStream(audioThumbnail.inputStream)
+                    } else {
+                        range.wrapInputStream(documentThumbnail.inputStream)
+                    }
+                },
+                { Image image -> image.mimeType.startsWith('image') ? 'image/jpeg' : 'image/png' },
+                { Image image -> image.mimeType.startsWith('image') ? 'jpg' : 'png' },
+                grailsApplication.config.getProperty('analytics.trackThumbnails', Boolean, false)
+        )
     }
 
     @ApiOperation(
@@ -179,41 +157,37 @@ class ImageController {
             httpMethod = "GET"
     )
     @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
+            @ApiResponse(code = SC_OK, message = "OK"),
+            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
     )
     @ApiImplicitParams([
             @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
     ])
-    def proxyImageThumbnailLarge() {
-        def imageIdentifier = imageService.getImageGUIDFromParams(params)
-        boolean addContentDisposition = params.boolean("contentDisposition")
-        if (imageIdentifier) {
-            def imageFilePath = imageStoreService.getImageThumbLargeFile(imageIdentifier)
-            def imageFile = new File(imageFilePath)
-            if (imageFile.exists()){
-                serveImageFile(response, imageFile, imageIdentifier, "image/jpeg", "jpg", addContentDisposition)
-                if (grailsApplication.config.analytics.trackThumbnails.toBoolean()) {
-                    def imageInstance = Image.findByImageIdentifier(imageIdentifier)
-                    sendAnalytics(imageInstance, 'imageview')
-                }
-
-            } else {
-                //may be sound file or document
-                def imageInstance = Image.findByImageIdentifier(imageIdentifier)
-                if (imageInstance) {
-                    if (imageInstance.mimeType.startsWith('audio')) {
-                        proxyImageRequest(response, grailsApplication.config.placeholder.sound.thumbnail as String, imageIdentifier, "jpg", "image/jpeg", 0, addContentDisposition)
+    def proxyImageThumbnailType() {
+        String type = params.thumbnailType ?: 'large'
+        serveImage(
+                { Image image ->
+                    if (image.mimeType.startsWith('image')) {
+                        imageStoreService.thumbnailTypeStoredLength(image, type)
+                    } else if (image.mimeType.startsWith('audio')) {
+                        audioLargeThumbnail.contentLength()
                     } else {
-                        proxyImageRequest(response, grailsApplication.config.placeholder.document.thumbnail as String, imageIdentifier, "jpg", "image/jpeg", 0, addContentDisposition)
+                        documentLargeThumbnail.contentLength()
                     }
-                } else {
-                    response.sendError(404, "Resource not found")
-                }
-            }
-        } else {
-            response.sendError(404, "Image ID not recognised.")
-        }
+                },
+                { Image image, Range range ->
+                    if (image.mimeType.startsWith('image')) {
+                        imageStoreService.thumbnailTypeInputStream(image, type, range)
+                    } else if (image.mimeType.startsWith('audio')) {
+                        range.wrapInputStream(audioLargeThumbnail.inputStream)
+                    } else {
+                        range.wrapInputStream(documentLargeThumbnail.inputStream)
+                    }
+                },
+                { Image image -> image.mimeType.startsWith('image') ? type == 'square' ? 'image/png' : 'image/jpeg' : 'image/png' },
+                { Image image -> image.mimeType.startsWith('image') ? type == 'square' ? 'png' : 'jpg' : 'png' },
+                grailsApplication.config.getProperty('analytics.trackThumbnails', Boolean, false)
+        )
     }
 
     @ApiOperation(
@@ -223,8 +197,8 @@ class ImageController {
             httpMethod = "GET"
     )
     @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
+            @ApiResponse(code = SC_OK, message = "OK"),
+            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
     )
     @ApiImplicitParams([
             @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string"),
@@ -233,98 +207,243 @@ class ImageController {
             @ApiImplicitParam(name = "z", paramType = "path", required = true, value = "Tile mapping service Z value", dataType = "string")
     ])
     def proxyImageTile() {
-        def imageIdentifier = params.id
-        def url = imageService.getImageTilesRootUrl(imageIdentifier)
-        url += "/${params.z}/${params.x}/${params.y}.png"
-        if (new File(url).exists()) {
-            proxyUrl(new URL(url), response)
-        } else {
-            response.sendError(404, "Image tile not found")
-        }
+        int x = params.int('x')
+        int y = params.int('y')
+        int z = params.int('z')
+        serveImage(
+                { Image image -> imageStoreService.tileStoredLength(image, x, y, z) },
+                { Image image, Range range -> imageStoreService.tileInputStream(image, range, x, y, z) },
+                { Image image -> 'image/jpeg' },
+                { Image image -> 'jpg' },
+                false
+        )
     }
 
-    private void proxyImageRequest(HttpServletResponse response, String imageUrl, String imageIdentifier, String extension, String mimeType, int contentLength, boolean addContentDisposition = false) {
-
-        def u = new URL(imageUrl)
-        response.setContentType(mimeType ?: "image/jpeg")
-
-        // this is specifically for iNaturalist data, where extensions are currently parsed to strings like m4a?12312312
-        if (extension && extension.contains("?")){
-            def cleanedExtension = extension.substring(0, extension.indexOf("?"))
-            if (cleanedExtension && cleanedExtension.length() > 0){
-                extension  = cleanedExtension
-            }
+    private void serveImage(
+            Closure<Long> getLength,
+            Closure<InputStream> getInputStream,
+            Closure<String> getContentType,
+            Closure<String> getExtension,
+            boolean sendAnalytics) {
+        def imageIdentifier = imageService.getImageGUIDFromParams(params)
+        if (!imageIdentifier) {
+            render(message: "Image not found", status: SC_NOT_FOUND, contentType: 'text/plain')
+            return
         }
 
-        if (imageIdentifier && addContentDisposition) {
-            response.setHeader("Content-disposition", "attachment;filename=${imageIdentifier}.${extension ?: "jpg"}")
+        def imageInstance = Image.findByImageIdentifier(imageIdentifier)
+        if (!imageInstance) {
+            render(message: "Image not found", status: SC_NOT_FOUND, contentType: 'text/plain')
+            return
+        }
+        boolean contentDisposition = params.boolean("contentDisposition", false)
+        boolean cacheHeaders = grailsApplication.config.getProperty('images.cache.headers', Boolean, true)
+
+        if (sendAnalytics) {
+            analyticsService.sendAnalytics(imageInstance, 'imageview', request.getHeader("User-Agent"))
         }
 
-        if (contentLength) {
-            response.setContentLength(contentLength)
-        }
+        long length = -1
 
-        proxyUrl(u, response)
-    }
-
-    private void proxyUrl(URL u, HttpServletResponse response) {
-
-        InputStream is = null
         try {
-            is = u.openStream()
-        } catch (Exception ex) {
-            logService.error("Failed it proxy URL:" + u, ex)
-            response.sendError(404, "Image unavailable or inaccessible.")
-        }
-
-        if (is) {
-            try {
-                IOUtils.copy(is, response.outputStream)
-            } catch (Exception ex) {
-                logService.error("Unable to proxy image:" + u, ex)
-                response.sendError(404, "Unable to proxy image")
-            } finally {
-                is.close()
-                response.flushBuffer()
+            // could use withCacheHeaders here but they add Etag/LastModified even if we throw an exception during
+            // the generate closure
+            def etag = imageInstance.contentSHA1Hash
+            def lastMod = imageInstance.dateUploaded
+            def changed = checkForNotModified(etag, lastMod)
+            if (changed) {
+                response.setHeader(HEADER_ETAG, etag)
+                response.setDateHeader(HEADER_LAST_MODIFIED, lastMod.time)
+                if (cacheHeaders) {
+                    cache(shared: true, neverExpires: true)
+                }
+                response.sendError(304)
+                return
             }
+
+            length = getLength(imageInstance)
+            def ranges = decodeRangeHeader(length)
+            def contentType = getContentType(imageInstance)
+            def extension = getExtension(imageInstance)
+
+            if (ranges.size() > 1) {
+                def boundary = startMultipartResponse(ranges, contentType)
+                response.setHeader(HEADER_ETAG, etag)
+                response.setDateHeader(HEADER_LAST_MODIFIED, lastMod.time)
+                if (cacheHeaders) {
+                    cache(shared: true, neverExpires: true)
+                }
+
+                def out = response.outputStream
+                def pw = out.newPrintWriter()
+
+                for (def range: ranges) {
+                    writeRangePart(range, imageInstance, boundary, contentType, pw, out, getInputStream)
+                }
+                finaliseMultipartResponse(boundary, pw)
+                response.flushBuffer()
+            } else {
+                Range range = ranges[0]
+                long rangeLength = range.length()
+                String contentRange = range.contentRangeHeader()
+                if (contentRange) {
+                    response.setHeader(HEADER_CONTENT_RANGE, contentRange)
+                    response.setStatus(SC_PARTIAL_CONTENT)
+                } else {
+                    response.setHeader("Accept-Ranges", "bytes")
+                }
+                response.setHeader(HEADER_ETAG, etag)
+                response.setDateHeader(HEADER_LAST_MODIFIED, lastMod.time)
+                if (cacheHeaders) {
+                    cache(shared: true, neverExpires: true)
+                }
+                serveImageStream(response, getInputStream(imageInstance, range), rangeLength, imageIdentifier, contentType, extension, contentDisposition)
+            }
+        } catch (Range.InvalidRangeHeaderException e) {
+            response.setHeader(HEADER_CONTENT_RANGE, "bytes */${length != -1 ? length : '*'}")
+            render(text: "Invalid range header", status: SC_REQUESTED_RANGE_NOT_SATISFIABLE, contentType: 'text/plain')
+        } catch (FileNotFoundException e) {
+            log.debug('Image not found in storage', e)
+            render(text: "Image not found in storage", status: SC_NOT_FOUND, contentType: 'text/plain')
+        } catch (ClientAbortException e) {
+            // User hung up, just ignore this exception since we can't recover into a nice error response.
+        } catch (Exception e) {
+            log.error("Exception serving image", e)
+            cache(false)
+            if (response.containsHeader(HEADER_LAST_MODIFIED)) {
+                response.setHeader(HEADER_LAST_MODIFIED, '')
+            }
+            if (response.containsHeader(HEADER_ETAG)) {
+                response.setHeader(HEADER_ETAG, '')
+            }
+            throw e
         }
     }
 
     /**
-     * POST event data to google analytics.
-     *
-     * @param imageInstance
-     * @param eventCategory
-     * @return
+     * Check whether a 304 response should be sent
+     * @param etag The etag of the current URL
+     * @param lastMod the last modified date of the current URL
+     * @return true if a 304 response should be sent
      */
+    private boolean checkForNotModified(String etag, Date lastMod) {
+        def possibleTags = request.getHeader('If-None-Match')
+        def modifiedDate = -1
+        try {
+            modifiedDate = request.getDateHeader('If-Modified-Since')
+        }
+        catch (IllegalArgumentException iae) {
+            // nom nom nom
+            log.error "Couldn't parse If-Modified-Since header", iae
+        }
 
-    def sendAnalytics(Image imageInstance, String eventCategory){
-        if (imageInstance && grailsApplication.config.analytics.ID){
-            def queryURL =  grailsApplication.config.analytics.URL
-            def requestBody = [
-                           'v': 1,
-                           'tid': grailsApplication.config.analytics.ID,
-                           'cid': UUID.randomUUID().toString(),  //anonymous client ID
-                           't': 'event',
-                           'ec': eventCategory, // event category
-                           'ea': imageInstance.dataResourceUid, //event value
-                           'ua' : request.getHeader("User-Agent")
-            ]
+        if (possibleTags || (modifiedDate != -1)) {
+            def etagChanged = false
+            def lastModChanged = false
 
-            def http = new HTTPBuilder(queryURL)
-            http.request( POST ) {
-                uri.path = '/collect'
-                requestContentType = groovyx.net.http.ContentType.URLENC
-                body =  requestBody
-
-                response.success = { resp ->
-                    println "POST response status: ${resp.statusLine}"
-                }
-
-                response.failure = { resp ->
-                    println 'request failed = ' + resp.status
+            // First let's check for ETags, they are 1st class
+            if (possibleTags && etag) {
+                def tagList = possibleTags.split(',')*.trim()
+                log.debug "There was a list of ETag candidates supplied [{}], new ETag... {}", tagList, etag
+                if (!tagList.contains(etag)) {
+                    etagChanged = true
                 }
             }
+
+            if ((modifiedDate != -1) && lastMod) {
+                // Or... 2nd class... check lastmod
+                def compareDate = new Date(modifiedDate)
+
+                if (compareDate < lastMod) {
+                    lastModChanged = true
+                }
+            }
+            // If neither has changed, we 304. But if either one has changed, we don't
+            return !etagChanged && !lastModChanged
+        }
+        // no headers in request, no 304
+        return false
+    }
+
+    private String startMultipartResponse(List<Range> ranges, String contentType) {
+
+        def boundary = boundaryCounter.incrementAndGet().toString().padLeft(20, '0')
+
+        def rangesSize = ranges.size()
+
+        def contentTypeHeader = 'Content-Type: ' + contentType
+
+        def contentRanges = ranges*.contentRangeHeader()
+
+        response.status = SC_PARTIAL_CONTENT
+        response.contentType = "multipart/byteranges; boundary=$boundary"
+        // calculate the content-length for the response
+        // each range will contain:
+        // \r\n
+        // --$boundary\r\n
+        // Content-Type: $contentType\r\n
+        // Content-Range: $range.contentRangeHeader\r\n
+        // \r\n
+        // range bytes\r\n
+        //
+        // then the footer:
+        // \r\n
+        // --$boundary--\r\n
+        response.contentLengthLong = (2 + 2 + boundary.size() + 2 + contentTypeHeader.size() + 2 + HEADER_CONTENT_RANGE.size() + ': '.size() + 2 + 2) * rangesSize + contentRanges.sum { it.size() } + ranges*.length().sum() + 2 + 2 + boundary.size() + 2 + 2
+
+        return boundary
+    }
+
+    private void writeRangePart(Range range, Image imageInstance, String boundary, String contentType, PrintWriter pw, OutputStream out, Closure<InputStream> getInputStream) {
+        pw.write(NEW_LINE)
+        pw.write('--')
+        pw.write(boundary)
+        pw.write(NEW_LINE)
+        pw.write('Content-Type: ')
+        pw.write(contentType)
+        pw.write(NEW_LINE)
+        pw.write(HEADER_CONTENT_RANGE)
+        pw.write(': ')
+        pw.write(range.contentRangeHeader())
+        pw.write(NEW_LINE)
+        pw.write(NEW_LINE)
+        pw.flush()
+
+        getInputStream(imageInstance, range).withStream { stream ->
+            IOUtils.copy(stream, out)
+        }
+        out.flush()
+    }
+
+    private void finaliseMultipartResponse(String boundary, PrintWriter pw) {
+        pw.write(NEW_LINE)
+        pw.write('--')
+        pw.write(boundary)
+        pw.write('--')
+        pw.write(NEW_LINE)
+        pw.flush()
+    }
+
+    /**
+     * Serve image from input stream.
+     *
+     * @param response
+     * @param stream
+     * @param imageIdentifier
+     * @param contentType
+     * @param extension
+     * @param addContentDisposition
+     * @return
+     */
+    private void serveImageStream(HttpServletResponse response, InputStream inputStream, long length, String imageIdentifier, String contentType, String extension, boolean addContentDisposition) {
+        response.setContentLengthLong(length)
+        response.setContentType(contentType)
+        if (addContentDisposition) {
+            response.setHeader("Content-disposition", "attachment;filename=${imageIdentifier}.${extension ?: "jpg"}")
+        }
+        inputStream.withStream { stream ->
+            IOUtils.copy(stream, response.outputStream)
+            response.flushBuffer()
         }
     }
 
@@ -338,7 +457,7 @@ class ImageController {
 
         def success = false
 
-        def message = ""
+        def message
 
         def image = Image.findByImageIdentifier(params.id as String)
 
@@ -347,7 +466,7 @@ class ImageController {
 
             if (userId){
                 //is user in ROLE_ADMIN or the original owner of the image
-                def isAdmin = authService.userInRole(CASRoles.ROLE_ADMIN)
+                def isAdmin = request.isUserInRole(CASRoles.ROLE_ADMIN)
                 def isImageOwner = image.uploader == userId
                 if (isAdmin || isImageOwner){
                     success = imageService.scheduleImageDeletion(image.id, userId)
@@ -395,59 +514,29 @@ class ImageController {
             httpMethod = "GET"
     )
     @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
+            @ApiResponse(code = SC_OK, message = "OK"),
+            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
     )
     @ApiImplicitParams([
             @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
     ])
     def details() {
-
-        if (request.getHeader('accept')) {
-
-            boolean imageRequest = request.getHeader('accept').indexOf(MediaType.IMAGE_JPEG.toString()) > -1
-            boolean htmlRequest = request.getHeader('accept').indexOf("text/html") > -1
-
-            def imageInstance = imageService.getImageFromParams(params)
-            if (htmlRequest){
+        withFormat {
+            html {
+                def imageInstance = imageService.getImageFromParams(params)
                 if (imageInstance) {
                     getImageModel(imageInstance)
                 } else {
                     flash.errorMessage = "Could not find image with id ${params.int("id") ?: params.imageId }!"
                     redirect(action:'list', controller: 'search')
                 }
-            } else if(imageRequest){
-                if (imageInstance) {
-                    def imageUrl = imageService.getImageUrl(imageInstance.imageIdentifier)
-                    boolean contentDisposition = params.boolean("contentDisposition")
-                    proxyImageRequest(response, imageUrl, imageInstance.imageIdentifier, imageInstance.extension, imageInstance.mimeType, (int) imageInstance.fileSize ?: 0, contentDisposition)
-                    if (grailsApplication.config.analytics.trackDetailedView.toBoolean()) {
-                        sendAnalytics(imageInstance, 'imageview')
-                    }
-                } else {
-                    response.setStatus(404)
-                    proxyImageRequest(response, grailsApplication.config.placeholder.missing.thumbnail as String, null, null, "image/png", 0, false)
-                }
-            } else {
-                renderImageInstance(imageInstance)
             }
-        } else {
-            //default to html view
-            def image = imageService.getImageFromParams(params)
-            if (image) {
-                getImageModel(image)
-            } else {
-                flash.errorMessage = "Could not find image with id ${params.int("id") ?: params.imageId }!"
-                redirect(action:'list', controller: 'search')
+            image {
+                getOriginalFile()
             }
-        }
-    }
-
-    private renderImageInstance(Object imageInstance) {
-        response.addHeader("Access-Control-Allow-Origin", "")
-        withFormat {
             json {
-
+                response.addHeader("Access-Control-Allow-Origin", "")
+                def imageInstance = imageService.getImageFromParams(params)
                 if(imageInstance) {
                     def jsonStr = imageInstance as JSON
                     if (params.callback) {
@@ -458,39 +547,31 @@ class ImageController {
                         render(jsonStr)
                     }
                 } else {
-                    response.status = 404
+                    response.status = SC_NOT_FOUND
                     render([success:false] as JSON)
                 }
             }
             xml {
+                response.addHeader("Access-Control-Allow-Origin", "")
+                def imageInstance = imageService.getImageFromParams(params)
                 if(imageInstance) {
                     render(imageInstance as XML)
                 } else {
-                    response.status = 404
+                    response.status = SC_NOT_FOUND
                     render([success:false] as XML)
                 }
             }
         }
+
     }
 
     private def getImageModel(Image image){
         def subimages = Subimage.findAllByParentImage(image)*.subimage
-        def sizeOnDisk = imageStoreService.getConsumedSpaceOnDisk(image.imageIdentifier)
+        def sizeOnDisk = imageStoreService.consumedSpace(image)
 
-        //accessible from cookie
-        def userEmail = AuthenticationUtils.getEmailAddress(request)
-        def userDetails = authService.getUserForEmailAddress(userEmail, true)
-        def userId = userDetails ? userDetails.id : ""
+        def userId = authService.userId
 
-        def isAdmin = false
-        if (userDetails){
-            if (userDetails.getRoles().contains("ROLE_ADMIN"))
-                isAdmin = true
-        }
-
-        if (!userId){
-            userId =  authService.getUserId()
-        }
+        def isAdmin = request.isUserInRole(CASRoles.ROLE_ADMIN)
 
         def thumbUrls = imageService.getAllThumbnailUrls(image.imageIdentifier)
 
@@ -499,8 +580,8 @@ class ImageController {
         //add additional metadata
         def resourceLevel = collectoryService.getResourceLevelMetadata(image.dataResourceUid)
 
-        if (grailsApplication.config.analytics.trackDetailedView.toBoolean()) {
-            sendAnalytics(image, 'imagedetailedview')
+        if (grailsApplication.config.getProperty('analytics.trackDetailedView', Boolean, false)) {
+            analyticsService.sendAnalytics(image, 'imagedetailedview', request.getHeader("User-Agent"))
         }
 
         [imageInstance: image, subimages: subimages,
@@ -516,8 +597,8 @@ class ImageController {
         }
         def subimages = Subimage.findAllByParentImage(image)*.subimage
 
-        if (grailsApplication.config.analytics.trackLargeViewer.toBoolean()) {
-            sendAnalytics(image, 'imagelargeviewer')
+        if (grailsApplication.config.getProperty('analytics.trackLargeViewer', Boolean, false)) {
+            analyticsService.sendAnalytics(image, 'imagelargeviewer', request.getHeader("User-Agent"))
         }
 
         render (view: 'viewer', model: [imageInstance: image, subimages: subimages])
@@ -591,7 +672,7 @@ class ImageController {
     def viewer() {
         def imageInstance = imageService.getImageFromParams(params)
         if (grailsApplication.config.analytics.trackLargeViewer.toBoolean()) {
-            sendAnalytics(imageInstance, 'imagelargeviewer')
+            analyticsService.sendAnalytics(imageInstance, 'imagelargeviewer', request.getHeader("User-Agent"))
         }
         [imageInstance: imageInstance, auxDataUrl: params.infoUrl]
     }
@@ -772,7 +853,7 @@ class ImageController {
         redirect(action:"stagedImages")
     }
 
-    private renderResults(Object results, int responseCode = 200) {
+    private renderResults(Object results, int responseCode = SC_OK) {
 
         withFormat {
             json {
@@ -809,6 +890,15 @@ class ImageController {
             return "-1"
         }
         AuthenticationUtils.getUserId(request)
+    }
+
+    private List<Range> decodeRangeHeader(long totalLength) {
+        def range = request.getHeader(HEADER_RANGE)
+        if (range) {
+            return Range.decodeRange(range, totalLength)
+        } else {
+            return [Range.emptyRange(totalLength)]
+        }
     }
 }
 

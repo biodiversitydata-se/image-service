@@ -3,6 +3,7 @@ package au.org.ala.images
 import au.org.ala.images.metadata.MetadataExtractor
 import au.org.ala.images.thumb.ThumbnailingResult
 import au.org.ala.images.tiling.TileFormat
+import grails.gorm.transactions.Transactional
 import groovy.sql.Sql
 import groovy.transform.Synchronized
 import org.apache.commons.codec.binary.Base64
@@ -35,6 +36,7 @@ class ImageService {
     def sessionFactory
     def imageService
     def elasticSearchService
+    def settingService
 
     private static Queue<BackgroundTask> _backgroundQueue = new ConcurrentLinkedQueue<BackgroundTask>()
     private static Queue<BackgroundTask> _tilingQueue = new ConcurrentLinkedQueue<BackgroundTask>()
@@ -60,13 +62,9 @@ class ImageService {
         if (imageUrl) {
             try {
                 def image = Image.findByOriginalFilename(imageUrl)
-                if (image){
-                    //check file exists
-                    def file = imageStoreService.getOriginalImageFile(image.imageIdentifier)
-                    if (file.exists() && file.size() > 0){
-                        scheduleMetadataUpdate(image.imageIdentifier, metadata)
-                        return new ImageStoreResult(image, true)
-                    }
+                if (image && image.stored()) {
+                    scheduleMetadataUpdate(image.imageIdentifier, metadata)
+                    return new ImageStoreResult(image, true)
                 }
                 def url = new URL(imageUrl)
                 def bytes = url.bytes
@@ -205,14 +203,17 @@ class ImageService {
         if (!image) {
             def sha1Hash = SHA1CodecExtensionMethods.encodeAsSHA1(bytes)
 
+            StorageLocation sl = StorageLocation.get(settingService.getStorageLocationDefault())
 
-            def imgDesc = imageStoreService.storeImage(bytes)
+            def imgDesc = imageStoreService.storeImage(bytes, sl, contentType)
             // Create the image record, and set the various attributes
             image = new Image(
                     imageIdentifier: imgDesc.imageIdentifier,
                     contentMD5Hash: md5Hash,
                     contentSHA1Hash: sha1Hash,
-                    uploader: uploaderId)
+                    uploader: uploaderId,
+                    storageLocation: sl
+            )
 
 
             if(metadata.extension){
@@ -313,10 +314,6 @@ class ImageService {
         return imageStoreService.getImageThumbUrl(imageIdentifier)
     }
 
-    String getImageThumbUrl(String imageIdentifier, Integer idx) {
-        return imageStoreService.getImageThumbUrl(imageIdentifier,  idx)
-    }
-
     String getImageThumbLargeUrl(String imageIdentifier) {
         return imageStoreService.getImageThumbLargeUrl(imageIdentifier)
     }
@@ -337,8 +334,8 @@ class ImageService {
         results
     }
 
-    String getImageTilesRootUrl(String imageIdentifier) {
-        return imageStoreService.getImageTilesRootUrl(imageIdentifier)
+    String getImageTilesUrlPattern(String imageIdentifier) {
+        return imageStoreService.getImageTilesUrlPattern(imageIdentifier)
     }
 
     Image updateLicence(Image image){
@@ -501,11 +498,11 @@ class ImageService {
     List<ThumbnailingResult> generateImageThumbnails(Image image) {
         List<ThumbnailingResult> results
         if (isAudioType(image)) {
-            results = imageStoreService.generateAudioThumbnails(image.imageIdentifier)
+            results = imageStoreService.generateAudioThumbnails(image)
         } else if (isImageType(image)) {
-            results = imageStoreService.generateImageThumbnails(image.imageIdentifier)
+            results = imageStoreService.generateImageThumbnails(image)
         } else {
-            results = imageStoreService.generateDocumentThumbnails(image.imageIdentifier)
+            results = imageStoreService.generateDocumentThumbnails(image)
         }
 
         // These are deprecated, but we'll update them anyway...
@@ -598,7 +595,7 @@ class ImageService {
     def deleteImagePurge(Image image) {
         if (image && image.dateDeleted) {
             deleteRelatedArtefacts(image)
-            imageStoreService.deleteImage(image.imageIdentifier)
+            image.deleteStored()
             //hard delete
             image.delete(flush:true)
             return true
@@ -693,53 +690,6 @@ class ImageService {
         scheduleMetadataUpdate(image.imageIdentifier, metadata)
 //        imageService.updateMetadata(image.imageIdentifier, metadata)
     }
-
-//    def setMetaDataItems(Image image, MetaDataSourceType source, Map metadata, String userId = "<unknown>") {
-//        if (!userId) {
-//            userId = "<unknown>"
-//        }
-//
-//        metadata.each { kvp ->
-//            def value = sanitizeString(kvp.value?.toString())
-//            def key = kvp.key
-//            if (image && StringUtils.isNotEmpty(key?.trim())) {
-//
-//                if (value.length() > 8000) {
-//                    auditService.log(image, "Cannot set metdata item '${key}' because value is too big! First 25 bytes=${value.take(25)}", userId)
-//                    return false
-//                }
-//
-//                // See if we already have an existing item...
-//                def existing = ImageMetaDataItem.findByImageAndNameAndSource(image, key, source)
-//                if (existing) {
-//                    existing.value = value
-//                } else {
-//                    log.info("Storing metadata: ${image.title}, name: ${key}, value: ${value}, source: ${source}")
-//                    if (key && value) {
-//                        def md = new ImageMetaDataItem(image: image, name: key, value: value, source: source)
-//                        md.save(failOnError: true)
-//                        image.addToMetadata(md)
-//                    }
-//                }
-//
-//                auditService.log(image, "Metadata item ${key} set to '${value?.take(25)}' (truncated) (${source})", userId)
-//            } else {
-//                logService.debug("Not Setting metadata item! Image ${image?.id} key: ${key} value: ${value}")
-//            }
-//        }
-//        image.save()
-//        return true
-//    }
-//
-//
-//    def setMetaDataItem(Long imageId, MetaDataSourceType source, String key, String value, String userId = "<unknown") {
-//        try {
-//            def image = Image.lock(imageId)
-//            setMetaDataItem(image, source, key, value, userId)
-//        } catch(Exception e){
-//           log.error("Error setting image ${imageId} :  ${key} = ${value}")
-//        }
-//    }
 
     def setMetaDataItem(Image image, MetaDataSourceType source, String key, String value, String userId = "<unknown") {
 
@@ -840,7 +790,7 @@ class ImageService {
             y = 0;
         }
 
-        def results = imageStoreService.retrieveImageRectangle(parentImage.imageIdentifier, x, y, width, height)
+        def results = imageStoreService.retrieveImageRectangle(parentImage, x, y, width, height)
         if (results.bytes) {
             int subimageIndex = Subimage.countByParentImage(parentImage) + 1
             def filename = "${parentImage.originalFilename}_subimage_${subimageIndex}"
@@ -901,36 +851,6 @@ class ImageService {
             }
         }
     }
-
-//    def createNextThumbnailJob() {
-//
-//        ImageBackgroundTask task = _backgroundQueue.find { bgt ->
-//            def imageTask = bgt as ImageBackgroundTask
-//            if (imageTask != null) {
-//                if (imageTask.operation == ImageTaskType.Thumbnail) {
-//                    if (_backgroundQueue.remove(imageTask)) {
-//                        return true
-//                    }
-//                }
-//            }
-//            return false
-//        }
-//
-//        if (task == null) {
-//            return [success: false, message:'No thumbnail job available at this time.']
-//        } else {
-//            if (task) {
-//                def image = Image.get(task.imageId)
-//                // Create a new pending job
-//                def ticket = UUID.randomUUID().toString()
-//                def job = new OutsourcedJob(image: image, taskType: ImageTaskType.Thumbnail, expectedDurationInMinutes: 15, ticket: ticket)
-//                job.save()
-//                return [success: true, imageId: image.imageIdentifier, jobTicket: ticket]
-//            } else {
-//                return [success:false, message: "Internal error!"]
-//            }
-//        }
-//    }
 
     def resetImageLinearScale(Image image) {
         image.mmPerPixel = null;
@@ -1122,5 +1042,29 @@ class ImageService {
         def exportFile = grailsApplication.config.imageservice.exportDir + "/images-index.csv"
         new Sql(dataSource).call("""{ call export_index() }""")
         new File(exportFile)
+    }
+
+    @Transactional
+    void migrateImage(long imageId, long destinationStorageLocationId, String userId) {
+        log.debug("Migrating image id {} to storage location {}", imageId, destinationStorageLocationId)
+        def image = Image.findById(imageId)
+        def sl = StorageLocation.findById(destinationStorageLocationId)
+        StorageLocation source = image.storageLocation
+        String imageIdentifier = image.imageIdentifier
+        if (!image.dateDeleted) {
+            log.debug("Beginning migration for image {}...", imageId)
+            if (source == sl) {
+                log.warn("Attempt to migrate image {} to storage location {} aborted because it's already there.", imageId, sl)
+                return
+            }
+            imageStoreService.migrateImage(image, sl)
+            log.debug("Image {} migration ended", imageId)
+            image.storageLocation = sl
+            image.save()
+            auditService.log(image.imageIdentifier, "Migrated to $sl", userId)
+        }
+        if (source && imageIdentifier) {
+            source.deleteStored(imageIdentifier)
+        }
     }
 }
