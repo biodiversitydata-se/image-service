@@ -38,18 +38,13 @@ class AdminController {
             redirect(action:'list')
         } else {
             def subimages = Subimage.findAllByParentImage(image)*.subimage
-            def sizeOnDisk = imageStoreService.getConsumedSpaceOnDisk(image.imageIdentifier)
+
+            def sizeOnDisk = image.consumedSpace()
 
             //accessible from cookie
-            def userEmail = AuthenticationUtils.getEmailAddress(request)
-            def userDetails = authService.getUserForEmailAddress(userEmail, true)
-            def userId = userDetails ? userDetails.id : ""
+            def userId = authService.userId
 
-            def isAdmin = false
-            if (userDetails){
-                if (userDetails.getRoles().contains("ROLE_ADMIN"))
-                    isAdmin = true
-            }
+            def isAdmin = request.isUserInRole('ROLE_ADMIN')
 
             def thumbUrls = imageService.getAllThumbnailUrls(image.imageIdentifier)
 
@@ -138,8 +133,8 @@ class AdminController {
                     }
                     lineCount++
                 }
-                scheduleImagesUpload(batch, authService.getUserId())
-                renderResults([success: true, message:'Image upload started'])
+                def batchId = scheduleImagesUpload(batch, authService.getUserId())
+                renderResults([success: true, batchId: batchId, message:'Image upload started'])
             } catch (Exception e){
                 log.error(e.getMessage(), e)
                 renderResults([success: false, message: "Problem reading CSV file. Please check contents."])
@@ -159,6 +154,17 @@ class AdminController {
             }
             batchService.addTaskToBatch(batchId, new UploadFromUrlTask(srcImage, imageService, userId))
             imageCount++
+        }
+        return batchId
+    }
+
+    def getBatchProgress() {
+        def batchId = params.batchId
+        def batchStatus = batchService.getBatchStatus(batchId)
+        if (batchStatus) {
+            render(batchStatus as JSON, contentType: 'application/json')
+        } else {
+            render([error: 'batch not found'] as JSON, contentType: 'application/json', status: 404)
         }
     }
 
@@ -419,6 +425,8 @@ class AdminController {
     }
 
     def tags() {}
+
+    def storageLocations() {}
 
     def uploadTagsFragment() {}
 

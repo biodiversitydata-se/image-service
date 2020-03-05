@@ -32,8 +32,8 @@
             $(document).ready(function() {
                 var options = {
                     auxDataUrl : "${auxDataUrl ? auxDataUrl : ''}",
-                    imageServiceBaseUrl : "${grailsApplication.config.grails.serverURL}${grailsApplication.config.server.contextPath}",
-                    imageClientBaseUrl : "${grailsApplication.config.grails.serverURL}${grailsApplication.config.server.contextPath}"
+                    imageServiceBaseUrl : "${createLink(absolute: true, uri: '/')}",
+                    imageClientBaseUrl : "${createLink(absolute: true, uri: '/')}"
                 };
                 imgvwr.viewImage($("#imageViewer"), "${imageInstance.imageIdentifier}", "", "", options);
             });

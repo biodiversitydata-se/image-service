@@ -3,6 +3,7 @@ package au.org.ala.images
 import com.opencsv.CSVWriter
 import org.apache.log4j.Logger
 import org.apache.tomcat.util.http.fileupload.FileUtils
+import org.hibernate.ScrollableResults
 
 /**
  * Cycles through the database outputting details of images that are referenced in the database
@@ -22,7 +23,6 @@ class ScheduleMissingImagesBackgroundTask extends BackgroundTask {
     @Override
     void execute() {
 
-
         def exportDir = new File(_exportDirectory)
         if (!exportDir.exists()) {
             FileUtils.forceMkdir(new File(_exportDirectory))
@@ -31,23 +31,17 @@ class ScheduleMissingImagesBackgroundTask extends BackgroundTask {
         def writer = new CSVWriter(new FileWriter(new File(exportDir, "/missing-images.csv")))
         writer.writeNext((String[])["imageIdentifier", "directory", "status"].toArray())
         def c = Image.createCriteria()
-        def imageIds = c.list {
-            projections {
-                property("imageIdentifier")
-            }
-        }
+        ScrollableResults images = c.scroll { }
         def counter = 0
-        imageIds.each { imageId ->
-            def imageDirectory = _imageStoreService.getImageDirectory(imageId)
-            if (imageDirectory.exists()){
-                //check for original
-                def originalFile = new File(imageDirectory, "original")
-                if(!originalFile.exists()){
-                    writer.writeNext((String[])[imageId, imageDirectory.getAbsolutePath(), "original-missing"].toArray())
-                }
-            } else {
-                writer.writeNext((String[])[imageId, imageDirectory.getAbsolutePath(), "directory-missing"].toArray())
+        while (images.next()) {
+            def image = (Image) images.get(0)
+            if (!image.stored()) {
+                writer.writeNext((String[])[image.imageIdentifier, image.storageLocation.createOriginalPathFromUUID(image.imageIdentifier), "original-missing"].toArray())
             }
+            // TODO directory missing for S3 buckets?
+//            else {
+//                writer.writeNext((String[])[imageId, imageDirectory.getAbsolutePath(), "directory-missing"].toArray())
+//            }
             counter += 1
         }
         if (counter % 1000 == 0){

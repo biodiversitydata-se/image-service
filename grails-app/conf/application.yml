@@ -20,14 +20,13 @@ grails:
             - file:///data/image-service/config/image-service-config.yml
             - file:///data/image-service/config/image-service-config.groovy
     mime:
+        use:
+            accept:
+                header: true
         disable:
             accept:
                 header:
                     userAgents:
-                        - Gecko
-                        - WebKit
-                        - Presto
-                        - Trident
         types:
             all: '*/*'
             atom: application/atom+xml
@@ -37,6 +36,15 @@ grails:
             html:
               - text/html
               - application/xhtml+xml
+            image:
+              - image/jpeg
+              - image/jpg
+              - image/png
+              - image/bmp
+              - image/tiff
+              - image/webp
+              - image/apng
+              - image/*
             js: text/javascript
             json:
               - application/json
@@ -72,60 +80,76 @@ grails:
                 scriptlets: html
                 taglib: none
                 staticparts: none
+    databinding:
+        convertEmptyStringsToNull: false
 
 server:
     contextPath: ''
 
+environments:
+    test:
+        grails:
+            config:
+                locations:
+                    - ~/image-service/test-image-service-config.yml
+
+---
+flyway:
+    enabled: true
+    baselineOnMigrate: true
+    baselineVersion: 1
+    outOfOrder: false
 ---
 hibernate:
+    dialect: org.hibernate.dialect.PostgreSQLDialect
     cache:
         queries: false
         use_second_level_cache: false
         use_query_cache: false
 
 dataSource:
+    driverClassName: org.postgresql.Driver
+    dbCreate: validate
     pooled: true
     jmxExport: true
-    username: images
-    password: 'images'
 
 environments:
     development:
-#        hibernate:
-#            dialect: org.hibernate.dialect.PostgreSQLDialect
         dataSource:
-            dbCreate: update
-#            driverClassName: org.postgresql.Driver
             url: jdbc:postgresql://localhost/images?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
             username: "images"
             password: "images"
     test:
-        hibernate:
-            dialect: org.hibernate.dialect.H2Dialect
+        grails:
+            config:
+                locations:
+                    - ~/image-service/test-image-service-config.yml
+        flyway:
+            baselineOnMigrate: false
         dataSource:
+            embeddedPostgres: true
             pooled: true
             jmxExport: true
-            driverClassName: org.h2.Driver
-            username: 'images'
-            password: 'images'
-            dbCreate: update
-            url: jdbc:h2:mem:images;MVCC=TRUE;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
+            embeddedPort: 6543
+            username: postgres
+            password: postgres
+            url: jdbc:postgresql://localhost:6543/postgres?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
         imageservice:
             imagestore:
                 root: '/tmp/image-service/store'
                 inbox: '/tmp/image-service/incoming'
             exportDir: '/tmp/image-service/exports'
     travis:
-        hibernate:
-            dialect: org.hibernate.dialect.H2Dialect
+        flyway:
+            baselineOnMigrate: false
         dataSource:
+            embeddedPostgres: true
             pooled: true
             jmxExport: true
-            driverClassName: org.h2.Driver
-            username: 'images'
-            password: 'images'
-            dbCreate: update
-            url: jdbc:h2:mem:images;MVCC=TRUE;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
+            embeddedPort: 6543
+            username: postgres
+            password: postgres
+            url: jdbc:postgresql://localhost:6543/postgres?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
         imageservice:
             imagestore:
                 root: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-store'
@@ -136,27 +160,32 @@ environments:
         hibernate:
             dialect: org.hibernate.dialect.PostgreSQLDialect
         dataSource:
-            dbCreate: update
+            dbCreate: validate
             driverClassName: org.postgresql.Driver
             url: jdbc:postgresql://localhost/images?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
             properties:
                 jmxEnabled: true
-                initialSize: 5
-                maxActive: 50
-                minIdle: 5
-                maxIdle: 25
-                maxWait: 10000
+                initialSize: 10
+                maxActive: 10
+                minIdle: 10
+                maxIdle: 10
+                maxWait: 5000
                 maxAge: 600000
                 timeBetweenEvictionRunsMillis: 5000
-                minEvictableIdleTimeMillis: 60000
+                minEvictableIdleTimeMillis: 5000
                 validationQuery: SELECT 1
                 validationQueryTimeout: 3
                 validationInterval: 15000
                 testOnBorrow: true
                 testWhileIdle: true
                 testOnReturn: false
-                jdbcInterceptors: ConnectionState
+                jdbcInterceptors: ConnectionState;StatementCache(max=200);SlowQueryReport(logFailed=true)
                 defaultTransactionIsolation: 2 # TRANSACTION_READ_COMMITTED
+                abandonWhenPercentageFull: 100
+                removeAbandonedTimeout: 120
+                removeAbandoned: true
+                logAbandoned: false
+                rollbackOnReturn: true
 security:
     cas:
         appServerName: 'http://dev.ala.org.au:8080'
@@ -169,10 +198,11 @@ imageservice:
     imagestore:
         root: '/data/image-service/store'
         inbox: '/data/image-service/incoming'
+        staging: '/data/image-service/store/staging'
     apache:
-        root: 'http://localhost:8880/store/'
+        root: '${grails.serverURL}${grails.contextPath}/store/'
         # space separated list
-        multiple_roots: 'http://localhost:8880/store/'
+        multiple_roots: '${grails.serverURL}${grails.contextPath}/store/'
     exportDir: '/data/image-service/exports'
     thumbnail:
         size: 300
@@ -213,13 +243,13 @@ endpoints:
 
 placeholder:
     sound:
-        thumbnail: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Speaker_Icon.svg/200px-Speaker_Icon.svg.png"
-        large: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Speaker_Icon.svg/500px-Speaker_Icon.svg.png"
+        thumbnail: "classpath:images/200px-Speaker_Icon.svg.png"
+        large: "classpath:images/500px-Speaker_Icon.svg.png"
     document:
-        thumbnail: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Document_icon_%28the_Noun_Project_27904%29.svg/200px-Document_icon_%28the_Noun_Project_27904%29.svg.png"
-        large: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Document_icon_%28the_Noun_Project_27904%29.svg/500px-Document_icon_%28the_Noun_Project_27904%29.svg.png"
+        thumbnail: "classpath:images/200px-Document_icon.svg.png"
+        large: "classpath:images/500px-Document_icon.svg.png"
     missing:
-        thumbnail: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Document_icon_%28the_Noun_Project_27904%29.svg/200px-Document_icon_%28the_Noun_Project_27904%29.svg.png"
+        thumbnail: "classpath:images/200px-Document_icon.svg.png"
 
 swagger:
     info:

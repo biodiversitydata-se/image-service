@@ -60,6 +60,7 @@ class Image {
 
     Integer squareThumbSize
 
+    static belongsTo = [ storageLocation: StorageLocation ]
     static hasMany = [keywords:ImageKeyword, metadata: ImageMetaDataItem, tags: ImageTag, outSourcedJobs: OutsourcedJob]
 
     static constraints = {
@@ -102,5 +103,60 @@ class Image {
         metadata cascade: 'all'
     }
 
+    byte[] retrieve() {
+        storageLocation.retrieve(this.imageIdentifier)
+    }
+
+    boolean stored() {
+        storageLocation.stored(this.imageIdentifier)
+    }
+
+    long consumedSpace() {
+        storageLocation.consumedSpace(this.imageIdentifier)
+    }
+
+    boolean deleteStored() {
+        storageLocation.deleteStored(this.imageIdentifier)
+    }
+
+    InputStream originalInputStream() throws FileNotFoundException {
+        storageLocation.originalInputStream(this.imageIdentifier, Range.emptyRange(this.fileSize))
+    }
+
+    InputStream originalInputStream(Range range) throws FileNotFoundException {
+        storageLocation.originalInputStream(this.imageIdentifier, range)
+    }
+
+    InputStream thumbnailInputStream(Range range) throws FileNotFoundException {
+        storageLocation.thumbnailInputStream(this.imageIdentifier, range)
+    }
+
+    InputStream thumbnailTypeInputStream(String type, Range range) throws FileNotFoundException {
+        storageLocation.thumbnailTypeInputStream(this.imageIdentifier, type, range)
+    }
+
+    InputStream tileInputStream(Range range, int x, int y, int z) throws FileNotFoundException {
+        storageLocation.tileInputStream(this.imageIdentifier, x, y, z, range)
+    }
+
+    long originalStoredLength() throws FileNotFoundException {
+        storageLocation.originalStoredLength(this.imageIdentifier)
+    }
+
+    long thumbnailStoredLength() throws FileNotFoundException {
+        storageLocation.thumbnailStoredLength(this.imageIdentifier)
+    }
+
+    long thumbnailTypeStoredLength(String type) throws FileNotFoundException {
+        storageLocation.thumbnailTypeStoredLength(this.imageIdentifier, type)
+    }
+
+    long tileStoredLength(int x, int y, int z) throws FileNotFoundException {
+        storageLocation.tileStoredLength(this.imageIdentifier, x, y, z)
+    }
+
+    void migrateTo(StorageLocation destination) {
+        storageLocation.migrateTo(this.imageIdentifier, this.mimeType, destination)
+    }
 
 }

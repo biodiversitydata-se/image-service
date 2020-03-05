@@ -570,7 +570,7 @@ class WebServiceController {
         results.dateTaken = formatDate(date: image.dateTaken, format: "yyyy-MM-dd HH:mm:ss")
         if (results.mimeType && results.mimeType.startsWith('image')){
             results.imageUrl = imageService.getImageUrl(image.imageIdentifier)
-            results.tileUrlPattern = "${imageService.getImageTilesRootUrl(image.imageIdentifier)}/{z}/{x}/{y}.png"
+            results.tileUrlPattern = "${imageService.getImageTilesUrlPattern(image.imageIdentifier)}"
             results.mmPerPixel = image.mmPerPixel ?: ''
             results.height = image.height
             results.width = image.width
@@ -778,7 +778,7 @@ class WebServiceController {
         }
 
         def userId = getUserIdForRequest(request)
-        if(!userId){
+        if (!userId) {
             renderResults([success:false, message:"User needs to be logged in to create sub image"])
             return
         }
@@ -1277,7 +1277,7 @@ class WebServiceController {
                     metadata["largeThumbUrl"] = imageService.getImageThumbLargeUrl(metadata.imageIdentifier)
                     metadata["squareThumbUrl"]  = imageService.getImageSquareThumbUrl(metadata.imageIdentifier)
                     metadata["thumbUrl"]  = imageService.getImageThumbUrl(metadata.imageIdentifier)
-                    metadata["tilesUrlPattern"]  = imageService.getImageTilesRootUrl(metadata.imageIdentifier) + "/{z}/{x}/{y}.png"
+                    metadata["tilesUrlPattern"]  = imageService.getImageTilesUrlPattern(metadata.imageIdentifier)
                     metadata.remove("fileSize")
                     metadata.remove("zoomLevels")
                 }
@@ -1349,7 +1349,7 @@ class WebServiceController {
                 return
             }
 
-            if (imageStoreService.storeTilesArchiveForImage(job.image.imageIdentifier, file)) {
+            if (imageStoreService.storeTilesArchiveForImage(job.image, file)) {
                 job.image.zoomLevels = zoomLevels
                 job.delete()
                 renderResults([success: true])
