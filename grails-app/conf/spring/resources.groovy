@@ -11,7 +11,11 @@ beans = {
             baselineOnMigrate = application.config.getProperty('flyway.baselineOnMigrate', Boolean, true)
             def outOfOrderProp = application.config.getProperty('flyway.outOfOrder', Boolean, false)
             outOfOrder = outOfOrderProp
-            placeholders = ['imageRoot': application.config.getProperty('imageservice.imagestore.root')]
+            placeholders = [
+                    'imageRoot': application.config.getProperty('imageservice.imagestore.root'),
+                    'exportRoot': application.config.getProperty('imageservice.imagestore.exportDir', '/data/image-service/exports'),
+                    'baseUrl': application.config.getProperty('grails.serverURL')
+            ]
             locations = application.config.flyway.locations ?: 'classpath:db/migration'
             if (application.config.flyway.baselineVersion) baselineVersionAsString = application.config.flyway.baselineVersion.toString()
         }

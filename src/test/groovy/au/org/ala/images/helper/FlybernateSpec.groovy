@@ -59,7 +59,11 @@ abstract class FlybernateSpec extends Specification {
 
         // CHANGED added flyway migrate
         flyway.setDataSource(config.getProperty('dataSource.url'), config.getProperty('dataSource.username'), config.getProperty('dataSource.password'))
-        flyway.placeholders = ['imageRoot': config.getProperty('imageservice.imagestore.root')]
+        flyway.placeholders = [
+                'imageRoot': config.getProperty('imageservice.imagestore.root'),
+                'exportRoot': config.getProperty('imageservice.imagestore.exportDir', '/data/image-service/exports'),
+                'baseUrl': config.getProperty('grails.serverURL', 'https://devt.ala.org.au/image-service')
+        ]
         flyway.setLocations('db/migration')
         flyway.clean()
         flyway.migrate()
