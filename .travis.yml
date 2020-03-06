@@ -20,10 +20,11 @@ cache:
 
 before_install:
   - docker-compose -f elastic.yml up -d
+  - 'export GRADLE_OPTS="-Dgrails.env=travis"'
 
 after_success:
-  - 'export GRADLE_OPTS="-Dgrails.env=travis"'
-  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && travis_retry ./gradlew publish --stacktrace --debug'
+  - 'export GRADLE_OPTS="-Dgrails.env=production"'
+  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && travis_retry ./gradlew publish --stacktrace'
 
 after_script:
   - docker-compose -f elastic.yml kill
