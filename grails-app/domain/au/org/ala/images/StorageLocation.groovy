@@ -10,6 +10,8 @@ abstract class StorageLocation {
     Date dateCreated
     Date lastUpdated
 
+    static hasMany = [images: Image]
+
     static constraints = {
     }
 
@@ -103,7 +105,7 @@ abstract class StorageLocation {
 
     abstract boolean stored(String uuid)
 
-    abstract void storeTileZipInputStream(String uuid, String zipFileName, String contentType, ZipInputStream zipInputStream)
+    abstract void storeTileZipInputStream(String uuid, String zipFileName, String contentType, long length = 0, ZipInputStream zipInputStream)
 
     abstract long consumedSpace(String uuid)
 
@@ -141,5 +143,5 @@ abstract class StorageLocation {
 
     protected abstract storeAnywhere(String uuid, InputStream inputStream, String relativePath, String contentType = 'image/jpeg', String contentDisposition = null, Long length = null)
 
-    abstract void migrateTo(String uuid, String contentType, StorageLocation other)
+    abstract void migrateTo(String uuid, String contentType, StorageLocation destination)
 }
