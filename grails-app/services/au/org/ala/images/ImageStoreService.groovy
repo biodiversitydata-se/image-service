@@ -230,9 +230,11 @@ class ImageStoreService {
             def szf = new ZipFile(stagingFile)
             def tika = new Tika()
             for (FileHeader fh : szf.getFileHeaders()) {
+                if (fh.isDirectory()) continue
                 szf.getInputStream(fh).withStream { stream ->
                     def contentType = tika.detect(stream, fh.fileName)
-                    image.storageLocation.storeTileZipInputStream(image.imageIdentifier, fh.fileName, contentType, szf.getInputStream(fh))
+                    def length = fh.uncompressedSize
+                    image.storageLocation.storeTileZipInputStream(image.imageIdentifier, fh.fileName, contentType, length, szf.getInputStream(fh))
                 }
             }
 
