@@ -1,5 +1,7 @@
 package au.org.ala.images
 
+import org.apache.commons.io.IOUtils
+
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -29,8 +31,14 @@ class StagingController {
             etag { "${Long.toHexString(Files.getLastModifiedTime(path).to(SECONDS))}-${Long.toHexString(Files.size(path))}" }
             lastModified { new Date(Files.getLastModifiedTime(path).toMillis()) }
             generate {
+                // Grails render(file: file, contentType: ct) will append a content encoding to the content type
+                // regardless of whether it is appropriate, so we do this manually
                 response.contentLengthLong = Files.size(path)
-                render(file: path.toFile(), contentType: Files.probeContentType(path)) // fileName: path.fileName,
+                response.contentType = Files.probeContentType(path)
+                path.withInputStream { stream ->
+                    IOUtils.copy(stream, response.outputStream)
+                }
+                response.flushBuffer()
             }
         }
     }
