@@ -1,5 +1,6 @@
 package au.org.ala.images
 
+import au.org.ala.images.StorageLocationService.AlreadyExistsException
 import au.org.ala.web.AlaSecured
 import au.org.ala.web.CASRoles
 
@@ -17,6 +18,9 @@ class StorageLocationController {
                 render(status: 400)
                 return
             }
+        } catch (AlreadyExistsException e) {
+            render(status: 409, text: e.message)
+            return
         } catch (e) {
             log.error("Error saving storage location", e)
             render(status: 400)

@@ -46,6 +46,7 @@ repositories {
     maven { url "https://dl.bintray.com/relaximus/plugins" }
     maven { url "https://dl.bintray.com/sachinverma/plugins" }
     maven { url 'https://dl.bintray.com/agorapulse/libs' }
+    maven { url 'https://dl.bintray.com/palantir/releases' } // docker-compose-rule is published on bintray
 }
 
 dependencies {
@@ -74,6 +75,7 @@ dependencies {
     compile group: 'org.locationtech.spatial4j', name: 'spatial4j', version: '0.7'
     compile group: 'org.locationtech.jts', name: 'jts-core', version: '1.15.0'
     compile "com.amazonaws:aws-java-sdk-s3:$amazonAwsSdkVersion"
+    compile 'org.javaswift:joss:0.10.2'
     runtime 'org.postgresql:postgresql:42.2.9'
     compile 'org.elasticsearch:elasticsearch:7.0.1'
     compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.0.1'
@@ -135,6 +137,7 @@ dependencies {
     testCompile 'org.grails.plugins:embedded-postgres:1.1.2'
     testCompile 'cloud.localstack:localstack-utils:0.2.1'
     testCompile "com.amazonaws:aws-java-sdk:$amazonAwsSdkVersion" // full AWS SDK included in test scope for localstack config
+    testCompile 'com.palantir.docker.compose:docker-compose-rule-junit4:1.4.2'
 }
 
 bootRun {

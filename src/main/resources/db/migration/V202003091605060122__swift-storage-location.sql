@@ -1,0 +1,9 @@
+alter table storage_location
+    add auth_url text,
+    add authentication_method text,
+    add username text,
+    add password text,
+    add tenant_id text,
+    add tenant_name text,
+    add container_name text,
+    add public_container boolean;

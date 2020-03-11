@@ -2,13 +2,14 @@ package au.org.ala.images
 
 import grails.testing.gorm.DataTest
 import grails.testing.services.ServiceUnitTest
+import org.javaswift.joss.client.factory.AuthenticationMethod
 import spock.lang.Specification
 
 class StorageLocationServiceSpec extends Specification implements ServiceUnitTest<StorageLocationService>, DataTest {
 
 
     def setupSpec() {
-        mockDomains StorageLocation, FileSystemStorageLocation, S3StorageLocation, Image
+        mockDomains StorageLocation, FileSystemStorageLocation, S3StorageLocation, SwiftStorageLocation, Image
     }
 
     def "test createStorageLocation"() {
@@ -27,7 +28,7 @@ class StorageLocationServiceSpec extends Specification implements ServiceUnitTes
         def fssl2 = service.createStorageLocation(json)
 
         then: "the Storage Location is rejected"
-        thrown RuntimeException
+        thrown StorageLocationService.AlreadyExistsException
 
         when: "creating an S3 Storage Location"
         json = [
@@ -55,15 +56,43 @@ class StorageLocationServiceSpec extends Specification implements ServiceUnitTes
         def s3sl2 = service.createStorageLocation(json)
 
         then: "the Storage Location is rejected"
-        thrown RuntimeException
+        thrown StorageLocationService.AlreadyExistsException
+
+        when: "creating a Swift Storage Location"
+        json = [
+                type: 'swift',
+                authUrl: 'http://localhost:8080/v1/auth',
+                authenticationMethod: 'BASIC',
+                username: 'test:testing',
+                password: 'tester',
+                containerName: 'images',
+                publicContainer: true
+        ]
+
+        def swiftsl = service.createStorageLocation(json)
+
+        then: "A Swift Storage Location is created"
+        swiftsl.class == SwiftStorageLocation
+        swiftsl.authUrl == 'http://localhost:8080/v1/auth'
+        swiftsl.authenticationMethod == AuthenticationMethod.BASIC
+        swiftsl.username == 'test:testing'
+        swiftsl.password == 'tester'
+        swiftsl.containerName == 'images'
+        swiftsl.publicContainer == true
+
+        when: "creating a duplicate Swift Storage Location"
+        def swiftsl2 = service.createStorageLocation(json)
+
+        then: "The storage location is rejected"
+        thrown StorageLocationService.AlreadyExistsException
 
         when: "creating an unsupported storage location type"
         json = [
-                type: 'swift',
+                type: 'gcs',
                 path: '/something'
         ]
 
-        def swsl = service.createStorageLocation(json)
+        def gcssl = service.createStorageLocation(json)
 
         then: "The storage location is rejected"
         thrown RuntimeException
