@@ -2,10 +2,17 @@ package au.org.ala.images
 
 import com.google.common.io.Resources
 import grails.testing.gorm.DomainUnitTest
+import net.lingala.zip4j.ZipFile
+import org.apache.commons.io.FileUtils
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 import spock.lang.Unroll
 
 abstract class StorageLocationSpec extends Specification implements DomainUnitTest<StorageLocation> {
+
+    @Rule
+    TemporaryFolder zipFolder = new TemporaryFolder()
 
     URL resource
     URLConnection connection
@@ -212,6 +219,32 @@ abstract class StorageLocationSpec extends Specification implements DomainUnitTe
         alternateStorageLocation.thumbnailTypeInputStream(uuid, 'large', Range.emptyRange(resourceLength)).bytes == resource.bytes
         alternateStorageLocation.tileInputStream(uuid, 1, 1, 1, Range.emptyRange(resourceLength)).bytes == resource.bytes
         alternateStorageLocation.consumedSpace(uuid) == size
+
+        where:
+        storageLocation << getStorageLocations()
+    }
+
+    @Unroll
+    def "test unzip #storageLocation"(StorageLocation storageLocation) {
+        setup:
+        def zipUrl = Resources.getResource('test.zip')
+        def zipFile = zipFolder.newFile('test.zip')
+        FileUtils.copyURLToFile(zipUrl, zipFile)
+        def zip = new ZipFile(zipFile)
+        def tileHeader = zip.getFileHeader('0/0/0.png')
+        def tile2Header = zip.getFileHeader('7/8/14.png')
+
+        when:
+        storageLocation.storeTileZipInputStream(uuid, tileHeader.fileName, 'image/png', tileHeader.uncompressedSize, zip.getInputStream(tileHeader))
+
+        then:
+        storageLocation.tileInputStream(uuid, 0,0,0, Range.emptyRange(tileHeader.uncompressedSize)).bytes == zip.getInputStream(tileHeader).bytes
+
+        when:
+        storageLocation.storeTileZipInputStream(uuid, tile2Header.fileName, 'image/png', tile2Header.uncompressedSize, zip.getInputStream(tile2Header))
+
+        then:
+        storageLocation.tileInputStream(uuid, 8,14,7, Range.emptyRange(tile2Header.uncompressedSize)).bytes == zip.getInputStream(tile2Header).bytes
 
         where:
         storageLocation << getStorageLocations()
