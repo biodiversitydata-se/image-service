@@ -1,4 +1,4 @@
-<%@ page import="au.org.ala.images.FileSystemStorageLocation" %>
+<%@ page import="au.org.ala.images.SwiftStorageLocation; au.org.ala.images.S3StorageLocation; au.org.ala.images.FileSystemStorageLocation" %>
 <table class="table">
     <thead>
         <tr>
@@ -21,16 +21,28 @@
                 <g:if test="${sl instanceof FileSystemStorageLocation}">
                     FS
                 </g:if>
-                <g:else>
+                <g:elseif test="${sl instanceof S3StorageLocation}">
                     S3
+                </g:elseif>
+                <g:elseif test="${sl instanceof SwiftStorageLocation}">
+                    OpenStack Swift
+                </g:elseif>
+                <g:else>
+                    ${sl.class}
                 </g:else>
             </td>
             <td>
                 <g:if test="${sl instanceof FileSystemStorageLocation}">
                     ${sl.basePath}
                 </g:if>
-                <g:else>
+                <g:elseif test="${sl instanceof S3StorageLocation}">
                     ${sl.region}:${sl.bucket}/${sl.prefix}
+                </g:elseif>
+                <g:elseif test="${sl instanceof SwiftStorageLocation}">
+                    ${sl.authUrl}:${sl.containerName}
+                </g:elseif>
+                <g:else>
+                    ${sl}
                 </g:else>
             </td>
             <td>
@@ -40,7 +52,6 @@
                 ${imageCounts[sl.id]}
             </td>
             <td>
-%{--                <button class="btn btn-xs btn-danger btn-delete" data-id="${sl.id}"><i class="fa fa-trash"></i></button>--}%
                 <button class="btn btn-xs btn-default btn-migrate" data-source="${sl.id}"><i class="fa fa-suitcase"></i></button>
             </td>
         </tr>
@@ -67,8 +78,14 @@
                                     <g:if test="${sl instanceof FileSystemStorageLocation}">
                                         FS:${sl.basePath}
                                     </g:if>
-                                    <g:else>
+                                    <g:elseif test="${sl instanceof S3StorageLocation}">
                                         S3:${sl.region}:${sl.bucket}/${sl.prefix}
+                                    </g:elseif>
+                                    <g:elseif test="${sl instanceof SwiftStorageLocation}">
+                                        Swift:${sl.authUrl}:${sl.containerName}
+                                    </g:elseif>
+                                    <g:else>
+                                        ${sl}
                                     </g:else>
                                 </option>
                             </g:each>

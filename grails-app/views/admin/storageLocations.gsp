@@ -1,3 +1,4 @@
+<%@ page import="org.javaswift.joss.client.factory.AuthenticationMethod" %>
 <!doctype html>
 <html>
     <head>
@@ -43,7 +44,7 @@
                                     AWS S3 Bucket
                                 </label>
                                 <label class="radio-inline">
-                                    <input type="radio" name="type" id="swift-type" value="swift" disabled>
+                                    <input type="radio" name="type" id="swift-type" value="swift">
                                     Swift
                                 </label>
                             </div>
@@ -80,6 +81,45 @@
                                     </label>
                                 </div>
                             </div>
+                            <div id="swift-form" class="type-form hidden">
+                                <div class="form-group">
+                                    <label for="authUrl">Auth URL</label>
+                                    <input type="url" class="form-control" id="authUrl" name="authUrl" placeholder="https://example.org/v1/auth">
+                                </div>
+                                <div class="form-group">
+                                    <label for="authenticationMethod">Auth Method</label>
+                                    <select class="form-control" id="authenticationMethod" name="authenticationMethod">
+                                        <g:each in="${AuthenticationMethod.values()}" var="method">
+                                            <option value="${method.name()}">${method}</option>
+                                        </g:each>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="username">Username</label>
+                                    <input type="text" class="form-control" id="username" name="username" placeholder="test:testing">
+                                </div>
+                                <div class="form-group">
+                                    <label for="password">Password</label>
+                                    <input type="text" class="form-control" id="password" name="password" placeholder="tester">
+                                </div>
+                                <div class="form-group">
+                                    <label for="tenantId">Tenant ID</label>
+                                    <input type="text" class="form-control" id="tenantId" name="tenantId" placeholder="">
+                                </div>
+                                <div class="form-group">
+                                    <label for="tenantName">Tenant Name</label>
+                                    <input type="text" class="form-control" id="tenantName" name="tenantName" placeholder="">
+                                </div>
+                                <div class="form-group">
+                                    <label for="containerName">Container Name</label>
+                                    <input type="text" class="form-control" id="containerName" name="containerName" placeholder="images">
+                                </div>
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" id="publicContainer" name="publicContainer"> Public container
+                                    </label>
+                                </div>
+                            </div>
                             <button type="button" id="btn-save-storage-location" class="btn btn-default">Add</button>
                         </form>
                     </div>
@@ -111,21 +151,18 @@
                 }).fail(function(jqXHR, textStatus, errorThrown) {
                     $('#storage-location-modal').modal('hide');
                     console.log(errorThrown);
-                    alert("Couldn't save storage location");
+                    if (jqXHR.status == 409) {
+                        alert(jqXHR.responseText)
+                    } else {
+                        alert("Couldn't save storage location");
+                    }
                 });
             });
 
             $('input[name="type"]').on('change', function(e) {
                 let type = $("input[name='type']:checked").val();
                 $('.type-form').addClass('hidden');
-                switch (type) {
-                    case 'fs':
-                         $('#fs-form').removeClass('hidden');
-                        break;
-                    case 's3':
-                         $('#s3-form').removeClass('hidden');
-                        break;
-                }
+                $('#'+type+'-form').removeClass('hidden');
             });
 
             $('#storage-location-container').on('click', '.btn-migrate', function(e) {

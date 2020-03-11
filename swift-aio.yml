@@ -1,0 +1,16 @@
+--- 
+networks: 
+  swift: ~
+services:
+  swift:
+    container_name: swift
+    environment: 
+      - cluster.name=docker-cluster
+      - discovery.type=single-node
+    image: "bouncestorage/swift-aio"
+    networks: 
+      - swift
+    ports: 
+      - "48080:8080"
+      - "49022:22"
+version: "2"
