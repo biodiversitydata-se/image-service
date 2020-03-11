@@ -184,10 +184,10 @@ class S3StorageLocation extends StorageLocation {
     }
 
     @Override
-    void storeTileZipInputStream(String uuid, String zipInputFileName, String contentType, ZipInputStream zipInputStream) {
+    void storeTileZipInputStream(String uuid, String zipInputFileName, String contentType, long length = 0, ZipInputStream zipInputStream) {
         def path = FilenameUtils.normalize(createTilesPathFromUUID(uuid) + '/' + zipInputFileName)
         zipInputStream.withStream { stream ->
-            s3Client.putObject(bucket, path, stream, generateMetadata(contentType))
+            s3Client.putObject(bucket, path, stream, generateMetadata(contentType, null, length))
         }
     }
 

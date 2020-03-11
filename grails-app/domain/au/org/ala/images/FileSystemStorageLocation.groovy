@@ -59,7 +59,7 @@ class FileSystemStorageLocation extends StorageLocation {
     }
 
     @Override
-    void storeTileZipInputStream(String uuid, String zipFileName, String contentType, ZipInputStream zipInputStream) {
+    void storeTileZipInputStream(String uuid, String zipFileName, String contentType, long length = 0, ZipInputStream zipInputStream) {
         def path = createTilesPathFromUUID(uuid)
         Files.createDirectories(Paths.get(path))
         FileUtils.copyInputStreamToFile(zipInputStream, new File(FilenameUtils.normalize(path + '/' + zipFileName)))
@@ -111,11 +111,11 @@ class FileSystemStorageLocation extends StorageLocation {
     }
 
     @Override
-    void migrateTo(String uuid, String contentType, StorageLocation other) {
+    void migrateTo(String uuid, String contentType, StorageLocation destination) {
         def basePath = createBasePathFromUUID(uuid)
         Files.walk(Paths.get(basePath), FileVisitOption.FOLLOW_LINKS).map { Path path ->
             if (Files.isRegularFile(path)) {
-                other.storeAnywhere(uuid, path.newInputStream(), path.toString() - basePath, contentType, null, Files.size(path))
+                destination.storeAnywhere(uuid, path.newInputStream(), path.toString() - basePath, contentType, null, Files.size(path))
             }
         }.collect(Collectors.toList())
     }
