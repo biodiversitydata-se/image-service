@@ -34,7 +34,7 @@ class StagingControllerSpec extends Specification implements ControllerUnitTest<
         response.status == 400
     }
 
-    def "test serve file"() {
+    def "test serve jpg file"() {
         setup:
         def testjpg = new ClassPathResource('test.jpg')
         FileUtils.copyInputStreamToFile(testjpg.inputStream, new File(tempFolder.newFolder('staging', 'userid'), 'test.jpg'))
@@ -44,7 +44,23 @@ class StagingControllerSpec extends Specification implements ControllerUnitTest<
         controller.serve()
 
         then:
-        response.contentType == 'image/jpeg;charset=utf-8'
+        response.contentType == 'image/jpeg'
+        assert !response.getHeader('etag').empty
+        assert !response.getHeader('last-modified').empty
+        response.contentAsByteArray == testjpg.inputStream.bytes
+    }
+
+    def "test serve csv txt file"() {
+        setup:
+        def testjpg = new ClassPathResource('test.txt')
+        FileUtils.copyInputStreamToFile(testjpg.inputStream, new File(tempFolder.newFolder('staging', 'userid', 'datafile'), 'datafile.txt'))
+        params.path = 'userid/datafile/datafile.txt'
+
+        when:
+        controller.serve()
+
+        then:
+        response.contentType == 'text/plain'
         assert !response.getHeader('etag').empty
         assert !response.getHeader('last-modified').empty
         response.contentAsByteArray == testjpg.inputStream.bytes
