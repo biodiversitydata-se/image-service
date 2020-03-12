@@ -22,6 +22,7 @@ class FileSystemStorageLocation extends StorageLocation {
     }
 
     static mapping = {
+        cache true
     }
 
     @Override

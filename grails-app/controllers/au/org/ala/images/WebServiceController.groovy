@@ -80,7 +80,7 @@ class WebServiceController {
             response.sendError(HttpStatus.SC_BAD_REQUEST, "Must include API key")
         } else {
             def message = ""
-            def image = Image.findByImageIdentifier(params.imageID as String)
+            def image = Image.findByImageIdentifier(params.imageID as String, [ cache: true])
             if (image) {
                 success = imageService.scheduleImageDeletion(image.id, userId)
                 message = "Image scheduled for deletion."
@@ -129,7 +129,7 @@ class WebServiceController {
             @ApiImplicitParam(name = "imageID", paramType = "path", required = true, value = "Image Id", dataType = "string")
     ])
     def scheduleThumbnailGeneration() {
-        def imageInstance = Image.findByImageIdentifier(params.id as String)
+        def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
         def userId = getUserIdForRequest(request)
         def results = [success: true]
 
@@ -172,7 +172,7 @@ class WebServiceController {
     ])
     def scheduleArtifactGeneration() {
 
-        def imageInstance = Image.findByImageIdentifier(params.id as String)
+        def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
         def userId = request.getHeader(ApiKeyInterceptor.API_KEY_HEADER_NAME)
         def results = [success: true]
 
@@ -215,7 +215,7 @@ class WebServiceController {
             @ApiImplicitParam(name = "imageID", paramType = "path", required = true, value = "Image Id", dataType = "string")
     ])
     def scheduleKeywordRegeneration() {
-        def imageInstance = Image.findByImageIdentifier(params.id as String)
+        def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
         def userId = request.getHeader(ApiKeyInterceptor.API_KEY_HEADER_NAME)
         def results = [success:true]
         if (params.id && !imageInstance) {
@@ -457,7 +457,7 @@ class WebServiceController {
         def success = false
         def message = ""
         def status = HttpStatus.SC_OK
-        def image = Image.findByImageIdentifier(params.imageId as String)
+        def image = Image.findByImageIdentifier(params.imageId as String, [ cache: true])
         def tag = Tag.get(params.int("tagId"))
         if (!image){
             message =  "Unrecognised image ID"
@@ -549,7 +549,7 @@ class WebServiceController {
     ])
     def detachTagFromImage() {
         def success = false
-        def image = Image.findByImageIdentifier(params.imageId as String)
+        def image = Image.findByImageIdentifier(params.imageId as String, [ cache: true])
         def tag = Tag.get(params.int("tagId"))
         if (image && tag) {
             success = tagService.detachTagFromImage(image, tag)
@@ -625,7 +625,7 @@ class WebServiceController {
     def getImageInfo() {
         def results = [success:false]
         def imageId = params.id ? params.id : params.imageID
-        def image = Image.findByImageIdentifier(imageId as String)
+        def image = Image.findByImageIdentifier(imageId as String, [ cache: true])
         if (image) {
             results.success = true
             addImageInfoToMap(image, results, params.boolean("includeTags"), params.boolean("includeMetadata"))
@@ -655,7 +655,7 @@ class WebServiceController {
     ])
     def imagePopupInfo() {
         def results = [success:false]
-        def image = Image.findByImageIdentifier(params.id as String)
+        def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (image) {
             results.success = true
             results.data = [:]
@@ -754,7 +754,7 @@ class WebServiceController {
     }
 
     def createSubimage() {
-        def image = Image.findByImageIdentifier(params.id as String)
+        def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"])
             return
@@ -804,7 +804,7 @@ class WebServiceController {
     )
     @RequireApiKey
     def subimage() {
-        def image = Image.findByImageIdentifier(params.id as String)
+        def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"], HttpStatus.SC_NOT_FOUND)
             return
@@ -846,7 +846,7 @@ class WebServiceController {
 
     def getSubimageRectangles() {
 
-        def image = Image.findByImageIdentifier(params.id as String)
+        def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"])
             return
@@ -862,7 +862,7 @@ class WebServiceController {
     }
 
     def addUserMetadataToImage() {
-        def image = Image.findByImageIdentifier(params.id as String)
+        def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"], HttpStatus.SC_NOT_FOUND)
             return
@@ -977,7 +977,7 @@ class WebServiceController {
 
     @RequireApiKey
     def bulkAddUserMetadataToImage(String id) {
-        def image = Image.findByImageIdentifier(id)
+        def image = Image.findByImageIdentifier(id, [ cache: true])
         def userId = getUserIdForRequest(request)
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"])
@@ -993,7 +993,7 @@ class WebServiceController {
 
     @RequireApiKey
     def removeUserMetadataFromImage() {
-        def image = Image.findByImageIdentifier(params.id as String)
+        def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"], HttpStatus.SC_BAD_REQUEST)
             return
@@ -1127,7 +1127,7 @@ class WebServiceController {
 
             imageIds.each { imageId ->
 
-                def image = Image.findByImageIdentifier(imageId)
+                def image = Image.findByImageIdentifier(imageId, [ cache: true])
 
                 if (image) {
                     def map = imageService.getImageInfoMap(image)
@@ -1387,7 +1387,7 @@ class WebServiceController {
 
         CodeTimer ct = new CodeTimer("Update Image metadata ${params.imageIdentifier}")
 
-        Image image = Image.findByImageIdentifier(params.imageIdentifier)
+        Image image = Image.findByImageIdentifier(params.imageIdentifier, [ cache: true])
         if (image){
             def userId = getUserIdForRequest(request)
             def metadata = {
@@ -1569,7 +1569,7 @@ class WebServiceController {
 
     def calibrateImageScale() {
         def userId = getUserIdForRequest(request)
-        def image = Image.findByImageIdentifier(params.imageId)
+        def image = Image.findByImageIdentifier(params.imageId, [ cache: true])
         def units = params.units ?: "mm"
         def pixelLength = params.double("pixelLength") ?: 0
         def actualLength = params.double("actualLength") ?: 0
@@ -1582,7 +1582,7 @@ class WebServiceController {
     }
 
     def resetImageCalibration() {
-        def image = Image.findByImageIdentifier(params.imageId)
+        def image = Image.findByImageIdentifier(params.imageId, [ cache: true])
         if (image) {
             imageService.resetImageLinearScale(image)
             renderResults([success: true, message:"Image linear scale has been reset"])
@@ -1593,7 +1593,7 @@ class WebServiceController {
 
     def setHarvestable() {
         def userId = getUserIdForRequest(request)
-        def image = Image.findByImageIdentifier(params.imageId)
+        def image = Image.findByImageIdentifier(params.imageId, [ cache: true])
         if (image) {
             imageService.setHarvestable(image, (params.value ?: params.harvest ?: "").toBoolean(), userId)
             renderResults([success: true, message:"Image harvestable now set to ${image.harvestable}", harvestable: image.harvestable])

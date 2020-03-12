@@ -17,6 +17,7 @@ abstract class StorageLocation {
 
     static mapping = {
         id generator: 'identity'
+        cache true
     }
 
     /**

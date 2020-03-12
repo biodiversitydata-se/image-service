@@ -232,7 +232,7 @@ class ImageController {
             return
         }
 
-        def imageInstance = Image.findByImageIdentifier(imageIdentifier)
+        def imageInstance = Image.findByImageIdentifier(imageIdentifier, [ cache: true])
         if (!imageInstance) {
             render(message: "Image not found", status: SC_NOT_FOUND, contentType: 'text/plain')
             return
@@ -460,7 +460,7 @@ class ImageController {
 
         def message
 
-        def image = Image.findByImageIdentifier(params.id as String)
+        def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
 
         if (image) {
             def userId = getUserIdForRequest(request)
@@ -877,7 +877,7 @@ class ImageController {
 
     @AlaSecured(value = [CASRoles.ROLE_USER, CASRoles.ROLE_ADMIN], anyRole = true, redirectUri = "/")
     def resetImageCalibration() {
-        def image = Image.findByImageIdentifier(params.imageId)
+        def image = Image.findByImageIdentifier(params.imageId, [ cache: true])
         if (image) {
             imageService.resetImageLinearScale(image)
             renderResults([success: true, message:"Image linear scale has been reset"])

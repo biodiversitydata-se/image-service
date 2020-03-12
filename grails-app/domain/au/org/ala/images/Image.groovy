@@ -101,6 +101,7 @@ class Image {
         imageIdentifier index: 'ImageIdentifier_Idx'
         description length: 8096
         metadata cascade: 'all'
+        cache true
     }
 
     byte[] retrieve() {
