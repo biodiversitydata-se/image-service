@@ -163,29 +163,6 @@ environments:
             dbCreate: validate
             driverClassName: org.postgresql.Driver
             url: jdbc:postgresql://localhost/images?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
-            properties:
-                jmxEnabled: true
-                initialSize: 10
-                maxActive: 10
-                minIdle: 10
-                maxIdle: 10
-                maxWait: 5000
-                maxAge: 600000
-                timeBetweenEvictionRunsMillis: 5000
-                minEvictableIdleTimeMillis: 5000
-                validationQuery: SELECT 1
-                validationQueryTimeout: 3
-                validationInterval: 15000
-                testOnBorrow: true
-                testWhileIdle: true
-                testOnReturn: false
-                jdbcInterceptors: ConnectionState;StatementCache(max=200);SlowQueryReport(logFailed=true)
-                defaultTransactionIsolation: 2 # TRANSACTION_READ_COMMITTED
-                abandonWhenPercentageFull: 100
-                removeAbandonedTimeout: 120
-                removeAbandoned: true
-                logAbandoned: false
-                rollbackOnReturn: true
 security:
     cas:
         appServerName: 'http://dev.ala.org.au:8080'
