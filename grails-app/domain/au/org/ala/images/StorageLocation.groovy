@@ -144,4 +144,6 @@ abstract class StorageLocation {
     protected abstract storeAnywhere(String uuid, InputStream inputStream, String relativePath, String contentType = 'image/jpeg', String contentDisposition = null, Long length = null)
 
     abstract void migrateTo(String uuid, String contentType, StorageLocation destination)
+
+    abstract boolean verifySettings()
 }

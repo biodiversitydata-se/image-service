@@ -25,6 +25,35 @@ class FileSystemStorageLocation extends StorageLocation {
     }
 
     @Override
+    boolean verifySettings() {
+        def baseDirFile = new File(basePath)
+        boolean isDir = (baseDirFile.exists() || baseDirFile.mkdirs()) && baseDirFile.isDirectory()
+        if (baseDirFile.exists()) {
+            if (!baseDirFile.isDirectory()) {
+                log.warn("FS {} exists but is not a directory", baseDirFile)
+                return false
+            }
+        }
+        else {
+            if (!baseDirFile.mkdirs()) {
+                log.warn("FS {} didn't exist but the application can't create it", baseDirFile)
+                return false
+            }
+        }
+        boolean canRead = isDir && baseDirFile.canRead()
+        if (!canRead) {
+            log.warn("FS {} exists but the application can't read from it", baseDirFile)
+            return false
+        }
+        boolean canWrite = canRead && baseDirFile.canWrite()
+        if (!canWrite) {
+            log.warn("FS {} exists but the application can't write to it", baseDirFile)
+            return false
+        }
+        return true
+    }
+
+    @Override
     void store(String uuid, InputStream inputStream, String contentType = 'image/jpeg', String contentDisposition = null, Long length = null) {
         String path = createOriginalPathFromUUID(uuid)
 
