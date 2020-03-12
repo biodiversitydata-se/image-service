@@ -35,6 +35,13 @@ class StagingController {
                 // regardless of whether it is appropriate, so we do this manually
                 response.contentLengthLong = Files.size(path)
                 response.contentType = Files.probeContentType(path)
+
+                // Grails will provide a dummy output stream for HEAD requests but
+                // explicitly bail on HEAD methods so we don't transfer bytes out of storage
+                // unnecessarily
+                if (request.method == 'HEAD') {
+                    return
+                }
                 path.withInputStream { stream ->
                     IOUtils.copy(stream, response.outputStream)
                 }

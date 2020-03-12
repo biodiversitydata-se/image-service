@@ -275,6 +275,13 @@ class ImageController {
                     cache(shared: true, neverExpires: true)
                 }
 
+                // Grails will provide a dummy output stream for HEAD requests but
+                // explicitly bail on HEAD methods so we don't transfer bytes out of storage
+                // unnecessarily
+                if (request.method == 'HEAD') {
+                    return
+                }
+
                 def out = response.outputStream
                 def pw = out.newPrintWriter()
 
@@ -298,7 +305,22 @@ class ImageController {
                 if (cacheHeaders) {
                     cache(shared: true, neverExpires: true)
                 }
-                serveImageStream(response, getInputStream(imageInstance, range), rangeLength, imageIdentifier, contentType, extension, contentDisposition)
+                response.contentLengthLong = rangeLength
+                response.contentType = contentType
+                if (contentDisposition) {
+                    response.setHeader("Content-disposition", "attachment;filename=${imageIdentifier}.${extension ?: "jpg"}")
+                }
+                // Grails will provide a dummy output stream for HEAD requests but
+                // explicitly bail on HEAD methods so we don't transfer bytes out of storage
+                // unnecessarily
+                if (request.method == 'HEAD') {
+                    return
+                }
+
+                getInputStream(imageInstance, range).withStream { stream ->
+                    IOUtils.copy(stream, response.outputStream)
+                    response.flushBuffer()
+                }
             }
         } catch (Range.InvalidRangeHeaderException e) {
             response.setHeader(HEADER_CONTENT_RANGE, "bytes */${length != -1 ? length : '*'}")
@@ -423,29 +445,6 @@ class ImageController {
         pw.write('--')
         pw.write(NEW_LINE)
         pw.flush()
-    }
-
-    /**
-     * Serve image from input stream.
-     *
-     * @param response
-     * @param stream
-     * @param imageIdentifier
-     * @param contentType
-     * @param extension
-     * @param addContentDisposition
-     * @return
-     */
-    private void serveImageStream(HttpServletResponse response, InputStream inputStream, long length, String imageIdentifier, String contentType, String extension, boolean addContentDisposition) {
-        response.setContentLengthLong(length)
-        response.setContentType(contentType)
-        if (addContentDisposition) {
-            response.setHeader("Content-disposition", "attachment;filename=${imageIdentifier}.${extension ?: "jpg"}")
-        }
-        inputStream.withStream { stream ->
-            IOUtils.copy(stream, response.outputStream)
-            response.flushBuffer()
-        }
     }
 
     /**
