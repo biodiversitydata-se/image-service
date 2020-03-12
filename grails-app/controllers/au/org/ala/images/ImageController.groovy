@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.atomic.AtomicLong
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND
+import static javax.servlet.http.HttpServletResponse.SC_NOT_MODIFIED
 import static javax.servlet.http.HttpServletResponse.SC_OK
 import static javax.servlet.http.HttpServletResponse.SC_PARTIAL_CONTENT
 import static javax.servlet.http.HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE
@@ -257,7 +258,7 @@ class ImageController {
                 if (cacheHeaders) {
                     cache(shared: true, neverExpires: true)
                 }
-                response.sendError(304)
+                response.sendError(SC_NOT_MODIFIED)
                 return
             }
 
