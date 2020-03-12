@@ -9,6 +9,8 @@ import grails.testing.gorm.DomainUnitTest
 import org.javaswift.joss.client.factory.AuthenticationMethod
 import org.junit.ClassRule
 
+import java.util.function.Function
+
 class SwiftStorageLocationSpec extends StorageLocationSpec implements DomainUnitTest<SwiftStorageLocation> {
 
     @ClassRule
@@ -21,7 +23,9 @@ class SwiftStorageLocationSpec extends StorageLocationSpec implements DomainUnit
                     SuccessOrFailure.onResultOf(new Attempt() {
                         @Override
                         boolean attempt() throws Exception {
-                            target.listeningNow
+                            target.listeningNow && target.isHttpResponding({
+                                "http://localhost:${it.externalPort}/healthcheck"
+                            }, true)
                         }
                     })
                 }
