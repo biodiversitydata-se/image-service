@@ -169,6 +169,8 @@
                 var $this = $(this);
                 var source = $this.data('source');
                 $('#storage-location-migrate-modal').modal('show').on('click', '#btn-migrate-storage', function(e) {
+                    var $this = $(this);
+                    $this.prop('disabled', true);
                     $.ajax({type: 'POST',
                         url: "${createLink(controller: 'storageLocation', action: 'migrate')}",
                         data: { src: source, dst: $('#destination').val() }
@@ -178,6 +180,8 @@
                         $('#storage-location-migrate-modal').modal('hide');
                         console.log(errorThrown);
                         alert("Couldn't migrate storage location");
+                    }).always(function() {
+                        $this.prop('disabled', false);
                     });
 
                 });
