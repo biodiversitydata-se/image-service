@@ -50,6 +50,23 @@ class StagingControllerSpec extends Specification implements ControllerUnitTest<
         response.contentAsByteArray == testjpg.inputStream.bytes
     }
 
+    def "test serve jpg HEAD"() {
+        setup:
+        def testjpg = new ClassPathResource('test.jpg')
+        FileUtils.copyInputStreamToFile(testjpg.inputStream, new File(tempFolder.newFolder('staging', 'userid2'), 'test.jpg'))
+        params.path = 'userid/test.jpg'
+        request.method = 'HEAD'
+
+        when:
+        controller.serve()
+
+        then:
+        response.contentType == 'image/jpeg'
+        assert !response.getHeader('etag').empty
+        assert !response.getHeader('last-modified').empty
+        response.contentAsByteArray == new byte[0]
+    }
+
     def "test serve csv txt file"() {
         setup:
         def testjpg = new ClassPathResource('test.txt')

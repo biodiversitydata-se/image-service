@@ -67,7 +67,7 @@ class ImageControllerSpec extends Specification implements ControllerUnitTest<Im
     }
 
     @Unroll
-    def "test serve image (range: #rangeHeader etag: #etag lastMod: #lastModified)"(String fileMimeType, String rangeHeader, int statusCode, String contentType, long length, String etag, Date lastModified) {
+    def "test serve image (range: #rangeHeader etag: #etag lastMod: #lastModified #headRequest)"(String fileMimeType, String rangeHeader, int statusCode, String contentType, long length, String etag, Date lastModified, boolean headRequest) {
         setup:
         Image image = new Image(
                 imageIdentifier: UUID.randomUUID().toString(),
@@ -78,31 +78,42 @@ class ImageControllerSpec extends Specification implements ControllerUnitTest<Im
                 dateUploaded: dateUploaded).save()
         List<Range> ranges = Range.decodeRange(rangeHeader, image.fileSize)
         setupGetImageRequest(image, rangeHeader, etag, lastModified)
+        if (headRequest) {
+            request.method = 'HEAD'
+        }
 
         when:
         controller.getOriginalFile()
 
         then:
-        if (statusCode != 304) {
+        if (statusCode != 304 && request.method != 'HEAD') {
             for (def range : ranges) {
                 1 * controller.imageStoreService.originalInputStream(image, range) >> { range.wrapInputStream(new ByteArrayInputStream(fileContent)) }
+            }
+        } else {
+            for (def range : ranges) {
+                0 * controller.imageStoreService.originalInputStream(image, range)
             }
         }
         1 * controller.analyticsService.sendAnalytics(image, 'imageview', userAgent)
         checkGetImageAssertions(image, ranges, statusCode, length, contentType, fileContent)
 
         where:
-        fileMimeType || rangeHeader    || statusCode || contentType || length || etag || lastModified
-        'image/jpeg'  | ''              | 200         | 'image/jpeg' | 1234    | null  | null
-        'image/jpeg'  | 'bytes=100-200' | 206         | 'image/jpeg' | 101     | null  | null
-        'image/jpeg'  | ''              | 200         | 'image/jpeg' | 1234    | 'asdf'| null
-        'image/jpeg'  | 'bytes=100-200' | 206         | 'image/jpeg' | 101     | null  | dateUploaded - 1
-        'image/jpeg'  | ''              | 304         | null         | 0       | sha1ContentHash | null
-        'image/jpeg'  | ''              | 304         | null         | 0       | null | dateUploaded
-        'image/jpeg'  | 'bytes=100-200' | 304         | null         | 0       | sha1ContentHash | null
-        'image/jpeg'  | 'bytes=100-200' | 304         | null         | 0       | null | dateUploaded
-        'image/jpeg'  | 'bytes=1-2,3-4' | 206         | "multipart/byteranges; boundary=00000000000000000001" | 202 | null | null
-        'image/jpeg'  | 'bytes=1-2,3-4' | 206         | "multipart/byteranges; boundary=00000000000000000001" | 202 | null | null
+        fileMimeType || rangeHeader    || statusCode || contentType || length || etag || lastModified || headRequest
+        'image/jpeg'  | ''              | 200         | 'image/jpeg' | 1234    | null  | null | false
+        'image/jpeg'  | 'bytes=100-200' | 206         | 'image/jpeg' | 101     | null  | null | false
+        'image/jpeg'  | ''              | 200         | 'image/jpeg' | 1234    | 'asdf'| null | false
+        'image/jpeg'  | 'bytes=100-200' | 206         | 'image/jpeg' | 101     | null  | dateUploaded - 1 | false
+        'image/jpeg'  | ''              | 304         | null         | 0       | sha1ContentHash | null | false
+        'image/jpeg'  | ''              | 304         | null         | 0       | null | dateUploaded | false
+        'image/jpeg'  | 'bytes=100-200' | 304         | null         | 0       | sha1ContentHash | null | false
+        'image/jpeg'  | 'bytes=100-200' | 304         | null         | 0       | null | dateUploaded | false
+        'image/jpeg'  | 'bytes=1-2,3-4' | 206         | "multipart/byteranges; boundary=00000000000000000001" | 202 | null | null | false
+        'image/jpeg'  | 'bytes=1-2,3-4' | 206         | "multipart/byteranges; boundary=00000000000000000001" | 202 | null | null | false
+        'image/jpeg'  | ''              | 200         | 'image/jpeg' | 1234       | null  | null | true
+        'image/jpeg'  | 'bytes=100-200' | 206         | 'image/jpeg' | 101       | null  | null | true
+        'image/jpeg'  | 'bytes=1-2,3-4' | 206         | "multipart/byteranges; boundary=00000000000000000001" | 202 | null | null | true
+
     }
 
     @Unroll
@@ -421,7 +432,11 @@ class ImageControllerSpec extends Specification implements ControllerUnitTest<Im
             assert response.getDateHeader('Expires') > (new Date() + 364).time
         }
         if (statusCode < 300 && ranges.size() == 1) {
-            assert response.contentAsByteArray == content[(ranges[0].start())..(ranges[0].end())] as byte[]
+            if (request.method == 'HEAD') {
+                assert response.contentAsByteArray == new byte[0]
+            } else {
+                assert response.contentAsByteArray == content[(ranges[0].start())..(ranges[0].end())] as byte[]
+            }
         }
         // TODO test multipart response body
         response.reset()
