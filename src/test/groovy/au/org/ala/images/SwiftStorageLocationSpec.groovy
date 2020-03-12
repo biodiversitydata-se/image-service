@@ -1,35 +1,18 @@
 package au.org.ala.images
 
 import com.palantir.docker.compose.DockerComposeRule
-import com.palantir.docker.compose.connection.DockerPort
-import com.palantir.docker.compose.connection.waiting.Attempt
-import com.palantir.docker.compose.connection.waiting.HealthCheck
-import com.palantir.docker.compose.connection.waiting.SuccessOrFailure
+import com.palantir.docker.compose.connection.waiting.HealthChecks
 import grails.testing.gorm.DomainUnitTest
 import org.javaswift.joss.client.factory.AuthenticationMethod
 import org.junit.ClassRule
+import spock.lang.Shared
 
-import java.util.function.Function
 
 class SwiftStorageLocationSpec extends StorageLocationSpec implements DomainUnitTest<SwiftStorageLocation> {
 
-    @ClassRule
-    public static DockerComposeRule docker = DockerComposeRule.builder()
+    @ClassRule @Shared DockerComposeRule docker = DockerComposeRule.builder()
             .file("swift-aio.yml")
-            .waitingForHostNetworkedPort(48080, new HealthCheck<DockerPort>() {
-
-                @Override
-                SuccessOrFailure isHealthy(DockerPort target) {
-                    SuccessOrFailure.onResultOf(new Attempt() {
-                        @Override
-                        boolean attempt() throws Exception {
-                            target.listeningNow && target.isHttpResponding({
-                                "http://localhost:${it.externalPort}/healthcheck"
-                            }, true)
-                        }
-                    })
-                }
-            })
+            .waitingForService("swift", HealthChecks.toRespond2xxOverHttp(8080) { port -> port.inFormat('http://$HOST:$EXTERNAL_PORT/healthcheck') })
             .build()
 
     @Override
