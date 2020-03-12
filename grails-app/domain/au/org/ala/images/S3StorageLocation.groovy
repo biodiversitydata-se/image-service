@@ -2,8 +2,10 @@ package au.org.ala.images
 
 import au.org.ala.images.util.ByteSinkFactory
 import com.amazonaws.AmazonClientException
+import com.amazonaws.AmazonServiceException
 import com.amazonaws.ClientConfiguration
 import com.amazonaws.Protocol
+import com.amazonaws.SdkClientException
 import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.client.builder.AwsClientBuilder
@@ -132,6 +134,16 @@ class S3StorageLocation extends StorageLocation {
         }
         metadata.setHeader('x-amz-acl', acl.toString())
         return metadata
+    }
+
+    @Override
+    boolean verifySettings() {
+        try {
+            return s3Client.doesBucketExistV2(bucket)
+        } catch (SdkClientException e) {
+            log.error("Exception while verifying S3 bucket {}", this, e)
+            return false
+        }
     }
 
     @Override

@@ -34,7 +34,10 @@ class StorageLocationController {
         def imageCounts = storageLocationList.collectEntries {
             [(it.id): Image.countByStorageLocationAndDateDeletedIsNull(it) ]
         }
-        [storageLocationList:  storageLocationList, imageCounts: imageCounts, defaultId: settingService.getStorageLocationDefault()]
+        def verifieds = storageLocationList.collectEntries {
+            [ (it.id): it.verifySettings() ]
+        }
+        [storageLocationList:  storageLocationList, imageCounts: imageCounts, defaultId: settingService.getStorageLocationDefault(), verifieds: verifieds]
     }
 
     @AlaSecured(value = [CASRoles.ROLE_ADMIN, "ROLE_IMAGE_ADMIN"], anyRole = true, statusCode = 403)

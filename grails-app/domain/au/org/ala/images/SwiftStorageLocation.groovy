@@ -83,9 +83,14 @@ class SwiftStorageLocation extends StorageLocation {
         return _container
     }
 
-    boolean verifyContainer() {
-        def container = container
-        container.exists() && account.list().any { it.name == containerName && it.public == publicContainer }
+    boolean verifySettings() {
+        try {
+            def container = container
+            container.exists() && account.list().any { it.name == containerName && it.public == publicContainer }
+        } catch (e) {
+            log.error("Exception while verifying settings for Swift container {}", this, e)
+            return false
+        }
     }
 
     @Override
