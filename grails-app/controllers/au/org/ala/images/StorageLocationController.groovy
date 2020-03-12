@@ -30,7 +30,7 @@ class StorageLocationController {
     }
 
     def listFragment() {
-        def storageLocationList = StorageLocation.list()
+        def storageLocationList = StorageLocation.list([sort: 'id'])
         def imageCounts = storageLocationList.collectEntries {
             [(it.id): Image.countByStorageLocationAndDateDeletedIsNull(it) ]
         }
