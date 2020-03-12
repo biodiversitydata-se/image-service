@@ -161,7 +161,7 @@ class ImageService {
     @Synchronized
     def updateMetadata(String imageId, Map metadata) {
 
-        def image = Image.findByImageIdentifier(imageId)
+        def image = Image.findByImageIdentifier(imageId, [ cache: true])
 
         if (image) {
             boolean toSave = false
@@ -324,7 +324,7 @@ class ImageService {
 
     List<String> getAllThumbnailUrls(String imageIdentifier) {
         def results = []
-        def image = Image.findByImageIdentifier(imageIdentifier)
+        def image = Image.findByImageIdentifier(imageIdentifier, [ cache: true])
         if (image) {
             def thumbs = ImageThumbnail.findAllByImage(image)
             thumbs?.each { thumb ->
@@ -967,7 +967,7 @@ class ImageService {
                 guid = params.imageId
             }
 
-            image = Image.findByImageIdentifier(guid)
+            image = Image.findByImageIdentifier(guid, [ cache: true])
         }
         return image
     }

@@ -44,6 +44,7 @@ class S3StorageLocation extends StorageLocation {
     }
 
     static mapping = {
+        cache true
     }
 
     private AmazonS3 _s3Client

@@ -43,7 +43,7 @@ class ImageStoreService {
     }
 
     byte[] retrieveImage(String imageIdentifier) {
-        return Image.findByImageIdentifier(imageIdentifier).retrieve()
+        return Image.findByImageIdentifier(imageIdentifier, [ cache: true] ).retrieve()
     }
 
     Map retrieveImageRectangle(Image parentImage, int x, int y, int width, int height) {
@@ -192,7 +192,7 @@ class ImageStoreService {
     void generateTMSTiles(String imageIdentifier) {
         logService.log("Generating TMS compatible tiles for image ${imageIdentifier}")
         def ct = new CodeTimer("Tiling image ${imageIdentifier}")
-        def image = Image.findByImageIdentifier(imageIdentifier)
+        def image = Image.findByImageIdentifier(imageIdentifier, [ cache: true])
 
         def results = tileImage(image)
         if (results.success) {

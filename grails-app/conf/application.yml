@@ -103,9 +103,9 @@ flyway:
 hibernate:
     dialect: org.hibernate.dialect.PostgreSQLDialect
     cache:
-        queries: false
+        queries: true
         use_second_level_cache: false
-        use_query_cache: false
+        use_query_cache: true
 
 dataSource:
     driverClassName: org.postgresql.Driver
