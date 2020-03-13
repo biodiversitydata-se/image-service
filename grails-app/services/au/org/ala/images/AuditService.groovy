@@ -1,6 +1,7 @@
 package au.org.ala.images
 
 import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
 
 class AuditService {
 
@@ -9,6 +10,11 @@ class AuditService {
     @PostConstruct
     void init() {
         AUDIT_SERVICE = this
+    }
+
+    @PreDestroy
+    void destroy() {
+        AUDIT_SERVICE = null
     }
 
     def log(Image image, String message, String userId) {
