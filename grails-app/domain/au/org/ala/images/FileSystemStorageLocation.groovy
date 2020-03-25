@@ -26,6 +26,16 @@ class FileSystemStorageLocation extends StorageLocation {
     }
 
     @Override
+    boolean isSupportsRedirect() {
+        return false
+    }
+
+    @Override
+    URI redirectLocation(String path) {
+        throw new UnsupportedOperationException("FS never redirects")
+    }
+
+    @Override
     boolean verifySettings() {
         def baseDirFile = new File(basePath)
         boolean isDir = (baseDirFile.exists() || baseDirFile.mkdirs()) && baseDirFile.isDirectory()
@@ -118,7 +128,7 @@ class FileSystemStorageLocation extends StorageLocation {
     }
 
     StoragePathStrategy storagePathStrategy() {
-        new DefaultStoragePathStrategy(basePath, false)
+        new DefaultStoragePathStrategy(basePath, false, true) // this probably doesn't work on winders...
     }
 
     @Override

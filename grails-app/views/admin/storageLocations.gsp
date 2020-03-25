@@ -80,6 +80,11 @@
                                         <input type="checkbox" id="publicRead" name="publicRead"> Public read
                                     </label>
                                 </div>
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" id="redirect" name="redirect"> Redirect
+                                    </label>
+                                </div>
                             </div>
                             <div id="swift-form" class="type-form hidden">
                                 <div class="form-group">
@@ -119,9 +124,28 @@
                                         <input type="checkbox" id="publicContainer" name="publicContainer"> Public container
                                     </label>
                                 </div>
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" id="redirect" name="redirect"> Redirect
+                                    </label>
+                                </div>
                             </div>
                             <button type="button" id="btn-save-storage-location" class="btn btn-default">Add</button>
                         </form>
+                    </div>
+                    <div class="modal-footer">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="update-storage-location-modal" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Update Storage Location</h4>
+                    </div>
+                    <div class="modal-body">
                     </div>
                     <div class="modal-footer">
                     </div>
@@ -173,7 +197,7 @@
                     $this.prop('disabled', true);
                     $.ajax({type: 'POST',
                         url: "${createLink(controller: 'storageLocation', action: 'migrate')}",
-                        data: { src: source, dst: $('#destination').val() }
+                        data: { src: source, dst: $('#destination').val(), deleteSrc: $('#deleteSrc').val() }
                     }).done(function(data, status, jqXHR) {
                         $('#storage-location-migrate-modal').modal('hide');
                     }).fail(function(jqXHR, textStatus, errorThrown) {
@@ -200,6 +224,35 @@
                     loadLocations();
                 });
             });
+
+            $('#storage-location-container').on('click', '.btn-edit', function(e) {
+                var $this = $(this);
+                var id = $this.data('id');
+                $.ajax("${createLink(controller:'storageLocation', action:'editFragment')}/" + id, { 'dataType': 'html' }).done(function(content) {
+                    // $("#update-storage-location-modal .modal-title").html("Rename tag");
+                    $("#update-storage-location-modal .modal-body").html(content);
+                });
+                $('#update-storage-location-modal').modal('show');
+            });
+            $('#update-storage-location-modal').on('hidden.bs.modal', function(e) {
+                $("#update-storage-location-modal .modal-body").html('');
+            });
+            $('#update-storage-location-modal').on('click', '#btn-update-storage-location', function(e) {
+                 $.ajax({type: 'POST',
+                         url: '${createLink(controller: 'storageLocation', action: 'update')}' + '/' + $('#update-storage-location-form input[name=id]').val(),
+                         data: JSON.stringify($('#update-storage-location-form').serializeArray().reduce(function(a, x) { a[x.name] = x.value; return a; }, {})),
+                         dataType: 'json',
+                         contentType: 'application/json'
+                }).done(function(data, status, jqXHR) {
+                    $('#update-storage-location-modal').modal('hide');
+                    loadLocations();
+                }).fail(function(jqXHR, textStatus, errorThrown) {
+                    $('#update-storage-location-modal').modal('hide');
+                    console.log(errorThrown);
+                    alert("Couldn't save storage location");
+                });
+            });
+
 
             loadLocations();
         });

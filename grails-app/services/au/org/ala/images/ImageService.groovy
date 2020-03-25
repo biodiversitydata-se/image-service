@@ -1045,7 +1045,7 @@ class ImageService {
     }
 
     @Transactional
-    void migrateImage(long imageId, long destinationStorageLocationId, String userId) {
+    void migrateImage(long imageId, long destinationStorageLocationId, String userId, boolean deleteSource) {
         log.debug("Migrating image id {} to storage location {}", imageId, destinationStorageLocationId)
         def image = Image.findById(imageId)
         def sl = StorageLocation.findById(destinationStorageLocationId)
@@ -1063,7 +1063,7 @@ class ImageService {
             image.save()
             auditService.log(image.imageIdentifier, "Migrated to $sl", userId)
         }
-        if (source && imageIdentifier) {
+        if (source && imageIdentifier && deleteSource) {
             source.deleteStored(imageIdentifier)
         }
     }

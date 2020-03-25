@@ -12,12 +12,34 @@ abstract class StorageLocation {
 
     static hasMany = [images: Image]
 
+    static transients = ['supportsRedirect']
+
     static constraints = {
     }
 
     static mapping = {
         id generator: 'identity'
         cache true
+    }
+
+    abstract boolean isSupportsRedirect()
+
+    abstract URI redirectLocation(String path)
+
+    URI originalRedirectLocation(String uuid) {
+        redirectLocation(storagePathStrategy().createOriginalPathFromUUID(uuid))
+    }
+
+    URI thumbnailRedirectLocation(String uuid) {
+        redirectLocation(storagePathStrategy().createThumbPathFromUUID(uuid))
+    }
+
+    URI thumbnailTypeRedirectLocation(String uuid, String type) {
+        redirectLocation(storagePathStrategy().createThumbLargePathFromUUID(uuid, type))
+    }
+
+    URI tileRedirectLocation(String uuid, int x, int y, int z) {
+        redirectLocation(storagePathStrategy().createTilesPathFromUUID(uuid, x, y, z))
     }
 
     /**

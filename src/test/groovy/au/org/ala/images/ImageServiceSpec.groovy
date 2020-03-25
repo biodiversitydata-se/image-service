@@ -19,7 +19,7 @@ class ImageServiceSpec extends Specification implements ServiceUnitTest<ImageSer
         def dest = new FileSystemStorageLocation(basePath: '/tmp/2').save()
 
         when:
-        service.migrateImage(image.id, dest.id, '1234')
+        service.migrateImage(image.id, dest.id, '1234', false)
 
         then:
         1 * service.imageStoreService.migrateImage(image, dest)
@@ -36,7 +36,7 @@ class ImageServiceSpec extends Specification implements ServiceUnitTest<ImageSer
         def dest = new FileSystemStorageLocation(basePath: '/tmp').save()
 
         when:
-        service.migrateImage(image.id, dest.id, '1234')
+        service.migrateImage(image.id, dest.id, '1234', false)
 
         then:
         0 * service.imageStoreService.migrateImage(image, dest)
@@ -53,7 +53,7 @@ class ImageServiceSpec extends Specification implements ServiceUnitTest<ImageSer
         def dest = new FileSystemStorageLocation(basePath: '/tmp/2').save()
 
         when:
-        service.migrateImage(image.id, dest.id, '1234')
+        service.migrateImage(image.id, dest.id, '1234', false)
 
         then:
         1 * service.imageStoreService.migrateImage(image, dest) >> { throw new IOException("Boo") }

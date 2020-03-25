@@ -3,10 +3,14 @@ package au.org.ala.images
 import grails.gorm.transactions.Transactional
 import org.javaswift.joss.client.factory.AuthenticationMethod
 
+import java.util.concurrent.Executors
+
 @Transactional
 class StorageLocationService {
 
     def imageService
+
+    final analyticsExecutor = Executors.newSingleThreadExecutor()
 
     StorageLocation createStorageLocation(json) {
         StorageLocation storageLocation
@@ -22,7 +26,8 @@ class StorageLocationService {
                     throw new AlreadyExistsException("S3 $json.region $json.bucket $json.prefix already exists")
                 }
                 storageLocation = new S3StorageLocation(region: json.region, bucket: json.bucket, prefix: json.prefix ?: '',
-                        accessKey: json.accessKey, secretKey: json.secretKey, publicRead: [true, 'true', 'on'].contains(json.publicRead))
+                        accessKey: json.accessKey, secretKey: json.secretKey, publicRead: [true, 'true', 'on'].contains(json.publicRead),
+                        redirect: [true, 'true', 'on'].contains(json.redirect))
                 break
             case 'swift':
                 if (SwiftStorageLocation.countByAuthUrlAndContainerName(json.authUrl, json.containerName) > 0) {
@@ -32,7 +37,8 @@ class StorageLocationService {
                             username: json.username, password: json.password,
                             tenantId: json.tenantId ?: '', tenantName: json.tenantName ?: '',
                             authenticationMethod: AuthenticationMethod.valueOf(json.authenticationMethod),
-                            publicContainer: [true, 'true', 'on'].contains(json.publicContainer))
+                            publicContainer: [true, 'true', 'on'].contains(json.publicContainer),
+                            redirect: [true, 'true', 'on'].contains(json.redirect))
                 break
             default:
                 throw new RuntimeException("Unknown storage location type ${json.type}")
@@ -48,7 +54,8 @@ class StorageLocationService {
 
     }
 
-    def migrate(long sourceId, long destId, String userId) {
+    @Transactional(readOnly = true)
+    def migrate(long sourceId, long destId, String userId, boolean deleteSource) {
         log.info("migrating images from storage location {} to {}", sourceId, destId)
         StorageLocation source = StorageLocation.findById(sourceId)
         StorageLocation dest = StorageLocation.findById(destId)
@@ -69,7 +76,21 @@ class StorageLocationService {
         while (results.next()) {
             def id = results.get(0)
             log.debug("Adding MigrationStorageLocationTask for image id {} to dest storage location {}", id, dest)
-            imageService.scheduleBackgroundTask(new MigrateStorageLocationTask(imageId: id, destinationStorageLocationId: destId, userId: userId, imageService: imageService))
+            imageService.scheduleBackgroundTask(new MigrateStorageLocationTask(imageId: id, destinationStorageLocationId: destId, userId: userId, imageService: imageService, deleteSource: deleteSource))
+        }
+    }
+
+    void updateStorageLocation(StorageLocation storageLocation) {
+        storageLocation.save(failOnError: true, validate: true)
+    }
+
+    void updateAcl(StorageLocation storageLocation) {
+        if (storageLocation instanceof S3StorageLocation) {
+            // TODO this could be very slow and leave a lot of images inaccessible,
+            // might have to disable updating publicRead
+            analyticsExecutor.execute {
+                storageLocation.updateACL()
+            }
         }
     }
 

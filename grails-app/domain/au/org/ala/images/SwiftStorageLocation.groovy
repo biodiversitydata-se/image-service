@@ -31,6 +31,7 @@ class SwiftStorageLocation extends StorageLocation {
     String containerName
 
     boolean publicContainer
+    boolean redirect
     boolean mock = false
 
     static constraints = {
@@ -83,12 +84,22 @@ class SwiftStorageLocation extends StorageLocation {
         return _container
     }
 
+    @Override
+    boolean isSupportsRedirect() {
+        return redirect
+    }
+
+    @Override
+    URI redirectLocation(String path) {
+        container.getObject(path).publicURL.toURI()
+    }
+
     boolean verifySettings() {
         try {
             def container = container
             container.exists() && account.list().any { it.name == containerName && it.public == publicContainer }
         } catch (e) {
-            log.error("Exception while verifying settings for Swift container {}", this, e)
+            log.error("Exception while verifying settings for Swift container {}: {}", this, e.message)
             return false
         }
     }
@@ -186,7 +197,7 @@ class SwiftStorageLocation extends StorageLocation {
 
     @Override
     StoragePathStrategy storagePathStrategy() {
-        return new DefaultStoragePathStrategy([], true)
+        return new DefaultStoragePathStrategy([], true, false)
     }
 
     @Override

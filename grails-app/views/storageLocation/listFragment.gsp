@@ -57,6 +57,7 @@
             </td>
             <td>
                 <button class="btn btn-xs btn-default btn-migrate" data-source="${sl.id}"><i class="fa fa-suitcase"></i></button>
+                <button class="btn btn-xs btn-default btn-edit" data-id="${sl.id}"><i class="fa fa-edit"></i></button>
             </td>
         </tr>
     </g:each>
@@ -94,6 +95,12 @@
                                 </option>
                             </g:each>
                         </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="deleteSrc" name="deleteSrc"> Delete source image?
+                        </label>
                     </div>
 
                     <button type="button" id="btn-migrate-storage" class="btn btn-default">Do it</button>
