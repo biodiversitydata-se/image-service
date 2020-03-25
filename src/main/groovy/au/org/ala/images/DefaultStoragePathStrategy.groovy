@@ -1,20 +1,30 @@
 package au.org.ala.images
 
+import groovy.util.logging.Slf4j
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.lang3.StringUtils
 
+@Slf4j
 class DefaultStoragePathStrategy implements StoragePathStrategy {
 
     boolean forceUnixSeparator
+    boolean forceAbsolutePath
     List<String> prefixes
 
-    DefaultStoragePathStrategy(List<String> prefixes, boolean forceUnixSeparator) {
-        this.prefixes = prefixes
+    DefaultStoragePathStrategy(List<String> prefixes, boolean forceUnixSeparator, boolean forceAbsolutePath = true) {
+        this.prefixes = prefixes.findAll() // remove empty
         this.forceUnixSeparator = forceUnixSeparator
+        this.forceAbsolutePath = forceAbsolutePath
     }
 
-    DefaultStoragePathStrategy(String prefix, boolean forceUnixSeparator) {
-        this(Arrays.asList(StringUtils.split(prefix, forceUnixSeparator ? '/' as char : File.separatorChar)), forceUnixSeparator)
+    DefaultStoragePathStrategy(String prefix, boolean forceUnixSeparator, boolean forceAbsolutePath = true) {
+        this(Arrays.asList(StringUtils.split(prefix, forceUnixSeparator ? '/' as char : File.separatorChar)), forceUnixSeparator, forceAbsolutePath)
+    }
+
+    @Override
+    String basePath() {
+        def l = new ArrayList(prefixes)
+        generatePath(l)
     }
 
     @Override
@@ -22,14 +32,28 @@ class DefaultStoragePathStrategy implements StoragePathStrategy {
         def l = new ArrayList(prefixes)
         computeAndAppendLocalDirectoryPath(uuid, l)
         l.addAll(postfix)
+        l.findAll()
+        return generatePath(l)
+    }
+
+    String generatePath(List<String> l) {
         def result
         if (forceUnixSeparator) {
-            result = '/' + FilenameUtils.normalize(l.join('/'), true)
+            result = ensureAbsoluteIfRequired(FilenameUtils.normalize(l.join('/'), true), '/')
         } else {
             // use system separator instead
-            result = File.separator + FilenameUtils.normalize(l.join(File.separator))
+            result = ensureAbsoluteIfRequired(FilenameUtils.normalize(l.join(File.separator)), File.separator)
         }
+        log.warn('Generated path {}', result)
         return result
+    }
+
+    String ensureAbsoluteIfRequired(String path, String separator) {
+        if (forceAbsolutePath && !path.startsWith(separator)) {
+            return separator + path
+        } else {
+            return path
+        }
     }
 
     private static void computeAndAppendLocalDirectoryPath(String uuid, List bits) {

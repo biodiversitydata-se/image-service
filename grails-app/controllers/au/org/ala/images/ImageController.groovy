@@ -20,9 +20,9 @@ import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.multipart.MultipartHttpServletRequest
 
 import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.atomic.AtomicLong
 
+import static javax.servlet.http.HttpServletResponse.SC_FOUND
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND
 import static javax.servlet.http.HttpServletResponse.SC_NOT_MODIFIED
 import static javax.servlet.http.HttpServletResponse.SC_OK
@@ -78,6 +78,7 @@ class ImageController {
     def proxyImage() {
         serveImage(
                 { Image image -> image.fileSize },
+                { Image image -> image.storageLocation.originalRedirectLocation(image.imageIdentifier) },
                 { Image image, Range range -> imageStoreService.originalInputStream(image, range) },
                 { Image image -> image.mimeType },
                 { Image image -> image.extension },
@@ -101,6 +102,7 @@ class ImageController {
     def getOriginalFile() {
         serveImage(
                 { Image image -> image.fileSize },
+                { Image image -> image.storageLocation.originalRedirectLocation(image.imageIdentifier) },
                 { Image image, Range range -> imageStoreService.originalInputStream(image, range) },
                 { Image image -> image.mimeType },
                 { Image image -> image.extension },
@@ -134,6 +136,13 @@ class ImageController {
                         audioThumbnail.contentLength()
                     } else {
                         documentThumbnail.contentLength()
+                    }
+                },
+                { Image image ->
+                    if (image.mimeType.startsWith('image')) {
+                        image.storageLocation.thumbnailRedirectLocation(image.imageIdentifier)
+                    } else {
+                        null
                     }
                 },
                 { Image image, Range range ->
@@ -176,6 +185,13 @@ class ImageController {
                         documentLargeThumbnail.contentLength()
                     }
                 },
+                { Image image ->
+                    if (image.mimeType.startsWith('image')) {
+                        image.storageLocation.thumbnailTypeRedirectLocation(image.imageIdentifier, type)
+                    } else {
+                        null
+                    }
+                },
                 { Image image, Range range ->
                     if (image.mimeType.startsWith('image')) {
                         imageStoreService.thumbnailTypeInputStream(image, type, range)
@@ -213,6 +229,7 @@ class ImageController {
         int z = params.int('z')
         serveImage(
                 { Image image -> imageStoreService.tileStoredLength(image, x, y, z) },
+                { Image image -> image.storageLocation.tileRedirectLocation(image.imageIdentifier, x, y, z) },
                 { Image image, Range range -> imageStoreService.tileInputStream(image, range, x, y, z) },
                 { Image image -> 'image/jpeg' },
                 { Image image -> 'jpg' },
@@ -222,6 +239,7 @@ class ImageController {
 
     private void serveImage(
             Closure<Long> getLength,
+            Closure<URI> getRedirectUri,
             Closure<InputStream> getInputStream,
             Closure<String> getContentType,
             Closure<String> getExtension,
@@ -242,6 +260,15 @@ class ImageController {
 
         if (sendAnalytics) {
             analyticsService.sendAnalytics(imageInstance, 'imageview', request.getHeader("User-Agent"))
+        }
+
+        if (imageInstance.storageLocation.supportsRedirect) {
+            URI uri = getRedirectUri(imageInstance)
+            if (uri) {
+                response.status = SC_FOUND
+                response.setHeader('Location', uri.toString())
+                return
+            }
         }
 
         long length = -1

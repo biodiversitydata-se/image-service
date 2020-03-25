@@ -2,8 +2,8 @@ package au.org.ala.images
 
 import au.org.ala.images.util.ByteSinkFactory
 import com.amazonaws.AmazonClientException
-import com.amazonaws.AmazonServiceException
 import com.amazonaws.ClientConfiguration
+import com.amazonaws.HttpMethod
 import com.amazonaws.Protocol
 import com.amazonaws.SdkClientException
 import com.amazonaws.auth.AWSStaticCredentialsProvider
@@ -13,9 +13,14 @@ import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.AmazonS3Exception
 import com.amazonaws.services.s3.model.CannedAccessControlList
+import com.amazonaws.services.s3.model.CopyObjectRequest
+import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
 import com.amazonaws.services.s3.model.GetObjectRequest
+import com.amazonaws.services.s3.model.Grant
+import com.amazonaws.services.s3.model.GroupGrantee
 import com.amazonaws.services.s3.model.ObjectListing
 import com.amazonaws.services.s3.model.ObjectMetadata
+import com.amazonaws.services.s3.model.Permission
 import com.amazonaws.services.s3.model.S3ObjectSummary
 import groovy.transform.EqualsAndHashCode
 import net.lingala.zip4j.io.inputstream.ZipInputStream
@@ -30,6 +35,7 @@ class S3StorageLocation extends StorageLocation {
     String accessKey
     String secretKey
     boolean publicRead
+    boolean redirect
 
     // for testing only, not exposed to UI
     boolean pathStyleAccess = false
@@ -66,6 +72,54 @@ class S3StorageLocation extends StorageLocation {
             _s3Client = builder.build()
         }
         _s3Client
+    }
+
+    @Override
+    boolean isSupportsRedirect() {
+        redirect
+    }
+
+    @Override
+    URI redirectLocation(String path) {
+//        def permission = s3Client.getObjectAcl(bucket, path).grantsAsList.find { grant ->
+//            grant.grantee == GroupGrantee.AllUsers && [Permission.Read, Permission.Write, Permission.FullControl].contains(grant.permission)
+//        }
+        if (publicRead) {
+            s3Client.getUrl(bucket, path).toURI()
+        } else {
+            // Set the presigned URL to expire after one hour.
+            Date expiration = new Date()
+            long expTimeMillis = expiration.getTime()
+            expTimeMillis += 1000 * 60 * 60;
+            expiration.setTime(expTimeMillis)
+
+            // Generate the presigned URL.
+            GeneratePresignedUrlRequest generatePresignedUrlRequest =
+                    new GeneratePresignedUrlRequest(bucket, path)
+                            .withMethod(HttpMethod.GET)
+                            .withExpiration(expiration)
+            s3Client.generatePresignedUrl(generatePresignedUrlRequest).toURI()
+        }
+    }
+
+    def updateACL() {
+        walkPrefix(storagePathStrategy().basePath()) { S3ObjectSummary objectSummary ->
+            def path = objectSummary.key
+            try {
+                s3Client.setObjectAcl(bucket, path, publicRead ? CannedAccessControlList.PublicRead : CannedAccessControlList.Private)
+
+                // update cache control metadata
+                def objectMetadata = s3Client.getObjectMetadata(bucket, path)
+                objectMetadata.cacheControl = (publicRead ? 'public,s-maxage=31536000' : 'private') + ',max-age=31536000'
+
+                CopyObjectRequest request = new CopyObjectRequest(bucket, path, bucket, path)
+                        .withNewObjectMetadata(objectMetadata)
+
+                s3Client.copyObject(request)
+            } catch (AmazonS3Exception e) {
+                log.error('Error updating ACL for {}, public: {}, error: {}', path, publicRead, e.message)
+            }
+        }
     }
 
     static ClientConfiguration buildClientConfiguration(defaultConfig, serviceConfig) {
@@ -134,6 +188,8 @@ class S3StorageLocation extends StorageLocation {
             acl = CannedAccessControlList.Private
         }
         metadata.setHeader('x-amz-acl', acl.toString())
+        metadata.cacheControl = (publicRead ? 'public,s-maxage=31536000' : 'private') + ',max-age=31536000'
+//        metadata.setHeader('Expires', 'access + 1 year???')
         return metadata
     }
 
@@ -163,7 +219,7 @@ class S3StorageLocation extends StorageLocation {
                 bytes = s3object.objectContent.withStream { it.bytes }
             } catch (AmazonS3Exception e) {
                 if (e.statusCode == 404) {
-                    throw new FileNotFoundException("S3 path $path")
+                    throw new FileNotFoundException("S3 path $imagePath")
                 } else {
                     throw e
                 }
@@ -258,7 +314,7 @@ class S3StorageLocation extends StorageLocation {
     }
 
     StoragePathStrategy storagePathStrategy() {
-        new DefaultStoragePathStrategy(prefix ?: '', true)
+        new DefaultStoragePathStrategy(prefix ?: '', true, false)
     }
 
     @Override

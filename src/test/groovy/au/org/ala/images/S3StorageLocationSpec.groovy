@@ -16,15 +16,15 @@ class S3StorageLocationSpec extends StorageLocationSpec implements DomainUnitTes
     @ClassRule @Shared LocalstackRule localstack = new LocalstackRule(S3StorageLocationSpec)
 
     List<S3StorageLocation> getStorageLocations() {[
-            new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bouquet', prefix: '', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
-            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: '/', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
-            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: '/prefix', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
-            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: 'prefix2', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
-            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: 'prefix3/', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
-            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: 'prefix4/subprefix', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
-            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: '/prefix5/subprefix', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
-            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: 'prefix6/subprefix/', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
-            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: '/prefix7/subprefix/', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
+            new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bouquet', prefix: '', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, redirect: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
+            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: '/', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, redirect: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
+            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: '/prefix', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, redirect: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
+            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: 'prefix2', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, redirect: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
+            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: 'prefix3/', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, redirect: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
+            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: 'prefix4/subprefix', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, redirect: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
+            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: '/prefix5/subprefix', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, redirect: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
+            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: 'prefix6/subprefix/', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, redirect: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
+            ,new S3StorageLocation(region: DEFAULT_REGION, bucket: 'bucket', prefix: '/prefix7/subprefix/', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, redirect: false, pathStyleAccess: true, hostname: Localstack.INSTANCE.endpointS3).save()
     ]}
     S3StorageLocation alternateStorageLocation
 
@@ -36,7 +36,7 @@ class S3StorageLocationSpec extends StorageLocationSpec implements DomainUnitTes
 
     def setup() {
         def localstack = Localstack.INSTANCE
-        alternateStorageLocation = new S3StorageLocation(region: DEFAULT_REGION, bucket: 'other-bucket', prefix: '/other/prefix', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, pathStyleAccess: true, hostname: localstack.endpointS3).save()
+        alternateStorageLocation = new S3StorageLocation(region: DEFAULT_REGION, bucket: 'other-bucket', prefix: '/other/prefix', accessKey: TestUtils.TEST_ACCESS_KEY, secretKey: TestUtils.TEST_SECRET_KEY, publicRead: false, redirect: false, pathStyleAccess: true, hostname: localstack.endpointS3).save()
     }
 
 }

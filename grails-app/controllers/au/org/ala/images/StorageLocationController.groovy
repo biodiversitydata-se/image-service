@@ -3,13 +3,18 @@ package au.org.ala.images
 import au.org.ala.images.StorageLocationService.AlreadyExistsException
 import au.org.ala.web.AlaSecured
 import au.org.ala.web.CASRoles
+import grails.gorm.transactions.Transactional
+import grails.web.http.HttpHeaders
 
+import static org.springframework.http.HttpStatus.OK
+
+@AlaSecured(value = [CASRoles.ROLE_ADMIN, "ROLE_IMAGE_ADMIN"], anyRole = true, statusCode = 403)
 class StorageLocationController {
 
     def storageLocationService
     def settingService
 
-    @AlaSecured(value = [CASRoles.ROLE_ADMIN, "ROLE_IMAGE_ADMIN"], anyRole = true, statusCode = 403)
+
     def create() {
         def json = request.getJSON()
         try {
@@ -40,7 +45,42 @@ class StorageLocationController {
         [storageLocationList:  storageLocationList, imageCounts: imageCounts, defaultId: settingService.getStorageLocationDefault(), verifieds: verifieds]
     }
 
-    @AlaSecured(value = [CASRoles.ROLE_ADMIN, "ROLE_IMAGE_ADMIN"], anyRole = true, statusCode = 403)
+    def editFragment() {
+        StorageLocation instance = StorageLocation.get(params.id)
+        respond instance
+    }
+
+    @Transactional
+    def update() {
+        StorageLocation instance = StorageLocation.get(params.id)
+
+        if (!instance) {
+            transactionStatus.setRollbackOnly()
+            return render(status: 404)
+        }
+        def result = instance.setProperties(request)
+
+        instance.validate()
+        if (instance.hasErrors()) {
+            render(status: 422)
+            return
+        }
+
+        boolean updateAcls = false
+
+        if (instance instanceof S3StorageLocation) {
+            updateAcls = instance.isDirty('publicRead')
+        }
+
+        instance.save()
+
+        if (updateAcls) {
+            storageLocationService.updateAcl(instance)
+        }
+
+        respond instance, [status: OK]
+    }
+
     def setDefault() {
         def id = params.long('id')
         StorageLocation sl = StorageLocation.get(id)
@@ -52,10 +92,10 @@ class StorageLocationController {
         }
     }
 
-    @AlaSecured(value = [CASRoles.ROLE_ADMIN, "ROLE_IMAGE_ADMIN"], anyRole = true, statusCode = 403)
     def migrate() {
         Long source = params.long('src')
         Long destination = params.long('dst')
+        boolean deleteSource = params.boolean('deleteSrc', false)
 
         if (source == destination) {
             render(status: 400, text: "Source and destination are the same")
@@ -63,7 +103,7 @@ class StorageLocationController {
 
         log.error("Migrate from source {} to destination {}", source, destination)
         if (source && destination) {
-            storageLocationService.migrate(source, destination, request.remoteUser)
+            storageLocationService.migrate(source, destination, request.remoteUser, deleteSource)
             render(status: 202)
         } else {
             render(status: 404)

@@ -18,12 +18,12 @@ class StorageLocationServiceFlybernateSpec extends FlybernateSpec implements Ser
         service.imageService = Mock(ImageService)
 
         when:
-        service.migrate(src.id, dst.id, '1234')
+        service.migrate(src.id, dst.id, '1234', false)
 
         then:
-        1 * service.imageService.scheduleBackgroundTask(new MigrateStorageLocationTask(imageId: img1.id, destinationStorageLocationId: dst.id, userId: '1234', imageService: service.imageService))
-        1 * service.imageService.scheduleBackgroundTask(new MigrateStorageLocationTask(imageId: img2.id, destinationStorageLocationId: dst.id, userId: '1234', imageService: service.imageService))
-        1 * service.imageService.scheduleBackgroundTask(new MigrateStorageLocationTask(imageId: img3.id, destinationStorageLocationId: dst.id, userId: '1234', imageService: service.imageService))
+        1 * service.imageService.scheduleBackgroundTask(new MigrateStorageLocationTask(imageId: img1.id, destinationStorageLocationId: dst.id, userId: '1234', imageService: service.imageService, deleteSource: false))
+        1 * service.imageService.scheduleBackgroundTask(new MigrateStorageLocationTask(imageId: img2.id, destinationStorageLocationId: dst.id, userId: '1234', imageService: service.imageService, deleteSource: false))
+        1 * service.imageService.scheduleBackgroundTask(new MigrateStorageLocationTask(imageId: img3.id, destinationStorageLocationId: dst.id, userId: '1234', imageService: service.imageService, deleteSource: false))
     }
 
 }

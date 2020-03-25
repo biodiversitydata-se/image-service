@@ -17,12 +17,12 @@ class SwiftStorageLocationSpec extends StorageLocationSpec implements DomainUnit
 
     @Override
     List<StorageLocation> getStorageLocations() {[
-        new SwiftStorageLocation(username: 'test',  password: 'test', authUrl: 'https://example.org/', tenantId: '1', tenantName: 'name', containerName: 'images').save().with { mock = true; return it }
-        , new SwiftStorageLocation(username: 'test:tester',  password: 'testing', authUrl: 'http://127.0.0.1:48080/auth/v1.0', tenantId: '', tenantName: '', containerName: 'images', authenticationMethod: AuthenticationMethod.BASIC).save()
+        new SwiftStorageLocation(username: 'test',  password: 'test', authUrl: 'https://example.org/', tenantId: '1', tenantName: 'name', containerName: 'images', redirect: false,).save().with { mock = true; return it }
+        , new SwiftStorageLocation(username: 'test:tester',  password: 'testing', authUrl: 'http://127.0.0.1:48080/auth/v1.0', tenantId: '', tenantName: '', containerName: 'images', authenticationMethod: AuthenticationMethod.BASIC, redirect: false,).save()
     ]}
 
     @Override
     StorageLocation getAlternateStorageLocation() {
-        new SwiftStorageLocation(username: 'test:tester',  password: 'testing', authUrl: 'http://127.0.0.1:48080/auth/v1.0', tenantId: '', tenantName: '', containerName: 'images-alt', authenticationMethod:  AuthenticationMethod.BASIC).save()
+        new SwiftStorageLocation(username: 'test:tester',  password: 'testing', authUrl: 'http://127.0.0.1:48080/auth/v1.0', tenantId: '', tenantName: '', containerName: 'images-alt', authenticationMethod:  AuthenticationMethod.BASIC, redirect: false,).save()
     }
 }

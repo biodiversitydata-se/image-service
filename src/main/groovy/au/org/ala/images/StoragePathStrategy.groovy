@@ -22,6 +22,8 @@ trait StoragePathStrategy {
         createPathFromUUID(uuid, 'original')
     }
 
+    abstract String basePath()
+
     abstract String createPathFromUUID(String uuid, String... postfix)
 
 }

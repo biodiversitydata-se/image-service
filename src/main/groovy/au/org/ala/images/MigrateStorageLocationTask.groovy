@@ -11,12 +11,13 @@ class MigrateStorageLocationTask extends BackgroundTask {
 
     long imageId
     long destinationStorageLocationId
+    boolean deleteSource
     String userId
 
     ImageService imageService
 
     @Override
     void execute() {
-        imageService.migrateImage(imageId, destinationStorageLocationId, userId)
+        imageService.migrateImage(imageId, destinationStorageLocationId, userId, deleteSource)
     }
 }
