@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.model.GroupGrantee
 import com.amazonaws.services.s3.model.ObjectListing
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.model.Permission
+import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.s3.model.S3ObjectSummary
 import groovy.transform.EqualsAndHashCode
 import net.lingala.zip4j.io.inputstream.ZipInputStream
@@ -196,7 +197,13 @@ class S3StorageLocation extends StorageLocation {
     @Override
     boolean verifySettings() {
         try {
-            return s3Client.doesBucketExistV2(bucket)
+            boolean result = s3Client.doesBucketExistV2(bucket)
+            if (result) {
+                String key = storagePathStrategy().basePath() + '/' + UUID.randomUUID().toString()
+                def putResult = s3Client.putObject(new PutObjectRequest(bucket, key, new ByteArrayInputStream(new byte[1]), generateMetadata('application/octet-stream', null, 1)))
+                s3Client.deleteObject(bucket, key)
+            }
+            return result
         } catch (SdkClientException e) {
             log.error("Exception while verifying S3 bucket {}", this, e)
             return false
