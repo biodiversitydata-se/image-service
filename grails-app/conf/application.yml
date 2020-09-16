@@ -95,7 +95,7 @@ environments:
 
 ---
 flyway:
-    enabled: true
+    enabled: false
     baselineOnMigrate: true
     baselineVersion: 1
     outOfOrder: false

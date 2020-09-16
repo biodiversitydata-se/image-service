@@ -1727,7 +1727,7 @@ class WebServiceController {
     @ApiOperation(
             value = "Export CSV of entire image catalogue",
             nickname = "exportCSV",
-            produces = "application/json",
+            produces = "application/gzip",
             consumes = "application/json",
             httpMethod = "GET",
             response = Map.class,
@@ -1742,6 +1742,51 @@ class WebServiceController {
         response.contentType = "application/gzip"
         def bos = new GZIPOutputStream(response.outputStream)
         imageService.exportCSV(bos)
+        bos.flush()
+        bos.close()
+    }
+
+    @ApiOperation(
+            value = "Export CSV of URL to imageIdentifier mappings",
+            nickname = "exportMapping",
+            produces = "application/gzip",
+            consumes = "application/json",
+            httpMethod = "GET",
+            response = Map.class,
+            tags = ["Export"]
+    )
+    @ApiResponses([
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+    )
+    def exportMapping(){
+        response.setHeader("Content-disposition", "attachment;filename=images-export.csv.gz")
+        response.contentType = "application/gzip"
+        def bos = new GZIPOutputStream(response.outputStream)
+        imageService.exportCSV(bos)
+        bos.flush()
+        bos.close()
+    }
+
+    @ApiOperation(
+            value = "Export CSV of URL to imageIdentifier mappings",
+            nickname = "exportDatasetMapping/{dataResourceUid}",
+            produces = "application/gzip",
+            consumes = "application/json",
+            httpMethod = "GET",
+            response = Map.class,
+            tags = ["Export"]
+    )
+    @ApiResponses([
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Missing dataResourceUid parameter"),
+            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+    )
+    def exportDatasetMapping(){
+        response.setHeader("Content-disposition", "attachment;filename=images-export.csv.gz")
+        response.contentType = "application/gzip"
+        def bos = new GZIPOutputStream(response.outputStream)
+        imageService.exportDatasetMappingCSV(params.dataResourceUid, bos)
         bos.flush()
         bos.close()
     }

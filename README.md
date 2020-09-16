@@ -39,11 +39,11 @@ You can also run this application locally by following the instructions on its [
 There is a docker-compose YML file that can be used to run postgres locally for local development purposes.
 To use run:
 ```$xslt
-docker-compose -f elastic.yml up -d
+docker-compose -f postgres.yml up -d
 ```
 And to shutdown
 ```$xslt
-docker-compose -f elastic.yml kill
+docker-compose -f postgres.yml kill
 ```
 
 ### Elastic search

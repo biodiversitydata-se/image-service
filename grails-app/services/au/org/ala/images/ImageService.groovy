@@ -117,21 +117,48 @@ class ImageService {
                 imageSources.each { imageSource ->
                     def imageUrl = (imageSource.sourceUrl ?: imageSource.imageUrl) as String
                     if (imageUrl) {
-                        def result = [success: false]
-                        try {
-                            def url = new URL(imageUrl)
-                            def bytes = url.bytes
-                            def contentType = detectMimeTypeFromBytes(bytes, imageUrl)
-                            ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length, contentType, uploader, imageSource)
-                            result.imageId = storeResult.image.imageIdentifier
-                            result.image = storeResult.image
-                            result.success = true
-                            auditService.log(storeResult.image, "Image (batch) downloaded from ${imageUrl}", uploader ?: "<unknown>")
-                        } catch (Exception ex) {
-                            log.error("Problem storing image - " + ex.getMessage(), ex)
-                            result.message = ex.message
+                        Image image = Image.findByOriginalFilename(imageUrl)
+                        if (!image) {
+                            def result = [success: false]
+                            try {
+                                def bytes = url.bytes
+                                def contentType = detectMimeTypeFromBytes(bytes, imageUrl)
+                                ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length, contentType, uploader, imageSource)
+                                result.imageId = storeResult.image.imageIdentifier
+                                result.image = storeResult.image
+                                result.success = true
+                                //                            auditService.log(storeResult.image, "Image (batch) downloaded from ${imageUrl}", uploader ?: "<unknown>")
+                            } catch (Exception ex) {
+                                log.error("Problem storing image - " + ex.getMessage(), ex)
+                                result.message = ex.message
+                            }
+                            results[imageUrl] = result
+                        } else {
+
+                            if (image.creator != imageSource.creator){
+                                image.creator = imageSource.creator
+                            }
+                            if (image.title != imageSource.title){
+                                image.title = imageSource.title
+                            }
+                            if (image.rightsHolder != imageSource.rightsHolder){
+                                image.rightsHolder = imageSource.rightsHolder
+                            }
+                            if (image.rights != imageSource.rights){
+                                image.rights = imageSource.rights
+                            }
+                            if (image.license != imageSource.license){
+                                image.license = imageSource.license
+                            }
+                            if (image.description != imageSource.description){
+                                image.description = imageSource.description
+                            }
+                            if (image.isDirty()){
+                                image.save()
+                            }
+                            //update metadata if required
+                            results[imageUrl] = [success: false, imageId: image.imageIdentifier]
                         }
-                        results[imageUrl] = result
                     }
                 }
             } finally {
@@ -1027,6 +1054,48 @@ class ImageService {
         FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
         def exportFile = grailsApplication.config.imageservice.exportDir + "/images.csv"
         new Sql(dataSource).call("""{ call export_images() }""")
+        new File(exportFile)
+    }
+
+    /**
+     * Export CSV. This uses a stored procedure that needs to be installed as part of the
+     * service installation.
+     *
+     * @param outputStream
+     * @return
+     */
+    def exportMappingCSV(outputStream){
+        exportMappingCSVToFile().withInputStream { stream ->
+            outputStream << stream
+        }
+    }
+
+    /**
+     * Export CSV. This uses a stored procedure that needs to be installed as part of the
+     * service installation.
+     *
+     * @param outputStream
+     * @return
+     */
+    def exportDatasetMappingCSV(String datasetID, outputStream){
+        exportMappingForDatasetCSVToFile(datasetID).withInputStream { stream ->
+            outputStream << stream
+        }
+    }
+
+
+
+    File exportMappingForDatasetCSVToFile(String datasetID){
+        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
+        def exportFile = grailsApplication.config.imageservice.exportDir + "/images-mapping-${datasetID}.csv"
+        new Sql(dataSource).call("""{ call export_dataset_mapping(?) }""",  [Sql.VARCHAR, datasetID])
+        new File(exportFile)
+    }
+
+    File exportMappingCSVToFile(){
+        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
+        def exportFile = grailsApplication.config.imageservice.exportDir + "/images-mapping.csv"
+        new Sql(dataSource).call("""{ call export_mapping() }""")
         new File(exportFile)
     }
 

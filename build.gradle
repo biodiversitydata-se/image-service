@@ -68,6 +68,8 @@ dependencies {
     compile group: 'org.grails.plugins', name: 'ala-auth', version: '3.2.2', changing: true
     compile group: 'au.org.ala.plugins.grails', name:'images-client-plugin', version: '1.1', changing: true
 
+    compile group: 'org.grails', name: 'grails-async-gpars', version: '4.0.0.RC2'
+
     // Added dependencies
     compile 'org.grails.plugins:cache-headers:2.0.2'
     compile 'org.grails.plugins:external-config:1.2.2'
@@ -88,7 +90,8 @@ dependencies {
     compile 'org.grails.plugins:ala-ws-security-plugin:2.0.1'
     compile 'net.lingala.zip4j:zip4j:2.3.1'
     compile 'com.google.guava:guava:28.2-jre'
-    
+    compile 'org.apache.avro:avro:1.8.2'
+
     // Swagger
     compile 'org.grails.plugins:swagger:1.0.1'
 
