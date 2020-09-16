@@ -1,0 +1,11 @@
+[Unit]
+Description=ala-image
+After=syslog.target
+
+[Service]
+User=image-service
+ExecStart=/opt/atlas/image-service/image-service.jar
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
