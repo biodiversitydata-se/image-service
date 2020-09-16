@@ -8,13 +8,13 @@
         </div>
 
         <div class="form-group">
-            <label class="control-label" for="metaDataValue">Value:</label>
+            <label class="control-label" for="metaDataValue"><g:message code="add.user.metadata.value" /></label>
             <input type="text" class="form-control input-lg" id="metaDataValue" placeholder="Value">
         </div>
 
         <div class="form-group">
-            <button class="btn btn-primary" id="btnAddNewUserMetadata">Add</button>
-            <button class="btn btn-default" id="btnCancelAddUserMetaData">Cancel</button>
+            <button class="btn btn-primary" id="btnAddNewUserMetadata"><g:message code="add.user.metadata.add" /></button>
+            <button class="btn btn-default" id="btnCancelAddUserMetaData"><g:message code="add.user.metadata.cancel" /></button>
         </div>
     </form>
 

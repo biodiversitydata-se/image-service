@@ -13,7 +13,7 @@
   - rights and limitations under the License.
   --}%
 <div>
-    <span>Enter a value to match:</span>
+    <span><g:message code="string.direct.enter.a.value.to.match" /></span>
     <div>
         <g:textField class="form-control input-xlarge" name="fieldValue" value="${value}" />
     </div>

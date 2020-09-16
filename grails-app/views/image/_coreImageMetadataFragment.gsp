@@ -1,10 +1,10 @@
 <table class="table table-bordered table-condensed table-striped">
     <g:if test="${imageInstance.dateDeleted}">
-        <h5 class="alert alert-danger">This image is deleted.</h5>
+        <h5 class="alert alert-danger"><g:message code="core.image.metadata.this.image.is.deleted" /></h5>
     </g:if>
     <g:if test="${imageInstance.dataResourceUid}">
         <tr>
-            <td class="property-name">Data resource</td>
+            <td class="property-name"><g:message code="core.image.metadata.data.resource" /></td>
             <td class="property-value">
                 <a href="${grailsApplication.config.collectory.baseURL}/public/show/${imageInstance.dataResourceUid}">
                     ${resourceLevel.name}
@@ -13,12 +13,12 @@
         </tr>
     </g:if>
     <tr>
-        <td class="property-name">Image Identifier</td>
+        <td class="property-name"><g:message code="core.image.metadata.image.identifier" /></td>
         <td class="property-value">${imageInstance.imageIdentifier}</td>
     </tr>
     <g:if test="${imageInstance.occurrenceId}">
         <tr>
-            <td class="property-name">Occurrence ID</td>
+            <td class="property-name"><g:message code="core.image.metadata.occurrence.id" /></td>
             <td class="property-value">
                 <a href="${grailsApplication.config.biocache.baseURL}/occurrences/${imageInstance.occurrenceId}">
                     ${imageInstance.occurrenceId}
@@ -27,64 +27,64 @@
         </tr>
     </g:if>
     <tr>
-        <td class="property-name">Title</td>
+        <td class="property-name"><g:message code="core.image.metadata.title" /></td>
         <td class="property-value">${imageInstance.title}</td>
     </tr>
     <tr>
-        <td class="property-name">Creator</td>
+        <td class="property-name"><g:message code="core.image.metadata.creator" /></td>
         <td class="property-value"><img:imageMetadata image="${imageInstance}" resource="${resourceLevel}" field="creator"/></td>
     </tr>
     <tr>
-        <td class="property-name">Description</td>
+        <td class="property-name"><g:message code="core.image.metadata.description" /></td>
         <td class="property-value">${imageInstance.description}</td>
     </tr>
     <g:if test="${isAdminView}">
         <tr>
-            <td class="property-name">Zoom levels</td>
+            <td class="property-name"><g:message code="core.image.metadata.zoom.levels" /></td>
             <td class="property-value">${imageInstance.zoomLevels}</td>
         </tr>
     </g:if>
     <g:if test="${isImage}">
 
         <tr>
-            <td class="property-name">Linear scale</td>
+            <td class="property-name"><g:message code="core.image.metadata.linear.scale" /></td>
             <td class="property-value">
                 <g:if test="${imageInstance.mmPerPixel}">
-                    ${imageInstance.mmPerPixel} mm per pixel
+                    <g:message code="core.image.metadata.mm.per.pixel" args="[imageInstance.mmPerPixel]" />
                     <button id="btnResetLinearScale" type="button" class="btn btn-sm btn-default pull-right" title="Reset calibration">
                         <i class="glyphicon glyphicon-remove"></i>
                     </button>
                 </g:if>
                 <g:else>
-                    &lt;not calibrated&gt;
+                    <g:message code="core.image.metadata.not.calibrated" />
                 </g:else>
             </td>
         </tr>
     </g:if>
     <tr>
-        <td class="property-name">Date uploaded</td>
+        <td class="property-name"><g:message code="core.image.metadata.dateUploadedYearMonth" /></td>
         <td class="property-value"><img:formatDateTime date="${imageInstance.dateUploaded}" /></td>
     </tr>
     <tr>
-        <td class="property-name">Uploaded by</td>
+        <td class="property-name"><g:message code="core.image.metadata.uploaded.by" /></td>
         <td class="property-value"><img:userDisplayName userId="${imageInstance.uploader}" /></td>
     </tr>
     <g:if test="${imageInstance.dateTaken}">
         <tr>
-            <td class="property-name">Date taken/created</td>
+            <td class="property-name"><g:message code="core.image.metadata.date.taken.created" /></td>
             <td class="property-value"><img:formatDateTime date="${imageInstance.dateTaken}" /></td>
         </tr>
     </g:if>
     <tr>
-        <td class="property-name">Rights</td>
+        <td class="property-name"><g:message code="core.image.metadata.rights" /></td>
         <td class="property-value"><img:imageMetadata image="${imageInstance}" resource="${resourceLevel}" field="rights"/></td>
     </tr>
     <tr>
-        <td class="property-name">Rights holder</td>
+        <td class="property-name"><g:message code="core.image.metadata.rights.holder" /></td>
         <td class="property-value"><img:imageMetadata image="${imageInstance}" resource="${resourceLevel}" field="rightsHolder"/></td>
     </tr>
     <tr>
-        <td class="property-name">Licence</td>
+        <td class="property-name"><g:message code="core.image.metadata.recognisedLicence" /></td>
         <td class="property-value">
             <g:if test="${imageInstance.recognisedLicense}">
                 <a href="${imageInstance.recognisedLicense.url}" title="${imageInstance.recognisedLicense.name +  ' (' + imageInstance.recognisedLicense.acronym + ')'}">
@@ -98,7 +98,7 @@
     </tr>
     <g:if test="${imageInstance.dateDeleted}">
         <tr>
-            <td class="property-name">Date deleted</td>
+            <td class="property-name"><g:message code="core.image.metadata.date.deleted" /></td>
             <td class="property-value">${imageInstance.dateDeleted}</td>
         </tr>
     </g:if>
@@ -118,7 +118,7 @@
     <g:if test="${subimages}">
         <tr>
             <td colspan="2">
-                <h5>Sub images</h5>
+                <h5><g:message code="core.image.metadata.sub.images" /></h5>
                 <ul class="list-unstyled list-inline">
                     <g:each in="${subimages}" var="subimage">
                         <li imageId="${subimage.id}">
@@ -157,7 +157,7 @@
                 </button>
             </g:if>
             <g:if test="${isAdmin && !isAdminView}">
-                <g:link class="btn btn-danger" controller="admin" action="image" params="[imageId: imageInstance.imageIdentifier]">Admin view</g:link>
+                <g:link class="btn btn-danger" controller="admin" action="image" params="[imageId: imageInstance.imageIdentifier]"><g:message code="core.image.metadata.admin.view" /></g:link>
             </g:if>
         </td>
     </tr>
@@ -167,8 +167,8 @@
         $("#btnResetLinearScale").on('click', function (e) {
             e.preventDefault();
             imgvwr.areYouSure({
-                title: "Reset calibration for this image?",
-                message: "Are you sure you wish to reset the linear scale for this image?",
+                title: <g:message code="core.image.metadata.reset.calibration.for.this.image" />,
+                message: <g:message code="core.image.metadata.are.you.sure.scale" />,
                 affirmativeAction: function () {
                     var url = "${createLink(absolute: true, controller:'webService', action:'resetImageCalibration')}?imageId=${imageInstance.imageIdentifier}";
                     $.ajax(url).done(function (result) {
