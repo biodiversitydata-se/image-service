@@ -121,6 +121,7 @@ class ImageService {
                         if (!image) {
                             def result = [success: false]
                             try {
+                                def url = new URL(imageUrl)
                                 def bytes = url.bytes
                                 def contentType = detectMimeTypeFromBytes(bytes, imageUrl)
                                 ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length, contentType, uploader, imageSource)
@@ -230,7 +231,9 @@ class ImageService {
         if (!image) {
             def sha1Hash = SHA1CodecExtensionMethods.encodeAsSHA1(bytes)
 
-            StorageLocation sl = StorageLocation.get(settingService.getStorageLocationDefault())
+            Long defaultStorageLocationID = settingService.getStorageLocationDefault()
+
+            StorageLocation sl = StorageLocation.get(defaultStorageLocationID)
 
             def imgDesc = imageStoreService.storeImage(bytes, sl, contentType)
             // Create the image record, and set the various attributes
@@ -1083,12 +1086,10 @@ class ImageService {
         }
     }
 
-
-
     File exportMappingForDatasetCSVToFile(String datasetID){
         FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
         def exportFile = grailsApplication.config.imageservice.exportDir + "/images-mapping-${datasetID}.csv"
-        new Sql(dataSource).call("""{ call export_dataset_mapping(?) }""",  [Sql.VARCHAR, datasetID])
+        new Sql(dataSource).call("""{ call export_dataset_mapping(?) }""", [datasetID])
         new File(exportFile)
     }
 

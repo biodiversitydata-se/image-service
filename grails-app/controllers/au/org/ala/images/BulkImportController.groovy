@@ -43,7 +43,7 @@ class BulkImportController {
         int count = 0
 
         // process record by record
-        while (reader.hasNext() && count < 100) {
+        while (reader.hasNext() && count < 10) {
             GenericRecord currRecord = reader.next()
             // Here we can add in data manipulation like anonymization etc
             def multimediaRecords = currRecord.get("multimediaItems");

@@ -1760,10 +1760,10 @@ class WebServiceController {
             @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
     )
     def exportMapping(){
-        response.setHeader("Content-disposition", "attachment;filename=images-export.csv.gz")
+        response.setHeader("Content-disposition", "attachment;filename=image-mapping.csv.gz")
         response.contentType = "application/gzip"
         def bos = new GZIPOutputStream(response.outputStream)
-        imageService.exportCSV(bos)
+        imageService.exportMappingCSV(bos)
         bos.flush()
         bos.close()
     }
@@ -1782,12 +1782,19 @@ class WebServiceController {
             @ApiResponse(code = 400, message = "Missing dataResourceUid parameter"),
             @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
     )
+    @ApiImplicitParams([
+            @ApiImplicitParam(name = "dataResourceUid", paramType = "path", required = true, value = "Data resource UID", dataType = "string")
+    ])
     def exportDatasetMapping(){
-        response.setHeader("Content-disposition", "attachment;filename=images-export.csv.gz")
-        response.contentType = "application/gzip"
-        def bos = new GZIPOutputStream(response.outputStream)
-        imageService.exportDatasetMappingCSV(params.dataResourceUid, bos)
-        bos.flush()
-        bos.close()
+        if (!params.id){
+            renderResults([success: false, message: "Failed to store image!"], 400)
+        } else {
+            response.setHeader("Content-disposition", "attachment;filename=image-mapping-${params.id}.csv.gz")
+            response.contentType = "application/gzip"
+            def bos = new GZIPOutputStream(response.outputStream)
+            imageService.exportDatasetMappingCSV(params.id, bos)
+            bos.flush()
+            bos.close()
+        }
     }
 }
