@@ -15,7 +15,7 @@
 
 <div>
     <div>
-        <span>Select a metadata item to search for:</span>
+        <span><g:message code="image.metadata.criteria.select.item" /></span>
         <div>
             <g:select from="${metadataNames}" name="metadataItemName" value="${metadataItemName}" />
         </div>

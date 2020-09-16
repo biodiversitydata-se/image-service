@@ -1,0 +1,6 @@
+# https://www.debian.org/doc/manuals/maint-guide/dother.en.html#install
+build/libs/image-service.jar opt/atlas/image-service
+debian/image-service.conf opt/atlas/image-service
+debian/data/image-service/config/image-service-config.template data/image-service/config
+debian/data/image-service/config/logback.groovy data/image-service/config
+debian/data/image-service/setup/image-service-export.sql usr/share/dbconfig-common/data/ala-image/install/pgsql

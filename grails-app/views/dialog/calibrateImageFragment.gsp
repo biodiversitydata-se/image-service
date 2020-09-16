@@ -1,6 +1,6 @@
 <div class="form-horizontal">
     <div class="control-group">
-        How long is the line you just drew on the image?
+        <g:message code="calibrate.image.how.long" />
     </div>
     <div class="control-group">
         <div class="controls">

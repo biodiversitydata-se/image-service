@@ -16,7 +16,7 @@
     <div class="alert alert-info" style="color: black">
         <strong>${criteriaDefinition.description}</strong>
     </div>
-    Please select one or more values from the list below
+    <g:message code="string.multi.please.select.one" />
     <table>
         <tr>
             <td>
@@ -26,7 +26,7 @@
             </td>
             <td style="vertical-align: top">
                 <div style="margin-left: 10px" class="muted">
-                    <strong>Selected values</strong>
+                    <strong><g:message code="string.multi.selected.values" /></strong>
                     <div id="selectedItemsList">
                     </div>
                 </div>

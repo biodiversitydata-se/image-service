@@ -1,0 +1,8 @@
+ala-image: non-standard-toplevel-dir data/
+ala-image: file-in-unusual-dir data/image-service/config/image-service-config.template
+ala-image: file-in-unusual-dir data/image-service/config/logback.groovy
+ala-image: dir-or-file-in-opt opt/atlas/
+ala-image: dir-or-file-in-opt opt/atlas/image-service/
+ala-image: dir-or-file-in-opt opt/atlas/image-service/image-service.conf
+ala-image: dir-or-file-in-opt opt/atlas/image-service/image-service.jar
+ala-image: shell-script-fails-syntax-check opt/atlas/image-service/image-service.jar

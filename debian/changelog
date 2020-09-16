@@ -1,0 +1,76 @@
+image-service (1.0.14-1) unstable; urgency=medium
+
+  * Merge with develop
+
+ -- Vicente J. Ruiz Jurado <vjrj@gbif.es>  Wed, 10 Jun 2020 19:30:14 +0200
+
+image-service (1.0.13-2) unstable; urgency=medium
+
+  * Improved configuration. Updated exec. Fix typo
+
+ -- Vicente J. Ruiz Jurado <vjrj@gbif.es>  Wed, 10 Jun 2020 19:18:29 +0200
+
+image-service (1.0.13-1) unstable; urgency=medium
+
+  * Updating deps
+
+ -- Vicente J. Ruiz Jurado <vjrj@gbif.es>  Wed, 10 Jun 2020 17:20:22 +0200
+
+image-service (1.0.6-9) unstable; urgency=medium
+
+  * license files removed
+
+ -- Vicente J. Ruiz Jurado <vjrj@gbif.es>  Thu, 19 Sep 2019 12:36:14 +0200
+
+image-service (1.0.6-8) unstable; urgency=medium
+
+  * Updated config with generated via ansible
+  * Update mysql procedure
+
+ -- Vicente J. Ruiz Jurado <vjrj@gbif.es>  Wed, 18 Sep 2019 23:22:11 +0200
+
+image-service (1.0.6-7) unstable; urgency=medium
+
+  * deluser postrm fix
+
+ -- Vicente J. Ruiz Jurado <vjrj@gbif.es>  Fri, 13 Sep 2019 00:29:55 +0200
+
+image-service (1.0.6-6) unstable; urgency=medium
+
+  * adduser as system user
+
+ -- Vicente J. Ruiz Jurado <vjrj@gbif.es>  Thu, 12 Sep 2019 21:34:51 +0200
+
+image-service (1.0.6-5) unstable; urgency=medium
+
+  * Fix adduser params
+  * Added missing DEBHELPER
+
+ -- Vicente J. Ruiz Jurado <vjrj@gbif.es>  Thu, 12 Sep 2019 18:29:37 +0200
+
+image-service (1.0.6-4) unstable; urgency=medium
+
+  * Correct exec-jar
+  * Fix user remove
+  * Trying to enable/disable service on install/uninstall
+
+ -- Vicente J. Ruiz Jurado <vjrj@gbif.es>  Thu, 12 Sep 2019 17:47:10 +0200
+
+image-service (1.0.6-3) unstable; urgency=medium
+
+  * Fix perms to jar
+
+ -- Vicente J. Ruiz Jurado <vjrj@gbif.es>  Thu, 12 Sep 2019 13:52:33 +0200
+
+image-service (1.0.6-2) unstable; urgency=medium
+
+  * Fix typo in preinstall on adduser
+  * image-service conf
+
+ -- Vicente J. Ruiz Jurado <vjrj@gbif.es>  Thu, 12 Sep 2019 12:47:19 +0200
+
+image-service (1.0.6-1) unstable; urgency=low
+
+  * Initial release
+
+ -- ALA Development Team <support@ala.org.au>  Thu, 12 Sep 2019 09:41:39 +0200

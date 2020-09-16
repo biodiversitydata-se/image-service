@@ -5,3 +5,10 @@ build
 /target
 /.idea
 *.iml
+*/*.debhelper
+*/*.debhelper.log
+*.buildinfo
+*.substvars
+debian/files
+debian/ala-image
+debian/debhelper-build-stamp

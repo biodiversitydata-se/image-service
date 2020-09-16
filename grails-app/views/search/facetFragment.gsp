@@ -6,7 +6,7 @@
 <table class="table table-bordered table-condensed table-striped scrollTable" id="fullFacets">
 <thead>
 <th><g:message code="facet.${facet}" default="${facet}"/></th>
-<th>Count</th>
+<th><g:message code="facet.count" /></th>
 </thead>
 
 <tbody class="scrollContent">

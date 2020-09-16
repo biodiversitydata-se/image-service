@@ -7,6 +7,6 @@
 </g:if>
 <g:else>
     <div>
-        No tags
+        <g:message code="details.no.tags" />
     </div>
 </g:else>
