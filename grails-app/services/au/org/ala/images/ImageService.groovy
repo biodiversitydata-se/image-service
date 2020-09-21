@@ -111,7 +111,6 @@ class ImageService {
     Map batchUploadFromUrl(List<Map<String, String>> imageSources, String uploader) {
         def results = [:]
         Image.withNewTransaction {
-
             sessionFactory.currentSession.setFlushMode(FlushMode.MANUAL)
             try {
                 imageSources.each { imageSource ->
@@ -119,7 +118,7 @@ class ImageService {
                     if (imageUrl) {
                         Image image = Image.findByOriginalFilename(imageUrl)
                         if (!image) {
-                            def result = [success: false]
+                            def result = [success: false, alreadyStored: false]
                             try {
                                 def url = new URL(imageUrl)
                                 def bytes = url.bytes
@@ -128,7 +127,8 @@ class ImageService {
                                 result.imageId = storeResult.image.imageIdentifier
                                 result.image = storeResult.image
                                 result.success = true
-                                //                            auditService.log(storeResult.image, "Image (batch) downloaded from ${imageUrl}", uploader ?: "<unknown>")
+                                result.alreadyStored = storeResult.alreadyStored
+                                result.metadataUpdated = true
                             } catch (Exception ex) {
                                 log.error("Problem storing image - " + ex.getMessage(), ex)
                                 result.message = ex.message
@@ -154,11 +154,19 @@ class ImageService {
                             if (image.description != imageSource.description){
                                 image.description = imageSource.description
                             }
+
+                            def metadataUpdated = false
                             if (image.isDirty()){
                                 image.save()
+                                metadataUpdated = true
                             }
                             //update metadata if required
-                            results[imageUrl] = [success: false, imageId: image.imageIdentifier]
+                            results[imageUrl] = [success: true,
+                                                 imageId: image.imageIdentifier,
+                                                 image: image,
+                                                 alreadyStored: true,
+                                                 metadataUpdated: metadataUpdated
+                            ]
                         }
                     }
                 }

@@ -1,9 +1,9 @@
 package au.org.ala.images
 
-import grails.testing.web.controllers.ControllerUnitTest
+import grails.testing.gorm.DomainUnitTest
 import spock.lang.Specification
 
-class BulkImportControllerSpec extends Specification implements ControllerUnitTest<BulkImportController> {
+class BatchFileUploadSpec extends Specification implements DomainUnitTest<BatchFileUpload> {
 
     def setup() {
     }

@@ -59,6 +59,7 @@ class AdminController {
     }
 
     def upload() { }
+
     def analytics() {
         render(view: 'analytics', model:[results:analyticsService.byAll()])
     }
@@ -190,6 +191,16 @@ class AdminController {
             csvWriter2.writeNext(licenceCSVMapping)
         }
         [licenceCSV:licenceCSV.toString(), licenceCSVMapping:licenceCSVMappings.toString()]
+    }
+
+    def batchUploads(){
+        [results: batchService.getUploads(), files: batchService.getFiles()]
+    }
+
+    def batchReloadFile(){
+        batchService.reloadFile(params.fileId)
+        flash.message = "Reload initiated for ${params.fileId}"
+        redirect(action:'batchUploads', message: "Reload initiated for ${params.fileId}")
     }
 
     def updateStoredLicences(){
@@ -483,6 +494,7 @@ class AdminController {
         }
         [results: results, query: params.q]
     }
+
 
     def clearCollectoryCache(){
         collectoryService.clearCache()

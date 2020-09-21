@@ -60,8 +60,8 @@ class Image {
 
     Integer squareThumbSize
 
-    static belongsTo = [ storageLocation: StorageLocation ]
-    static hasMany = [keywords:ImageKeyword, metadata: ImageMetaDataItem, tags: ImageTag, outSourcedJobs: OutsourcedJob]
+        static belongsTo = [ storageLocation: StorageLocation ]
+        static hasMany = [keywords:ImageKeyword, metadata: ImageMetaDataItem, tags: ImageTag, outSourcedJobs: OutsourcedJob]
 
     static constraints = {
         parent nullable: true
