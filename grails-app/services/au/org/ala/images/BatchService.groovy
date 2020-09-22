@@ -73,6 +73,10 @@ class BatchService {
         }
     }
 
+    def getBatchFileUpload(String uploadId){
+        BatchFileUpload.findById(uploadId)
+    }
+
     BatchFileUpload createBatchFileUploadsFromZip(String dataResourceUid, File uploadedFile){
 
         String md5Hash = generateMD5(uploadedFile)
@@ -82,30 +86,30 @@ class BatchService {
             return upload
         }
 
-        //unpack zip to local directory
-        File uploadDir = new File("/data/image-service/uploads/" + System.currentTimeMillis() + "/")
-        FileUtils.forceMkdir(uploadDir);
-        File newSource = new File(uploadDir, uploadedFile.getName())
-        Files.copy(uploadedFile, new File(uploadDir, uploadedFile.getName()))
-
         upload = new BatchFileUpload(
-                filePath: newSource.getAbsolutePath(),
+                filePath: uploadedFile.getAbsolutePath(),
                 md5Hash: md5Hash,
-                dataResourceUid: dataResourceUid
+                dataResourceUid: dataResourceUid,
+                status: "UNPACKING"
         )
+        upload.save(flush:true)
 
         try {
             def ant = new AntBuilder()   // create an antbuilder
-            ant.unzip(src: newSource.getAbsolutePath(),
-                    dest: uploadDir.getAbsolutePath(),
+            ant.unzip(src: uploadedFile.getAbsolutePath(),
+                    dest: uploadedFile.getParentFile().getAbsolutePath(),
                     overwrite: "true")
 
-            upload.status = "REGISTERED"
+            File newDir = new File("/data/image-service/uploads/" + upload.getId() + "/")
+            uploadedFile.getParentFile().renameTo(newDir)
+            upload.filePath = newDir.getAbsolutePath() + "/" +  uploadedFile.getName();
+            upload.status = "UNZIPPED"
+            upload.save(flush:true)
 
             def batchFiles = []
 
             //create BatchFileUpload jobs for each AVRO
-            uploadDir.listFiles().each { File avroFile ->
+            newDir.listFiles().each { File avroFile ->
                 //read the file
                 if (avroFile.getName().toLowerCase().endsWith(".avro")){
                     String md5HashBatchFile = generateMD5(avroFile)
@@ -127,13 +131,15 @@ class BatchService {
                 }
             }
             upload.batchFiles = batchFiles as Set
+            upload.status = "WAITING_PROCESSING"
 
         } catch (Exception e){
             log.error("Problem unpacking zip " + e.getMessage(), e)
-            upload.status = "CORRUPT_FILE"
+            upload.status = "CORRUPT_AVRO_FILES"
         }
 
         upload.save(flush:true)
+
         upload
     }
 
@@ -177,6 +183,7 @@ class BatchService {
     def loadBatchFile(BatchFile batchFile) {
 
         log.info("Loading batch file: " + batchFile.filePath)
+
         def inStream = new FileInputStream(new File(batchFile.filePath))
         DataFileStream<GenericRecord> reader = new DataFileStream<>(inStream, new GenericDatumReader<GenericRecord>())
 
@@ -184,7 +191,7 @@ class BatchService {
         int count = 0
 
         // process record by record
-        while (reader.hasNext() && count < 1000) {
+        while (reader.hasNext()) {
             GenericRecord currRecord = reader.next()
             // Here we can add in data manipulation like anonymization etc
             def multimediaRecords = currRecord.get("multimediaItems");
@@ -219,15 +226,19 @@ class BatchService {
         def results = imageService.batchUploadFromUrl([_imageSource], _userId)
         def newImage = results[_imageSource.sourceUrl ?: _imageSource.imageUrl]
         if (newImage && newImage.success && newImage.image) {
-            //Only run for new images......
-//            Image.withNewTransaction {
-//                imageService.setMetadataItemsByImageId(newImage.image.id, _imageSource, MetaDataSourceType.SystemDefined, _userId)
-//            }
+            if (newImage.metadataUpdated) {
+                imageService.scheduleImageIndex(newImage.image.id)
+            }
+
             if (!newImage.alreadyStored){
                 imageService.scheduleArtifactGeneration(newImage.image.id, _userId)
-            }
-            if (!newImage.metadataUpdated) {
-                imageService.scheduleImageIndex(newImage.image.id)
+                //Only run for new images......
+                imageService.scheduleImageMetadataPersist(
+                        newImage.image.id,
+                        newImage.image.imageIdentifier,
+                        newImage.image.originalFilename,
+                        MetaDataSourceType.SystemDefined,
+                        _userId)
             }
         }
     }
@@ -246,12 +257,27 @@ class BatchService {
             batchFile.lastUpdated = new Date()
             batchFile.save(flush:true)
 
+            batchFile.batchFileUpload.status = "LOADING"
+            batchFile.batchFileUpload.save(flush:true)
+
             //load batch file
             loadBatchFile(batchFile)
 
+            Date now = new Date()
             batchFile.status = "COMPLETE"
-            batchFile.lastUpdated = new Date()
+            batchFile.lastUpdated = now
+            batchFile.dateCompleted = now
             batchFile.save(flush:true)
+
+            // if all loaded, mark as complete
+            boolean allComplete = batchFile.batchFileUpload.batchFiles.every { it.status == "COMPLETE" }
+            if (allComplete){
+                batchFile.batchFileUpload.status =  "COMPLETE"
+                batchFile.batchFileUpload.dateCompleted = now
+            } else {
+                batchFile.batchFileUpload.status =  "PARTIALLY_COMPLETE"
+            }
+            batchFile.batchFileUpload.status = allComplete ? "COMPLETE" : "PARTIALLY_COMPLETE"
         }
     }
 

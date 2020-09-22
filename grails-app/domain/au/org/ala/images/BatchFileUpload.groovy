@@ -8,9 +8,12 @@ class BatchFileUpload {
     Date dateCreated
     Date lastUpdated
     String status
+    Date dateCompleted
 
     static hasMany = [batchFiles:BatchFile]
-    static constraints = {}
+    static constraints = {
+        dateCompleted nullable: true
+    }
     static mapping = {
         version false
     }

@@ -116,9 +116,16 @@ dataSource:
 environments:
     development:
         dataSource:
+            driverClassName: "org.postgresql.Driver"
+            logSql: false
             url: jdbc:postgresql://localhost/images?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
             username: "images"
             password: "images"
+            type: "com.zaxxer.hikari.HikariDataSource"
+            properties:
+                maximumPoolSize: 30
+                registerMbeans: true
+                connectionTimeout: 5000
     test:
         grails:
             config:

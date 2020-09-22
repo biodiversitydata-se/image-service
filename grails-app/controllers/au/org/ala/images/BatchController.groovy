@@ -7,8 +7,9 @@ import io.swagger.annotations.ApiImplicitParams
 import io.swagger.annotations.ApiOperation
 import io.swagger.annotations.ApiResponse
 import io.swagger.annotations.ApiResponses
+import org.apache.commons.io.FileUtils
 
-@Api(value = "/ws/batch", description = "Image Web Services")
+@Api(value = "/ws/batch")
 class BatchController {
 
     def batchService
@@ -18,15 +19,15 @@ class BatchController {
     @ApiOperation(
             value = "Upload zipped AVRO files for loading",
             nickname = "upload",
-            produces = "application/jdson",
+            produces = "application/json",
             consumes = "application/gzip",
-            httpMethod = "GET",
+            httpMethod = "POST",
             response = Map.class,
-            tags = ["Export"]
+            tags = ["BatchUpdate"]
     )
     @ApiResponses([
             @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 400, message = "Missing dataResourceUid parameter"),
+            @ApiResponse(code = 400, message = "Missing dataResourceUid parameter or missing file"),
             @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
     )
     @ApiImplicitParams([
@@ -35,17 +36,95 @@ class BatchController {
     def upload(){
 
         //multi part upload
+        def zipFile = request.getFile('archive')
+        def dataResourceUid = params.dataResourceUid
 
-        //data resource uid
-        def dataResource = "dr1411"
-        def zipFile = new File("/data/pipelines-data/dr893/1/interpreted/multimedia/interpret-1600456272.avro.zip")
+        if (!zipFile){
+            response.sendError(400, "Missing zip file")
+            return
+        }
+
+        if (!dataResourceUid){
+            response.sendError(400, "Missing dataResourceUid parameter")
+            return
+        }
+
+        File uploadDir = new File("/data/image-service/uploads/tmp-" + System.currentTimeMillis() + "/")
+        FileUtils.forceMkdir(uploadDir)
+        File tmpFile = new File(uploadDir, zipFile.filename)
+        zipFile.transferTo(tmpFile)
 
         //write zip file to filesystem
-        def upload = batchService.createBatchFileUploadsFromZip(dataResource, zipFile)
-
-        //schedule an upload job
+        def upload = batchService.createBatchFileUploadsFromZip(dataResourceUid, tmpFile)
 
         //return an async response
-        render (upload as JSON)
+        def response = [
+                batchID : upload.getId(),
+                dataResourceUid: upload.dataResourceUid,
+                file: upload.filePath,
+                dateCreated: upload.getDateCreated(),
+                status: upload.status,
+                files: []
+        ]
+        upload.batchFiles.each {
+            response.files << [
+                    status: it.status,
+                    file: it.filePath,
+                    invalidRecords: it.invalidRecords,
+                    recordCount: it.recordCount
+            ]
+        }
+        render (response as JSON)
     }
+
+    @ApiOperation(
+            value = "Get batch update statsu",
+            nickname = "status",
+            produces = "application/json",
+            httpMethod = "GET",
+            response = Map.class,
+            tags = ["BatchUpdate"]
+    )
+    @ApiResponses([
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Missing dataResourceUid parameter or missing file"),
+            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+    )
+    @ApiImplicitParams([
+            @ApiImplicitParam(name = "dataResourceUid", paramType = "path", required = true, value = "Data resource UID", dataType = "string")
+    ])
+    def status(){
+
+        //write zip file to filesystem
+        def upload = batchService.getBatchFileUpload(params.id)
+        if (upload){
+            //return an async response
+            def response = createResponse(upload)
+            render (response as JSON)
+        } else {
+            response.sendError(404)
+        }
+    }
+
+    Map createResponse(BatchFileUpload upload){
+        //return an async response
+        def response = [
+                batchID : upload.getId(),
+                dataResourceUid: upload.dataResourceUid,
+                file: upload.filePath,
+                dateCreated: upload.getDateCreated(),
+                status: upload.status,
+                files: []
+        ]
+        upload.batchFiles.each {
+            response.files << [
+                    status: it.status,
+                    file: it.filePath,
+                    invalidRecords: it.invalidRecords,
+                    recordCount: it.recordCount
+            ]
+        }
+        response
+    }
+
 }

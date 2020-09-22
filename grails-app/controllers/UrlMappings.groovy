@@ -19,6 +19,10 @@ class UrlMappings {
         "/ws/batchstatus"(controller: "webService", action:'getBatchStatus')
         "/ws/imageInfoForList"(controller: "webService", action: "getImageInfoForIdList")
 
+        "/ws/batch/$id"(controller: "batch", action:"status")
+        "/ws/batch/status/$id"(controller: "batch", action:"status")
+        "/ws/batch/upload"(controller: "batch", action:"upload")
+
         "/ws/$action?/$id?(.$format)?" {
             controller = "webService"
         }
