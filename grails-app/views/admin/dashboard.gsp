@@ -46,6 +46,14 @@
             <table class="table">
                 <tr>
                     <td class="col-md-6">
+                        Batch (AVRO) uploads
+                    </td>
+                    <td class="col-md-6">
+                        <span id="batchUploads"><asset:image src="spinner.gif" /></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="col-md-6">
                         Import/Thumbnail/Delete queue size
                     </td>
                     <td class="col-md-6">
@@ -87,6 +95,7 @@
                 $.ajax("${createLink(controller:'webService', action:'getBackgroundQueueStats')}").done(function(data) {
                     $("#statQueueSize").html(data.queueLength);
                     $("#tilingQueueSize").html(data.tilingQueueLength);
+                    $("#batchUploads").html(data.batchUploads);
                 });
             }
         </script>

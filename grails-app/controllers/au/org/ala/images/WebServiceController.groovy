@@ -710,7 +710,6 @@ class WebServiceController {
         results.deletedImageCount = Image.countByDateDeletedIsNotNull()
         results.licenceCount = License.count()
         results.licenceMappingCount = LicenseMapping.count()
-        results.sizeOnDisk =
         renderResults(results)
     }
 
@@ -750,6 +749,7 @@ class WebServiceController {
         def results = [:]
         results.queueLength = imageService.getImageTaskQueueLength()
         results.tilingQueueLength = imageService.getTilingTaskQueueLength()
+        results.batchUploads = batchService.getActiveBatchUploadCount()
         renderResults(results)
     }
 

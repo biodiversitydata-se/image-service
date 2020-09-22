@@ -7,7 +7,7 @@
     </style>
 </head>
 <body>
-<content tag="pageTitle">Batch Uploads</content>
+<content tag="pageTitle">Batch uploads</content>
 <content tag="adminButtonBar" />
 <g:if test="${flash.message}">
     <div class="alert alert-success" style="display: block">${flash.message}</div>
@@ -20,7 +20,7 @@
 </h3>
 <g:if test="${files}">
 <table class="table table-condensed table-striped table-bordered ">
-    <thead>
+    <thead class="thead-dark">
     <th>batchID</th>
     <th>fileID</th>
     <th>dataResourceUid</th>
@@ -63,7 +63,7 @@
 </h3>
 <g:if test="${results}">
 <table class="table table-condensed table-striped table-bordered ">
-    <thead>
+    <thead class="thead-dark">
         <th>batchID</th>
         <th>files</th>
         <th>dataResourceUid</th>

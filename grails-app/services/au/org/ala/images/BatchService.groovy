@@ -73,9 +73,18 @@ class BatchService {
         }
     }
 
+    def getBatchFileUploadsFor(String dataResourceUid){
+        BatchFileUpload.findAllByDataResourceUid(dataResourceUid)
+    }
+
     def getBatchFileUpload(String uploadId){
         BatchFileUpload.findById(uploadId)
     }
+
+    def getActiveBatchUploadCount(){
+        BatchFileUpload.countByStatusNotEqual("COMPLETED")
+    }
+
 
     BatchFileUpload createBatchFileUploadsFromZip(String dataResourceUid, File uploadedFile){
 
@@ -192,6 +201,7 @@ class BatchService {
 
         // process record by record
         while (reader.hasNext()) {
+//        while (reader.hasNext() && count < 500) {
             GenericRecord currRecord = reader.next()
             // Here we can add in data manipulation like anonymization etc
             def multimediaRecords = currRecord.get("multimediaItems");
@@ -221,7 +231,7 @@ class BatchService {
         log.info("Completed loading of batch file: " + batchFile.filePath)
     }
 
-    void execute(_imageSource,  String _userId) {
+    Map execute(_imageSource,  String _userId) {
 
         def results = imageService.batchUploadFromUrl([_imageSource], _userId)
         def newImage = results[_imageSource.sourceUrl ?: _imageSource.imageUrl]
@@ -241,6 +251,7 @@ class BatchService {
                         _userId)
             }
         }
+        newImage
     }
 
     def processNextInQueue(){

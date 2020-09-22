@@ -78,8 +78,37 @@ class BatchController {
     }
 
     @ApiOperation(
-            value = "Get batch update statsu",
-            nickname = "status",
+            value = "Get batch update status",
+            nickname = "status/{batchID}",
+            produces = "application/json",
+            httpMethod = "GET",
+            response = Map.class,
+            tags = ["BatchUpdate"]
+    )
+    @ApiResponses([
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Missing batchID parameter or missing file"),
+            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+    )
+    @ApiImplicitParams([
+            @ApiImplicitParam(name = "batchId", paramType = "path", required = true, value = "Batch ID", dataType = "string")
+    ])
+    def status(){
+
+        //write zip file to filesystem
+        def upload = batchService.getBatchFileUpload(params.id)
+        if (upload){
+            //return an async response
+            def response = createResponse(upload)
+            render (response as JSON)
+        } else {
+            response.sendError(404)
+        }
+    }
+
+    @ApiOperation(
+            value = "Get batch update status",
+            nickname = "dataresource/{dataResourceUid}",
             produces = "application/json",
             httpMethod = "GET",
             response = Map.class,
@@ -93,14 +122,17 @@ class BatchController {
     @ApiImplicitParams([
             @ApiImplicitParam(name = "dataResourceUid", paramType = "path", required = true, value = "Data resource UID", dataType = "string")
     ])
-    def status(){
+    def statusForDataResource(){
 
         //write zip file to filesystem
-        def upload = batchService.getBatchFileUpload(params.id)
-        if (upload){
+        def uploads = batchService.getBatchFileUploadsFor(params.dataResourceUid)
+        if (uploads){
             //return an async response
-            def response = createResponse(upload)
-            render (response as JSON)
+            def responses = []
+            uploads.each { upload ->
+                responses << createResponse(upload)
+            }
+            render (responses as JSON)
         } else {
             response.sendError(404)
         }
@@ -126,5 +158,4 @@ class BatchController {
         }
         response
     }
-
 }
