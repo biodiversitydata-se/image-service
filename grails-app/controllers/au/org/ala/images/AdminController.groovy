@@ -31,6 +31,12 @@ class AdminController {
         redirect(action:'dashboard')
     }
 
+    def debugBackgroundQueue(){
+        imageService.dumpQueueToFile()
+        flash.message = "Background queue dumped to file."
+        redirect(action:'dashboard')
+    }
+
     def image() {
         def image = imageService.getImageFromParams(params)
         if (!image) {
@@ -194,13 +200,19 @@ class AdminController {
     }
 
     def batchUploads(){
-        [results: batchService.getUploads(), files: batchService.getFiles()]
+        [results: batchService.getUploads(), files: batchService.getFiles(), batchServiceProcessingEnabled: settingService.getBatchServiceProcessingEnabled()]
     }
 
     def batchReloadFile(){
         batchService.reloadFile(params.fileId)
         flash.message = "Reload initiated for ${params.fileId}"
         redirect(action:'batchUploads', message: "Reload initiated for ${params.fileId}")
+    }
+
+    def batchFileDeleteFromQueue(){
+        batchService.deleteFileFromQueue(params.fileId)
+        flash.message = "File ${params.fileId} deleted"
+        redirect(action:'batchUploads', message: "File removed from queue for ${params.fileId}")
     }
 
     def updateStoredLicences(){
@@ -317,7 +329,9 @@ class AdminController {
 
     def dashboard() {}
 
-    def tools() {}
+    def tools() {
+        [batchProcessingEnabled: settingService.getBatchServiceProcessingEnabled()]
+    }
 
     def localIngest() {}
 
@@ -470,6 +484,30 @@ class AdminController {
         redirect(action:'tools', message: flash.message)
     }
 
+    def disableBatchProcessing(){
+        settingService.disableBatchProcessing()
+        flash.message = "Batch processing disabled.";
+        redirect(action:'batchUploads', message: flash.message)
+    }
+
+    def clearFileQueue(){
+        batchService.clearFileQueue()
+        flash.message = "File queue cleared";
+        redirect(action:'batchUploads', message: flash.message)
+    }
+
+    def clearUploads(){
+        batchService.clearUploads()
+        flash.message = "File queue cleared";
+        redirect(action:'batchUploads', message: flash.message)
+    }
+
+    def enableBatchProcessing(){
+        settingService.enableBatchProcessing()
+        flash.message = "Batch processing enabled.";
+        redirect(action:'batchUploads', message: flash.message)
+    }
+
     def checkForMissingImages(){
         imageService.scheduleBackgroundTask(new ScheduleMissingImagesBackgroundTask(imageStoreService, grailsApplication.config.imageservice.exportDir))
         flash.message = "Check for missing images started......Output: " + grailsApplication.config.imageservice.exportDir + "/missing-images.csv";
@@ -494,7 +532,6 @@ class AdminController {
         }
         [results: results, query: params.q]
     }
-
 
     def clearCollectoryCache(){
         collectoryService.clearCache()

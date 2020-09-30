@@ -21,6 +21,11 @@ class IndexImageBackgroundTask extends BackgroundTask {
             _elasticSearchService.indexImage(imageInstance)
         }
     }
+
+    @Override
+    String toString() {
+        return "IndexImageBackgroundTask," + _imageId
+    }
 }
 
 class ScheduleReindexAllImagesTask extends BackgroundTask {

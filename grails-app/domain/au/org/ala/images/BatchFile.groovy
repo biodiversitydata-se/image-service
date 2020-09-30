@@ -6,10 +6,11 @@ class BatchFile {
     Date dateCreated
     Date lastUpdated
     String status
-    long recordCount
-    long invalidRecords
-    long newImages
-    long metadataUpdates
+    Long recordCount
+    Long invalidRecords
+    Long newImages
+    Long metadataUpdates
+    Long processedCount
     Date dateCompleted
 
     String md5Hash
@@ -19,6 +20,7 @@ class BatchFile {
     static constraints = {
         newImages nullable: true
         metadataUpdates nullable: true
+        processedCount nullable: true
         dateCompleted nullable: true
     }
 

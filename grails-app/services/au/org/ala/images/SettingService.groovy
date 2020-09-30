@@ -44,6 +44,34 @@ class SettingService {
         return getLongSetting()
     }
 
+    @ImageServiceSetting(name = 'batch.service.threads', description = "Number of download threads to use", defaultValue = '3')
+    Long getBatchServiceThreads() {
+        return getLongSetting()
+    }
+
+    @ImageServiceSetting(name = 'batch.service.throttle.milliseconds', description = "Time to sleep between download requests", defaultValue = '0')
+    Long getBatchServiceThrottleInMillis() {
+        return getLongSetting()
+    }
+
+    @ImageServiceSetting(name = 'batch.service.read.size', description = "Number of records to read in single batch", defaultValue = '10')
+    Long getBatchServiceReadSize() {
+        return getLongSetting()
+    }
+
+    @ImageServiceSetting(name = 'batch.service.processing.enabled', description = "Should the service process files on the queue", defaultValue = "true")
+    boolean getBatchServiceProcessingEnabled() {
+        getBoolSetting()
+    }
+
+    void enableBatchProcessing(){
+        setSettingValue( 'batch.service.processing.enabled', "true")
+    }
+
+    void disableBatchProcessing(){
+        setSettingValue( 'batch.service.processing.enabled', "false")
+    }
+
     void setStorageLocationDefault(Long value) {
         setSettingValue('storage.location.default', value.toString())
     }
@@ -60,7 +88,7 @@ class SettingService {
             Boolean.parseBoolean(value)
         }
         setting.value = value
-        setting.save()
+        setting.save(flush:true)
     }
 
     /**

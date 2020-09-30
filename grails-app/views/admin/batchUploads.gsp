@@ -15,17 +15,50 @@
 <g:if test="${flash.errorMessage}">
     <div class="alert alert-danger" style="display: block">${flash.errorMessage}</div>
 </g:if>
-<h3>
-    Batch file processing
-</h3>
+
+<h2>
+    Batch processing
+</h2>
+
+<p>
+    Batch processing of AVRO files. This page can be used to monitor AVRO batch processing.
+</p>
+
+<div class="btn-toolbar">
+    <div class="btn-group mr-2 pull-right" role="group" aria-label="First group">
+        <g:link controller="admin" action="clearUploads" class="btn-default btn ${batchServiceProcessingEnabled ? 'disabled': ''}">
+            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+            Delete all
+        </g:link>
+        <g:link controller="admin" action="clearFileQueue" class="btn-default btn ${batchServiceProcessingEnabled ? 'disabled': ''}">
+            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+            Clear file queue
+        </g:link>
+    <g:if test="${batchServiceProcessingEnabled}">
+        <g:link controller="admin" action="disableBatchProcessing" class="btn-primary btn">
+            <span class="glyphicon glyphicon-stop" aria-hidden="true"></span>
+            Disable batch processing
+        </g:link>
+    </g:if>
+    <g:else>
+        <g:link controller="admin" action="enableBatchProcessing" class="btn-info btn">
+            <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
+            Enable batch processing
+        </g:link>
+    </g:else>
+    </div>
+</div>
+
+<h3>File queue</h3>
 <g:if test="${files}">
-<table class="table table-condensed table-striped table-bordered ">
+    <table class="table table-condensed table-striped table-bordered ">
     <thead class="thead-dark">
     <th>batchID</th>
     <th>fileID</th>
     <th>dataResourceUid</th>
     <th>invalidRecords</th>
     <th>recordCount</th>
+    <th>processedCount</th>
     <th>newImages</th>
     <th>metadataUpdates</th>
     <th>dateCreated</th>
@@ -42,13 +75,24 @@
             <td>${batchFile.batchFileUpload.dataResourceUid}</td>
             <td>${batchFile.invalidRecords}</td>
             <td>${batchFile.recordCount}</td>
+            <td>${batchFile.processedCount}</td>
             <td>${batchFile.newImages}</td>
             <td>${batchFile.metadataUpdates}</td>
             <td>${batchFile.dateCreated}</td>
             <td>${batchFile.lastUpdated}</td>
             <td>${batchFile.dateCompleted}</td>
             <td>${batchFile.status}</td>
-            <td><g:link action="batchReloadFile" params="${[fileId: batchFile.id]}" class="btn-primary btn-sm">Reload</g:link></td>
+            <td>
+                <div class="btn-group-vertical">
+                    <g:link action="batchReloadFile" params="${[fileId: batchFile.id]}" class="btn btn-default btn-sm btn-block">
+                        <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
+                        Reload</g:link>
+                    <g:link action="batchFileDeleteFromQueue" params="${[fileId: batchFile.id]}" class="btn btn-danger btn-sm btn-block">
+                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                        Delete
+                    </g:link>
+                </div>
+            </td>
         </tr>
     </g:each>
     </tbody>
@@ -58,11 +102,9 @@
     Batch file processing will appear here when available.
 </g:else>
 
-<h3>
-    Batch zip uploads
-</h3>
+<h3>Uploads</h3>
 <g:if test="${results}">
-<table class="table table-condensed table-striped table-bordered ">
+    <table class="table table-condensed table-striped table-bordered ">
     <thead class="thead-dark">
         <th>batchID</th>
         <th>files</th>

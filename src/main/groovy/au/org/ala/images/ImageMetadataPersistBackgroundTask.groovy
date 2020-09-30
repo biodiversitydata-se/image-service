@@ -74,4 +74,9 @@ class ImageMetadataPersistBackgroundTask extends BackgroundTask {
             return StringUtils.trimToEmpty(value)
         }
     }
+
+    @Override
+    String toString() {
+        return "ImageMetadataPersistBackgroundTask," + _imageId
+    }
 }

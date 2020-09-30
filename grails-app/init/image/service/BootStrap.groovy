@@ -6,6 +6,7 @@ class BootStrap {
 
     def elasticSearchService
 
+    def batchService
 
     def init = { servletContext ->
 
@@ -17,7 +18,7 @@ class BootStrap {
         )
 
         elasticSearchService.initialize()
-
+        batchService.initialize()
 
     }
     def destroy = {

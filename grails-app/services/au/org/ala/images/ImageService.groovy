@@ -58,6 +58,15 @@ class ImageService {
         return null
     }
 
+    def dumpQueueToFile(){
+        def fw = new FileWriter(new File("/tmp/backgroundQueue.txt"))
+        _backgroundQueue.each {
+            fw.write(it.toString() + "\n")
+        }
+        fw.flush()
+        fw.close()
+    }
+
     ImageStoreResult storeImageFromUrl(String imageUrl, String uploader, Map metadata = [:]) {
         if (imageUrl) {
             try {
@@ -116,7 +125,13 @@ class ImageService {
                 imageSources.each { imageSource ->
                     def imageUrl = (imageSource.sourceUrl ?: imageSource.imageUrl) as String
                     if (imageUrl) {
-                        Image image = Image.findByOriginalFilename(imageUrl)
+                        Image image = null
+                        if (imageUrl.startsWith("http")){
+                            image = Image.findByOriginalFilename(imageUrl)
+                        } else {
+                            image = Image.findByOriginalFilenameAndDataResourceUid(imageUrl, imageSource.dataResourceUid)
+                        }
+
                         if (!image) {
                             def result = [success: false, alreadyStored: false]
                             try {
@@ -128,38 +143,45 @@ class ImageService {
                                 result.image = storeResult.image
                                 result.success = true
                                 result.alreadyStored = storeResult.alreadyStored
-                                result.metadataUpdated = true
+                                result.metadataUpdated = false
                             } catch (Exception ex) {
+                                //log to batch update error file
                                 log.error("Problem storing image - " + ex.getMessage(), ex)
                                 result.message = ex.message
                             }
                             results[imageUrl] = result
                         } else {
+                            def metadataUpdated = false
 
                             if (image.creator != imageSource.creator){
                                 image.creator = imageSource.creator
+                                metadataUpdated = true
                             }
                             if (image.title != imageSource.title){
                                 image.title = imageSource.title
+                                metadataUpdated = true
                             }
                             if (image.rightsHolder != imageSource.rightsHolder){
                                 image.rightsHolder = imageSource.rightsHolder
+                                metadataUpdated = true
                             }
                             if (image.rights != imageSource.rights){
                                 image.rights = imageSource.rights
+                                metadataUpdated = true
                             }
                             if (image.license != imageSource.license){
                                 image.license = imageSource.license
+                                metadataUpdated = true
                             }
                             if (image.description != imageSource.description){
                                 image.description = imageSource.description
-                            }
-
-                            def metadataUpdated = false
-                            if (image.isDirty()){
-                                image.save()
                                 metadataUpdated = true
                             }
+
+                            if (metadataUpdated){
+                                image.save()
+                            }
+
                             //update metadata if required
                             results[imageUrl] = [success: true,
                                                  imageId: image.imageIdentifier,
@@ -253,8 +275,7 @@ class ImageService {
                     storageLocation: sl
             )
 
-
-            if(metadata.extension){
+            if (metadata.extension){
                 image.extension = metadata.extension
             } else {
                 // this is known to be problematic
@@ -280,11 +301,7 @@ class ImageService {
             preExisting = true
         }
 
-        if (preExisting){
-            //stick it on a queue
-            scheduleMetadataUpdate(image.imageIdentifier, metadata)
-            scheduleLicenseUpdate(image.id)
-        } else {
+        if (!preExisting){
             //update metadata
             metadata.each { kvp ->
                 def propertyName = hasImageCaseFriendlyProperty(image, kvp.key)

@@ -16,5 +16,10 @@ class ImageMetadataUpdateBackgroundTask extends BackgroundTask {
     void execute() {
         _imageService.updateMetadata(_imageIdentifier, _metadata)
     }
+
+    @Override
+    String toString() {
+        return "ImageMetadataUpdateBackgroundTask," + _imageIdentifier
+    }
 }
 
