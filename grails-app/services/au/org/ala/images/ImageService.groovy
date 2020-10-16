@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
 
 class ImageService {
 
@@ -269,82 +270,89 @@ class ImageService {
         }
     }
 
-    @Synchronized("imageStoreLock")
+    private final ReentrantLock lock = new ReentrantLock();
+
     ImageStoreResult storeImageBytes(byte[] bytes, String originalFilename, long filesize, String contentType,
                           String uploaderId, Map metadata = [:]) {
 
-        def md5Hash = MD5CodecExtensionMethods.encodeAsMD5(bytes)
+        try {
+            lock.lock()
 
-        //check for existing image using MD5 hash
-        def image = Image.findByContentMD5Hash(md5Hash)
-        def preExisting = false
-        if (!image) {
-            def sha1Hash = SHA1CodecExtensionMethods.encodeAsSHA1(bytes)
+            def md5Hash = MD5CodecExtensionMethods.encodeAsMD5(bytes)
 
-            Long defaultStorageLocationID = settingService.getStorageLocationDefault()
+            //check for existing image using MD5 hash
+            def image = Image.findByContentMD5Hash(md5Hash)
+            def preExisting = false
+            if (!image) {
+                def sha1Hash = SHA1CodecExtensionMethods.encodeAsSHA1(bytes)
 
-            StorageLocation sl = StorageLocation.get(defaultStorageLocationID)
+                Long defaultStorageLocationID = settingService.getStorageLocationDefault()
 
-            def imgDesc = imageStoreService.storeImage(bytes, sl, contentType)
+                StorageLocation sl = StorageLocation.get(defaultStorageLocationID)
 
-            // Create the image record, and set the various attributes
-            image = new Image(
-                    imageIdentifier: imgDesc.imageIdentifier,
-                    contentMD5Hash: md5Hash,
-                    contentSHA1Hash: sha1Hash,
-                    uploader: uploaderId,
-                    storageLocation: sl
-            )
+                def imgDesc = imageStoreService.storeImage(bytes, sl, contentType)
 
-            if (metadata.extension){
-                image.extension = metadata.extension
+                // Create the image record, and set the various attributes
+                image = new Image(
+                        imageIdentifier: imgDesc.imageIdentifier,
+                        contentMD5Hash: md5Hash,
+                        contentSHA1Hash: sha1Hash,
+                        uploader: uploaderId,
+                        storageLocation: sl
+                )
+
+                if (metadata.extension){
+                    image.extension = metadata.extension
+                } else {
+                    // this is known to be problematic
+                    def extension =  FilenameUtils.getExtension(originalFilename) ?: 'jpg'
+                    if (extension && extension.contains("?")){
+                        def cleanedExtension = extension.substring(0, extension.indexOf("?"))
+                        if (cleanedExtension && cleanedExtension.length() > 0){
+                            extension  = cleanedExtension
+                        }
+                    }
+                    image.extension = extension
+                }
+
+                image.height = imgDesc.height
+                image.width = imgDesc.width
+                image.fileSize = filesize
+                image.mimeType = contentType
+                image.dateUploaded = new Date()
+                image.originalFilename = originalFilename
+                image.dateTaken = getImageTakenDate(bytes) ?: image.dateUploaded
             } else {
-                // this is known to be problematic
-                def extension =  FilenameUtils.getExtension(originalFilename) ?: 'jpg'
-                if (extension && extension.contains("?")){
-                    def cleanedExtension = extension.substring(0, extension.indexOf("?"))
-                    if (cleanedExtension && cleanedExtension.length() > 0){
-                        extension  = cleanedExtension
-                    }
-                }
-                image.extension = extension
+                image.dateDeleted = null //reset date deleted if image resubmitted...
+                preExisting = true
             }
 
-            image.height = imgDesc.height
-            image.width = imgDesc.width
-            image.fileSize = filesize
-            image.mimeType = contentType
-            image.dateUploaded = new Date()
-            image.originalFilename = originalFilename
-            image.dateTaken = getImageTakenDate(bytes) ?: image.dateUploaded
-        } else {
-            image.dateDeleted = null //reset date deleted if image resubmitted...
-            preExisting = true
-        }
+            if (!preExisting){
 
-        if (!preExisting){
-
-            //update metadata stored in the `image` table
-            metadata.each { kvp ->
-                def propertyName = hasImageCaseFriendlyProperty(image, kvp.key)
-                if (propertyName && kvp.value){
-                    if (!(propertyName in ["dateTaken", "dateUploaded", "id"])){
-                        image[propertyName] = kvp.value
+                //update metadata stored in the `image` table
+                metadata.each { kvp ->
+                    def propertyName = hasImageCaseFriendlyProperty(image, kvp.key)
+                    if (propertyName && kvp.value){
+                        if (!(propertyName in ["dateTaken", "dateUploaded", "id"])){
+                            image[propertyName] = kvp.value
+                        }
                     }
+                }
+
+                //try to match licence
+                updateLicence(image)
+
+                try {
+                    image.save(flush: true, failOnError: true)
+                } catch (Exception ex){
+                    log.error("Problem ${preExisting ? 'updating' : 'saving'} image ${originalFilename}  - " + ex.getMessage(), ex)
                 }
             }
 
-            //try to match licence
-            updateLicence(image)
-
-            try {
-                image.save(flush: true, failOnError: true)
-            } catch (Exception ex){
-                log.error("Problem ${preExisting ? 'updating' : 'saving'} image ${originalFilename}  - " + ex.getMessage(), ex)
-            }
+            new ImageStoreResult(image, preExisting)
+        } finally {
+            lock.unlock()
         }
-
-        new ImageStoreResult(image, preExisting)
     }
 
     def hasImageCaseFriendlyProperty(Image image, String propertyName){
