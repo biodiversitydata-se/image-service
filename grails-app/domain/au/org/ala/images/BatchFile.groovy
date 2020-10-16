@@ -7,11 +7,11 @@ class BatchFile {
     Date lastUpdated
     String status
     Long recordCount
-    Long invalidRecords
     Long newImages
     Long metadataUpdates
     Long processedCount
     Date dateCompleted
+    Long timeTakenToLoad
 
     String md5Hash
 
@@ -22,6 +22,7 @@ class BatchFile {
         metadataUpdates nullable: true
         processedCount nullable: true
         dateCompleted nullable: true
+        timeTakenToLoad nullable: true
     }
 
     static mapping = {

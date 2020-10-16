@@ -9,6 +9,7 @@ import au.org.ala.images.tiling.ImageTilerResults
 import au.org.ala.images.tiling.TileFormat
 import au.org.ala.images.tiling.TilerSink
 import au.org.ala.images.util.ImageReaderUtils
+import grails.gorm.transactions.Transactional
 import grails.web.mapping.LinkGenerator
 import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.model.FileHeader
@@ -42,6 +43,7 @@ class ImageStoreService {
         return imgDesc
     }
 
+    @Transactional
     byte[] retrieveImage(String imageIdentifier) {
         return Image.findByImageIdentifier(imageIdentifier, [ cache: true] ).retrieve()
     }

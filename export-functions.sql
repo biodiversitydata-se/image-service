@@ -1,3 +1,35 @@
+CREATE OR REPLACE FUNCTION export_dataset(uid varchar) RETURNS void AS $$
+DECLARE
+    output_file CONSTANT varchar := CONCAT(CONCAT( '/data/image-service/exports/images-export-', uid), '.csv');
+BEGIN
+    EXECUTE format ('
+    COPY
+        (
+        select
+            image_identifier as "imageID",
+            original_filename as "identifier",
+            audience,
+            contributor,
+            created,
+            creator,
+            description,
+            mime_type as "format",
+            license,
+            publisher,
+            dc_references as "references",
+            rights_holder  as "rightsHolder",
+            source,
+            title,
+            type
+            from image i
+            where data_resource_uid = %L
+        )
+    TO %L (FORMAT CSV)'
+        , uid, output_file);
+END;
+$$ LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION export_dataset_mapping(uid varchar) RETURNS void AS $$
 DECLARE
     output_file CONSTANT varchar := CONCAT(CONCAT( '/data/image-service/exports/images-mapping-', uid), '.csv');

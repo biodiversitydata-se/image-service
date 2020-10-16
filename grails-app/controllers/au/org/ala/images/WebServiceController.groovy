@@ -1415,7 +1415,28 @@ class WebServiceController {
      * @return
      */
     @ApiOperation(
-            value = "Upload a single image, with by URL or multipart HTTP file upload. For multipart the image must be posted in a 'image' property",
+            value = """
+                Upload a single image, with by URL or multipart HTTP file upload. 
+                For multipart the image must be posted in a 'image' property.
+            """,
+            notes = """
+               The following metadata properties can be set/updated:    
+                
+                audience      - http://purl.org/dc/terms/audience
+                contributor   - http://purl.org/dc/terms/contributor
+                creator       - http://purl.org/dc/terms/creator
+                created       - http://purl.org/dc/terms/created  
+                description   - http://purl.org/dc/terms/description 
+                format        - http://purl.org/dc/terms/format (see https://www.iana.org/assignments/media-types/media-types.xhtml) 
+                license       - http://purl.org/dc/terms/license
+                publisher     - http://purl.org/dc/terms/publisher
+                references    - http://purl.org/dc/terms/references   
+                rights        - http://purl.org/dc/terms/rights 
+                rightsHolder  - http://purl.org/dc/terms/rightsHolder
+                source        - http://purl.org/dc/terms/source
+                title         - http://purl.org/dc/terms/title
+                type          - http://purl.org/dc/terms/type
+            """,
             nickname = "uploadImage",
             produces = "application/json",
             consumes = "application/json",
@@ -1480,8 +1501,10 @@ class WebServiceController {
                 CodeTimer ct = new CodeTimer("Setting Image metadata ${params.imageIdentifier}")
 
                 tagService.updateTags(storeResult.image, params.tags, userId)
-                if(!storeResult.alreadyStored) {
-                    imageService.schedulePostIngestTasks(storeResult.image.id, storeResult.image.imageIdentifier, storeResult.image.originalFilename, userId)
+
+                if (!storeResult.alreadyStored) {
+                    //reindex if already stored
+                    imageService.scheduleImageIndex(storeResult.image.id)
                 }
 
                 ct.stop(true)
@@ -1549,7 +1572,7 @@ class WebServiceController {
             }
 
             // first create the images
-            def results = imageService.batchUploadFromUrl(imageList, userId)
+            def results = imageService.batchUpdate(imageList, userId)
 
             imageList.each { srcImage ->
                 def newImage = results[srcImage.sourceUrl ?: srcImage.imageUrl]
@@ -1793,6 +1816,53 @@ class WebServiceController {
             response.contentType = "application/gzip"
             def bos = new GZIPOutputStream(response.outputStream)
             imageService.exportDatasetMappingCSV(params.id, bos)
+            bos.flush()
+            bos.close()
+        }
+    }
+
+    @ApiOperation(
+            value = "Export CSV of URL to imageIdentifier mappings",
+            notes = """Exports the following fields in CSV:
+                image_identifier as "imageID"
+                identifier
+                audience
+                contributor
+                created
+                creator
+                description
+                format
+                license
+                publisher
+                references
+                rightsHolder
+                source
+                title
+                type
+            """,
+            nickname = "exportDataset/{dataResourceUid}",
+            produces = "application/gzip",
+            consumes = "application/json",
+            httpMethod = "GET",
+            response = Map.class,
+            tags = ["Export"]
+    )
+    @ApiResponses([
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Missing dataResourceUid parameter"),
+            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+    )
+    @ApiImplicitParams([
+            @ApiImplicitParam(name = "dataResourceUid", paramType = "path", required = true, value = "Data resource UID", dataType = "string")
+    ])
+    def exportDataset(){
+        if (!params.id){
+            renderResults([success: false, message: "Failed to store image!"], 400)
+        } else {
+            response.setHeader("Content-disposition", "attachment;filename=image-export-${params.id}.csv.gz")
+            response.contentType = "application/gzip"
+            def bos = new GZIPOutputStream(response.outputStream)
+            imageService.exportDatasetCSV(params.id, bos)
             bos.flush()
             bos.close()
         }

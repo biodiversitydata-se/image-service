@@ -24,6 +24,9 @@ import org.hibernate.FlushMode
 import org.springframework.web.multipart.MultipartFile
 import java.text.SimpleDateFormat
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 class ImageService {
 
@@ -37,6 +40,24 @@ class ImageService {
     def imageService
     def elasticSearchService
     def settingService
+
+    private final imageStoreLock = new Object()
+
+    final static List<String> SUPPORTED_UPDATE_FIELDS = [
+        "audience",
+        "contributor",
+        "created",
+        "creator",
+        "description",
+        "license",
+        "publisher",
+        "references",
+        "rights",
+        "rightsHolder",
+        "source",
+        "title",
+        "type"
+    ]
 
     private static Queue<BackgroundTask> _backgroundQueue = new ConcurrentLinkedQueue<BackgroundTask>()
     private static Queue<BackgroundTask> _tilingQueue = new ConcurrentLinkedQueue<BackgroundTask>()
@@ -117,13 +138,27 @@ class ImageService {
         return null
     }
 
-    Map batchUploadFromUrl(List<Map<String, String>> imageSources, String uploader) {
+    def getImageUrl(Map<String, String> imageSource){
+        if (imageSource.sourceUrl) return imageSource.sourceUrl
+        if (imageSource.imageUrl) return imageSource.imageUrl
+        imageSource.identifier
+    }
+
+    /**
+     * Batch update supporting bulk updates
+     *
+     * @param batch
+     * @param uploader
+     * @return
+     */
+    Map batchUpdate(List<Map<String, String>> batch, String uploader) {
         def results = [:]
         Image.withNewTransaction {
             sessionFactory.currentSession.setFlushMode(FlushMode.MANUAL)
             try {
-                imageSources.each { imageSource ->
-                    def imageUrl = (imageSource.sourceUrl ?: imageSource.imageUrl) as String
+                batch.each { imageSource ->
+
+                    def imageUrl = getImageUrl(imageSource) as String
                     if (imageUrl) {
                         Image image = null
                         if (imageUrl.startsWith("http")){
@@ -151,31 +186,15 @@ class ImageService {
                             }
                             results[imageUrl] = result
                         } else {
+
                             def metadataUpdated = false
 
-                            if (image.creator != imageSource.creator){
-                                image.creator = imageSource.creator
-                                metadataUpdated = true
-                            }
-                            if (image.title != imageSource.title){
-                                image.title = imageSource.title
-                                metadataUpdated = true
-                            }
-                            if (image.rightsHolder != imageSource.rightsHolder){
-                                image.rightsHolder = imageSource.rightsHolder
-                                metadataUpdated = true
-                            }
-                            if (image.rights != imageSource.rights){
-                                image.rights = imageSource.rights
-                                metadataUpdated = true
-                            }
-                            if (image.license != imageSource.license){
-                                image.license = imageSource.license
-                                metadataUpdated = true
-                            }
-                            if (image.description != imageSource.description){
-                                image.description = imageSource.description
-                                metadataUpdated = true
+                            SUPPORTED_UPDATE_FIELDS.each { updateField ->
+
+                                if (image[updateField] != imageSource[updateField]){
+                                    image[updateField] = imageSource[updateField]
+                                    metadataUpdated = true
+                                }
                             }
 
                             if (metadataUpdated){
@@ -197,7 +216,8 @@ class ImageService {
                 sessionFactory.currentSession.setFlushMode(FlushMode.AUTO)
             }
         }
-        return results
+
+        results
     }
 
     int getImageTaskQueueLength() {
@@ -249,7 +269,7 @@ class ImageService {
         }
     }
 
-    @Synchronized
+    @Synchronized("imageStoreLock")
     ImageStoreResult storeImageBytes(byte[] bytes, String originalFilename, long filesize, String contentType,
                           String uploaderId, Map metadata = [:]) {
 
@@ -266,6 +286,7 @@ class ImageService {
             StorageLocation sl = StorageLocation.get(defaultStorageLocationID)
 
             def imgDesc = imageStoreService.storeImage(bytes, sl, contentType)
+
             // Create the image record, and set the various attributes
             image = new Image(
                     imageIdentifier: imgDesc.imageIdentifier,
@@ -302,11 +323,12 @@ class ImageService {
         }
 
         if (!preExisting){
-            //update metadata
+
+            //update metadata stored in the `image` table
             metadata.each { kvp ->
                 def propertyName = hasImageCaseFriendlyProperty(image, kvp.key)
                 if (propertyName && kvp.value){
-                    if(!(propertyName in ["dateTaken", "dateUploaded", "id"])){
+                    if (!(propertyName in ["dateTaken", "dateUploaded", "id"])){
                         image[propertyName] = kvp.value
                     }
                 }
@@ -324,7 +346,6 @@ class ImageService {
 
         new ImageStoreResult(image, preExisting)
     }
-
 
     def hasImageCaseFriendlyProperty(Image image, String propertyName){
         if (!imagePropertyMap) {
@@ -518,16 +539,36 @@ class ImageService {
         int taskCount = 0
         BackgroundTask task = null
 
+        Integer batchThreads = settingService.getBackgroundTasksThreads()
+
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(batchThreads);
+
         while (taskCount < BACKGROUND_TASKS_BATCH_SIZE && (task = _backgroundQueue.poll()) != null) {
             if (task) {
                 try {
-                    task.execute()
+                    final BackgroundTask taskToRun = task
+                    executor.execute(new Runnable() {
+                        @Override
+                        void run() {
+                            taskToRun.execute()
+                        }
+                    });
                 } catch (Exception e){
                     log.error("Error executing task: " + task)
                     log.error("Error executing task: " + e.getMessage(), e)
                 }
                 taskCount++
             }
+        }
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException ex) {
+            log.error(ex.getMessage(), ex)
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -1109,6 +1150,19 @@ class ImageService {
         exportMappingForDatasetCSVToFile(datasetID).withInputStream { stream ->
             outputStream << stream
         }
+    }
+
+    def exportDatasetCSV(String datasetID, outputStream){
+        exportDatasetCSVToFile(datasetID).withInputStream { stream ->
+            outputStream << stream
+        }
+    }
+
+    File exportDatasetCSVToFile(String datasetID){
+        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
+        def exportFile = grailsApplication.config.imageservice.exportDir + "/images-export-${datasetID}.csv"
+        new Sql(dataSource).call("""{ call export_dataset(?) }""", [datasetID])
+        new File(exportFile)
     }
 
     File exportMappingForDatasetCSVToFile(String datasetID){

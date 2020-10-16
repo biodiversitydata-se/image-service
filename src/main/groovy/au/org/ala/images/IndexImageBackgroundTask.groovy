@@ -1,13 +1,13 @@
 package au.org.ala.images
 
 import com.opencsv.CSVReader
+import grails.gorm.transactions.Transactional
 import org.apache.log4j.Logger
 
 class IndexImageBackgroundTask extends BackgroundTask {
 
     private long _imageId
     private ElasticSearchService _elasticSearchService
-    private Logger log = Logger.getLogger(IndexImageBackgroundTask.class)
 
     IndexImageBackgroundTask(long imageId, ElasticSearchService elasticSearchService) {
         _imageId = imageId
@@ -15,6 +15,7 @@ class IndexImageBackgroundTask extends BackgroundTask {
     }
 
     @Override
+    @Transactional
     void execute() {
         def imageInstance = Image.get(_imageId)
         if (imageInstance) {

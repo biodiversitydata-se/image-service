@@ -16,7 +16,13 @@ class ImageMetadataPersistBackgroundTask extends BackgroundTask {
     String _originalFilename
     private Logger log = Logger.getLogger(ImageMetadataPersistBackgroundTask.class)
 
-    ImageMetadataPersistBackgroundTask(Long imageId, String imageIdentifier, String originalFilename, MetaDataSourceType metaDataSourceType, String uploaderId, ImageService imageService, ImageStoreService imageStoreService) {
+    ImageMetadataPersistBackgroundTask(Long imageId,
+                                       String imageIdentifier,
+                                       String originalFilename,
+                                       MetaDataSourceType metaDataSourceType,
+                                       String uploaderId,
+                                       ImageService imageService,
+                                       ImageStoreService imageStoreService) {
         _imageId = imageId
         _imageService = imageService
         _imageStoreService = imageStoreService

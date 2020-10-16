@@ -1,4 +1,4 @@
-create table storage_location
+create table IF NOT EXISTS storage_location
 (
     id bigserial primary key,
     version bigint not null,
@@ -16,13 +16,13 @@ create table storage_location
     base_path text
 );
 
-create index storage_location_class on storage_location (class);
+create index IF NOT EXISTS storage_location_class on storage_location (class);
 
 alter table image
-    add storage_location_id bigint;
+    add IF NOT EXISTS storage_location_id bigint;
 
 insert into storage_location (version, class, base_path, date_created, last_updated)
-values (0, 'au.org.ala.images.FileSystemStorageLocation', '${imageRoot}', default, default);
+values (0, 'au.org.ala.images.FileSystemStorageLocation', '${imageRoot}', default, default) ON CONFLICT DO NOTHING;
 
 update image set storage_location_id = (select id from storage_location limit 1);
 

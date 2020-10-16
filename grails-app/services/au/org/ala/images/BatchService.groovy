@@ -6,21 +6,21 @@ import org.apache.avro.generic.GenericDatumReader
 import org.apache.avro.generic.GenericRecord
 
 import java.security.MessageDigest
-import java.util.concurrent.Callable
-import java.util.concurrent.Future
-import java.util.concurrent.atomic.AtomicLong
+import java.time.Duration
+import java.time.Instant
 
 class BatchService {
 
     private final static Map<String, BatchStatus> _Batches = [:]
     public static final String LOADING = "LOADING"
-    public static final String NOT_LOADED = "NOT_LOADED"
+    public static final String STOPPED = "STOPPED"
     public static final String COMPLETE = "COMPLETE"
     public static final String PARTIALLY__COMPLETE = "PARTIALLY_COMPLETE"
     public static final String QUEUED = "QUEUED"
     public static final String WAITING__PROCESSING = "WAITING_PROCESSING"
     public static final String CORRUPT__AVRO__FILES = "CORRUPT_AVRO_FILES"
     public static final String INVALID = "INVALID"
+    public static final String UNZIPPED = "UNZIPPED"
 
     def imageService
     def settingService
@@ -121,7 +121,7 @@ class BatchService {
             File newDir = new File("/data/image-service/uploads/" + upload.getId() + "/")
             uploadedFile.getParentFile().renameTo(newDir)
             upload.filePath = newDir.getAbsolutePath() + "/" +  uploadedFile.getName();
-            upload.status = "UNZIPPED"
+            upload.status = UNZIPPED
             upload.save(flush:true)
 
             def batchFiles = []
@@ -138,7 +138,6 @@ class BatchService {
                         def result = validateAvro(avroFile)
                         batchFile.filePath = avroFile.getAbsolutePath()
                         batchFile.recordCount = result.recordCount
-                        batchFile.invalidRecords = result.invalidRecords
                         batchFile.status = batchFile.recordCount > 0 ? QUEUED : INVALID
                         batchFile.batchFileUpload = upload
                         batchFile.md5Hash = md5HashBatchFile
@@ -166,7 +165,6 @@ class BatchService {
         def inStream = new FileInputStream(avroFile)
         DataFileStream<GenericRecord> reader = new DataFileStream<>(inStream, new GenericDatumReader<GenericRecord>())
         long recordCount = 0
-        long invalidRecords = 0
 
         // process record by record
         while (reader.hasNext() ) {
@@ -175,14 +173,12 @@ class BatchService {
             def multimediaRecords = currRecord.get("multimediaItems");
             multimediaRecords.each { GenericRecord record ->
                 def identifier = record.get("identifier")
-                if (!identifier){
-                    invalidRecords++
-                } else {
+                if (identifier){
                     recordCount ++;
                 }
             }
         }
-        [recordCount: recordCount, invalidRecords: invalidRecords]
+        [recordCount: recordCount]
     }
 
     String generateMD5(final file) {
@@ -208,15 +204,14 @@ class BatchService {
     private boolean loadBatchFile(BatchFile batchFile) {
 
         log.info("Loading batch file: " + batchFile.filePath)
+        def start = Instant.now()
 
         def inStream = new FileInputStream(new File(batchFile.filePath))
         DataFileStream<GenericRecord> reader = new DataFileStream<>(inStream, new GenericDatumReader<GenericRecord>())
 
-        def batch = []
-        int count = 0
-
         def dataResourceUid = batchFile.batchFileUpload.dataResourceUid
 
+        int count = 0
         long newImageCount = 0
         long metadataUpdateCount = 0
 
@@ -229,38 +224,36 @@ class BatchService {
         while (reader.hasNext() && batchEnabled()){
 
             int batchSize = 0
+            def batch = []
 
             // read a batch of records
-            while (reader.hasNext() && batchSize < batchReadSize ) {
+            while (reader.hasNext() && batchSize < batchReadSize) {
                 GenericRecord currRecord = reader.next()
                 // Here we can add in data manipulation like anonymization etc
                 def multimediaRecords = currRecord.get("multimediaItems");
                 multimediaRecords.each { GenericRecord record ->
                     // check URL
-                    batch << [
-                        sourceUrl: record.get("identifier"),
-                        originalFilename: record.get("identifier"),
-                        dataResourceUid: dataResourceUid,
-                        creator: record.get("creator"),
-                        title: record.get("title"),
-                        rightsHolder: record.get("rightsHolder"),
-                        rights: record.get("rights"),
-                        license: record.get("license"),
-                        description: record.get("description")
-                    ]
-                    count ++;
+                    if (record.get("identifier")) {
+                        def recordMap =  [
+                                dataResourceUid : dataResourceUid,
+                                identifier      : record.get("identifier")
+                        ]
+
+                        ImageService.SUPPORTED_UPDATE_FIELDS.each { updateField ->
+                            recordMap[updateField] = record.get(updateField)
+                        }
+
+                        batch << recordMap
+                        count++;
+                    }
                 }
                 batchSize ++
             }
-
             List<Map<String, Object>> results = Collections.synchronizedList(new ArrayList<Map<String, Object>>());
 
             GParsPool.withPool(batchThreads) {
                 batch.eachParallel { image ->
-                    def result = execute(image, "test")
-                    if (result){
-                        results.add(result)
-                    }
+                    results << execute(image, "test")
                     if (batchThrottleInMillis > 0){
                         Thread.sleep(batchThrottleInMillis)
                     }
@@ -282,6 +275,7 @@ class BatchService {
             batchFile.metadataUpdates = metadataUpdateCount
             batchFile.newImages = newImageCount
             batchFile.processedCount = count
+            batchFile.timeTakenToLoad = Duration.between(start, Instant.now()).toMillis() / 1000
             batchFile.save(flush:true)
 
             completed = !reader.hasNext()
@@ -297,31 +291,31 @@ class BatchService {
 
     Map execute(_imageSource,  String _userId) {
 
-        def results = imageService.batchUploadFromUrl([_imageSource], _userId)
-        def newImage = results[_imageSource.sourceUrl ?: _imageSource.imageUrl]
-        if (newImage && newImage.success && newImage.image) {
-            if (newImage.metadataUpdated) {
-                imageService.scheduleImageIndex(newImage.image.id)
+        def results = imageService.batchUpdate([_imageSource], _userId)
+        def imageUpdateResult = results[imageService.getImageUrl(_imageSource)]
+        if (imageUpdateResult && imageUpdateResult.success && imageUpdateResult.image) {
+            if (imageUpdateResult.metadataUpdated) {
+                imageService.scheduleImageIndex(imageUpdateResult.image.id)
             }
 
-            if (!newImage.alreadyStored){
-                imageService.scheduleArtifactGeneration(newImage.image.id, _userId)
-                imageService.scheduleImageIndex(newImage.image.id)
+            if (!imageUpdateResult.alreadyStored){
+                imageService.scheduleArtifactGeneration(imageUpdateResult.image.id, _userId)
+                imageService.scheduleImageIndex(imageUpdateResult.image.id)
                 //Only run for new images......
-//                imageService.scheduleImageMetadataPersist(
-//                        newImage.image.id,
-//                        newImage.image.imageIdentifier,
-//                        newImage.image.originalFilename,
-//                        MetaDataSourceType.SystemDefined,
-//                        _userId)
+                imageService.scheduleImageMetadataPersist(
+                        imageUpdateResult.image.id,
+                        imageUpdateResult.image.imageIdentifier,
+                        imageUpdateResult.image.originalFilename,
+                        MetaDataSourceType.SystemDefined,
+                        _userId)
             }
         }
-        newImage
+        imageUpdateResult
     }
 
     def initialize(){
         BatchFile.findAllByStatus(LOADING).each {
-            it.setStatus(NOT_LOADED)
+            it.setStatus(STOPPED)
             it.save(flush:true)
         }
     }
@@ -359,16 +353,23 @@ class BatchService {
             batchFile.batchFileUpload.save(flush:true)
 
             //load batch file
+            def start = Instant.now()
             def complete = loadBatchFile(batchFile)
+            def minsTaken = Duration.between(start, Instant.now()).toMillis()
 
             Date now = new Date()
             if (complete) {
                 batchFile.status = COMPLETE
                 batchFile.lastUpdated = now
                 batchFile.dateCompleted = now
+                if (minsTaken)
+                    batchFile.timeTakenToLoad = minsTaken / 1000
+                else
+                    batchFile.timeTakenToLoad = 0
+
                 batchFile.save(flush: true)
             } else {
-                batchFile.status = NOT_LOADED
+                batchFile.status = STOPPED
                 batchFile.lastUpdated = now
                 batchFile.save(flush: true)
             }
@@ -415,10 +416,10 @@ class BatchService {
     }
 
     def getUploads(){
-        BatchFileUpload.findAll()
+        BatchFileUpload.findAll([sort:'id', order: 'desc'])
     }
 
     def getFiles(){
-        BatchFile.findAll()
+        BatchFile.findAll([sort:'id', order: 'desc'])
     }
 }

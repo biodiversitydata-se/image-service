@@ -24,6 +24,11 @@ class SettingService {
         return getBoolSetting()
     }
 
+    @ImageServiceSetting(name = 'background.tasks.threads', description = "Number of threads the service perform thumbnailing and ingesting", defaultValue = "3")
+    Integer getBackgroundTasksThreads() {
+        return getIntSetting()
+    }
+
     @ImageServiceSetting(name = 'outsourced.task.checking.enabled', description = "Should the service check the status of outsourced tiling jobs", defaultValue = "true")
     boolean getOutsourcedTaskCheckingEnabled() {
         return getBoolSetting()
@@ -44,7 +49,7 @@ class SettingService {
         return getLongSetting()
     }
 
-    @ImageServiceSetting(name = 'batch.service.threads', description = "Number of download threads to use", defaultValue = '3')
+    @ImageServiceSetting(name = 'batch.service.threads', description = "Number of download threads to use", defaultValue = '5')
     Long getBatchServiceThreads() {
         return getLongSetting()
     }
@@ -54,7 +59,7 @@ class SettingService {
         return getLongSetting()
     }
 
-    @ImageServiceSetting(name = 'batch.service.read.size', description = "Number of records to read in single batch", defaultValue = '10')
+    @ImageServiceSetting(name = 'batch.service.read.size', description = "Number of records to read in single batch", defaultValue = '250')
     Long getBatchServiceReadSize() {
         return getLongSetting()
     }

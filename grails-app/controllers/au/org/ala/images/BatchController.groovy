@@ -70,7 +70,6 @@ class BatchController {
             response.files << [
                     status: it.status,
                     file: it.filePath,
-                    invalidRecords: it.invalidRecords,
                     recordCount: it.recordCount
             ]
         }
@@ -152,7 +151,6 @@ class BatchController {
             response.files << [
                     status: it.status,
                     file: it.filePath,
-                    invalidRecords: it.invalidRecords,
                     recordCount: it.recordCount
             ]
         }

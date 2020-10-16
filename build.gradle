@@ -57,6 +57,7 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-actuator"
     provided "org.springframework.boot:spring-boot-starter-tomcat"
     compile "org.grails:grails-web-boot"
+    compile group: 'org.grails.plugins', name: 'grails-pretty-time', version: '4.0.0'
 
     compile 'xml-apis:xml-apis:1.4.01'
     compile 'org.grails.plugins:csv:1.0.1'
