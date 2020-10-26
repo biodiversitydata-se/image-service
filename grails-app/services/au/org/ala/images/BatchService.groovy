@@ -253,7 +253,7 @@ class BatchService {
 
             GParsPool.withPool(batchThreads) {
                 batch.eachParallel { image ->
-                    results << execute(image, "test")
+                    results << execute(image, "batch-update")
                     if (batchThrottleInMillis > 0){
                         Thread.sleep(batchThrottleInMillis)
                     }
@@ -323,7 +323,7 @@ class BatchService {
     def processNextInQueue(){
 
         if (!settingService.getBatchServiceProcessingEnabled()){
-            log.info("Batch service is currently disabled")
+            log.debug("Batch service is currently disabled")
             return
         }
 
@@ -333,7 +333,7 @@ class BatchService {
             return
         }
 
-        log.info("Running batch file load job")
+        log.debug("Checking batch file load job...")
 
         // Read a job from BatchFile - oldest file that is set to "READY_TO_LOAD"
         BatchFile batchFile = BatchFile.findByStatus(QUEUED, [sort: 'dateCreated', order: 'asc'])
@@ -383,6 +383,8 @@ class BatchService {
                 batchFile.batchFileUpload.status = PARTIALLY__COMPLETE
             }
             batchFile.batchFileUpload.status = allComplete ? COMPLETE : PARTIALLY__COMPLETE
+        } else {
+            log.debug("No jobs to run.")
         }
     }
 

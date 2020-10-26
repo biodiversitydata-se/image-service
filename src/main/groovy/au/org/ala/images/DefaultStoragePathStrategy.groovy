@@ -44,7 +44,7 @@ class DefaultStoragePathStrategy implements StoragePathStrategy {
             // use system separator instead
             result = ensureAbsoluteIfRequired(FilenameUtils.normalize(l.join(File.separator)), File.separator)
         }
-        log.warn('Generated path {}', result)
+        log.debug('Generated path {}', result)
         return result
     }
 

@@ -282,6 +282,7 @@ elasticsearch:
   maxOffset: 10000
   maxPageSize: 200
   defaultPageSize: 10
+  batchIndexSize: 1000
 
 # External links
 collectory:

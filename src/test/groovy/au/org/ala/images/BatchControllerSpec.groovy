@@ -12,7 +12,5 @@ class BatchControllerSpec extends Specification implements ControllerUnitTest<Ba
     }
 
     void "test something"() {
-        expect:"fix me"
-            true == false
     }
 }

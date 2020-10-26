@@ -12,7 +12,5 @@ class BatchFileUploadSpec extends Specification implements DomainUnitTest<BatchF
     }
 
     void "test something"() {
-        expect:"fix me"
-            true == false
     }
 }

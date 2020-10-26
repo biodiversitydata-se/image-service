@@ -1,5 +1,6 @@
 package au.org.ala.images
 
+import au.ala.org.ws.security.RequireApiKey
 import grails.converters.JSON
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiImplicitParam
@@ -7,6 +8,7 @@ import io.swagger.annotations.ApiImplicitParams
 import io.swagger.annotations.ApiOperation
 import io.swagger.annotations.ApiResponse
 import io.swagger.annotations.ApiResponses
+import io.swagger.annotations.Authorization
 import org.apache.commons.io.FileUtils
 
 @Api(value = "/ws/batch")
@@ -23,7 +25,8 @@ class BatchController {
             consumes = "application/gzip",
             httpMethod = "POST",
             response = Map.class,
-            tags = ["BatchUpdate"]
+            tags = ["BatchUpdate"],
+            authorizations = @Authorization(value="apiKey")
     )
     @ApiResponses([
             @ApiResponse(code = 200, message = "OK"),
@@ -33,6 +36,7 @@ class BatchController {
     @ApiImplicitParams([
             @ApiImplicitParam(name = "dataResourceUid", paramType = "path", required = true, value = "Data resource UID", dataType = "string")
     ])
+    @RequireApiKey
     def upload(){
 
         //multi part upload

@@ -578,9 +578,25 @@ class WebServiceController {
         }
         results.description = image.description ?: ''
         results.title = image.title ?: ''
+        results.type = image.type ?: ''
+        results.audience = image.audience ?: ''
+        results.references = image.references ?: ''
+        results.publisher = image.publisher ?: ''
+        results.contributor = image.contributor ?: ''
+        results.created = image.created ?: ''
+        results.source = image.source ?: ''
         results.creator = image.creator ?: ''
         results.license = image.license ?: ''
-        results.recognisedLicence = image.recognisedLicense
+        if (image.recognisedLicense) {
+            results.recognisedLicence = [
+                'acronym' : image.recognisedLicense.acronym,
+                'name' : image.recognisedLicense.name,
+                'url' : image.recognisedLicense.url,
+                'imageUrl' : image.recognisedLicense.imageUrl
+            ]
+        } else {
+            results.recognisedLicence = null
+        }
         results.dataResourceUid = image.dataResourceUid ?: ''
         results.occurrenceID = image.occurrenceId ?: ''
 
