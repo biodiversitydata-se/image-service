@@ -200,7 +200,13 @@ class AdminController {
     }
 
     def batchUploads(){
-        [results: batchService.getUploads(), files: batchService.getFiles(), batchServiceProcessingEnabled: settingService.getBatchServiceProcessingEnabled()]
+        [results: batchService.getUploads(), files: batchService.getNonCompleteFiles(), batchServiceProcessingEnabled: settingService.getBatchServiceProcessingEnabled()]
+    }
+
+    def batchUpload(){
+        BatchFileUpload batchFileUpload = batchService.getBatchFileUpload(params.id)
+        [batchFileUpload: batchFileUpload, files: batchService.getFilesForUpload(params.id),
+         batchServiceProcessingEnabled: settingService.getBatchServiceProcessingEnabled()]
     }
 
     def batchReloadFile(){
@@ -493,7 +499,7 @@ class AdminController {
 
     def clearFileQueue(){
         batchService.clearFileQueue()
-        flash.message = "File queue cleared";
+        flash.message = "File queue cleared.";
         redirect(action:'batchUploads', message: flash.message)
     }
 

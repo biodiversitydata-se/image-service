@@ -17,34 +17,21 @@
 </g:if>
 
 <h2>
-    Batch processing
+    Batch processing for upload ${batchFileUpload.id} : ${batchFileUpload.dataResourceUid}
 </h2>
+<p>
+Individual file details for the upload ${batchFileUpload.id} received on upload ${batchFileUpload.dateCreated}
+</p>
 <div class="btn-toolbar">
     <div class="btn-group mr-2 pull-right" role="group" aria-label="First group">
         <button type="button" class="btn btn-default" data-toggle="modal" data-target="#helpModal">
             <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
             Help
         </button>
-        <g:link controller="admin" action="clearUploads" class="btn-default btn">
-            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-            Purge all non-active uploads
+        <g:link controller="admin" action="batchUploads" class="btn-default btn">
+            <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+            Back to batch uploads
         </g:link>
-        <g:link controller="admin" action="clearFileQueue" class="btn-default btn">
-            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-            Purge all non-active from file queue
-        </g:link>
-    <g:if test="${batchServiceProcessingEnabled}">
-        <g:link controller="admin" action="disableBatchProcessing" class="btn-primary btn">
-            <span class="glyphicon glyphicon-stop" aria-hidden="true"></span>
-            Disable batch processing
-        </g:link>
-    </g:if>
-    <g:else>
-        <g:link controller="admin" action="enableBatchProcessing" class="btn-info btn">
-            <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
-            Enable batch processing
-        </g:link>
-    </g:else>
     </div>
 </div>
 
@@ -96,13 +83,11 @@
     </div>
 </div>
 
-<h3>File queue</h3>
+<h3>Files</h3>
 <g:if test="${files}">
     <table class="table table-condensed table-bordered ">
     <thead class="thead-dark">
-    <th>batchID</th>
     <th>fileID</th>
-    <th>dataResourceUid</th>
     <th>recordCount</th>
     <th>processedCount</th>
     <th>newImages</th>
@@ -117,9 +102,7 @@
     <tbody>
     <g:each in="${files}" var="batchFile">
         <tr class="${batchFile.status == 'LOADING' ? 'active' : ''} ${batchFile.status == 'COMPLETE' ? 'success' : ''} ${batchFile.status == 'QUEUED' ? 'warning' : ''} ${batchFile.status == 'STOPPED' ? 'danger' : ''}">
-            <td>${batchFile.batchFileUpload.id}</td>
             <td>${batchFile.id}</td>
-            <td>${batchFile.batchFileUpload.dataResourceUid}</td>
             <td>${batchFile.recordCount}</td>
             <td>${batchFile.processedCount}</td>
             <td>${batchFile.newImages}</td>
@@ -160,43 +143,5 @@
     Batch file processing will appear here when available.
 </g:else>
 
-<h3>Uploads</h3>
-<p>
-    Uploads with a <b>COMPLETE</b> will be removed from this list in ${grailsApplication.config.purgeCompletedAgeInDays}
-days.
-</p>
-<g:if test="${results}">
-    <table class="table table-condensed table-bordered ">
-    <thead class="thead-dark">
-        <th>batchID</th>
-        <th>files</th>
-        <th>dataResourceUid</th>
-        <th>dateCreated</th>
-        <th>dateCompleted</th>
-        <th>status</th>
-        <th></th>
-    </thead>
-    <tbody>
-    <g:each in="${results}" var="batchFileUpload">
-        <tr class="${batchFileUpload.status == 'COMPLETE' ? 'success' : 'warning'}">
-            <td>${batchFileUpload.id}</td>
-            <td>${batchFileUpload.batchFiles.size()}</td>
-            <td>${batchFileUpload.dataResourceUid}</td>
-            <td><prettytime:display date="${batchFileUpload.dateCreated}" /></td>
-            <td><prettytime:display date="${batchFileUpload.dateCompleted}" /></td>
-            <td>${batchFileUpload.status}</td>
-            <td>
-                <g:link class="btn btn-default btn-sm" controller="admin" action="batchUpload" id="${batchFileUpload.id}">
-                View details
-                </g:link>
-            </td>
-        </tr>
-    </g:each>
-    </tbody>
-</table>
-</g:if>
-<g:else>
-    Batch details will appear here when available.
-</g:else>
 </body>
 </html>

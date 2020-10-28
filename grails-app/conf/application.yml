@@ -284,9 +284,17 @@ elasticsearch:
   defaultPageSize: 10
   batchIndexSize: 1000
 
+# Number of days to wait before purging completed batch jobs
+purgeCompletedAgeInDays: 3
+
+# The URLs to recognise as image service URL for the purposes of recognising incoming
+# URLs for images (to avoid re-downloading the images)
+imageServiceUrls: ["http://dev.ala.org.au:8080","https://images.ala.org.au"]
+
 # External links
 collectory:
     baseURL: "https://collections.ala.org.au"
 biocache:
     baseURL: "https://biocache.ala.org.au"
+
 

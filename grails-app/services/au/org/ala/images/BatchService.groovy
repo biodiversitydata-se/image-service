@@ -8,6 +8,7 @@ import org.apache.avro.generic.GenericRecord
 import java.security.MessageDigest
 import java.time.Duration
 import java.time.Instant
+import java.time.ZonedDateTime
 
 class BatchService {
 
@@ -24,6 +25,7 @@ class BatchService {
 
     def imageService
     def settingService
+    def grailsApplication
 
     String createNewBatch() {
         BatchStatus status = new BatchStatus()
@@ -410,10 +412,8 @@ class BatchService {
     }
 
     def clearUploads(){
-        BatchFileUpload.findAll().each {
-            if (it.batchFiles.every {it.status != LOADING }){
-                it.delete(flush:true)
-            }
+        BatchFileUpload.findAllByStatusNotEqual(LOADING).each {
+            it.delete(flush:true)
         }
     }
 
@@ -421,7 +421,31 @@ class BatchService {
         BatchFileUpload.findAll([sort:'id', order: 'desc'])
     }
 
+    def getNonCompleteFiles(){
+        BatchFile.findAllByStatusNotEqual(COMPLETE, [sort:'id', order: 'desc'])
+    }
+
+
+    def getFilesForUpload(uploadId){
+        BatchFileUpload upload = BatchFileUpload.findById(uploadId)
+        if (upload) {
+            BatchFile.findAllByBatchFileUpload(upload, [sort: 'id', order: 'desc'])
+        } else {
+            []
+        }
+    }
+
     def getFiles(){
         BatchFile.findAll([sort:'id', order: 'desc'])
+    }
+
+    def purgeCompletedJobs(){
+        ZonedDateTime now = ZonedDateTime.now()
+        ZonedDateTime threeDaysAgo = now.minusDays(grailsApplication.config.purgeCompletedAgeInDays.toInteger())
+        BatchFile.findAllByStatus(COMPLETE).each {
+            if (it.dateCompleted.toInstant().isBefore(threeDaysAgo.toInstant())) {
+                it.delete(flush: true)
+            }
+        }
     }
 }

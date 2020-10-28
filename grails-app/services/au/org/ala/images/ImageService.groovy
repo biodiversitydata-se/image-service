@@ -145,6 +145,16 @@ class ImageService {
         imageSource.identifier
     }
 
+    boolean isImageServiceUrl(String url){
+        boolean isRecognised = false
+        grailsApplication.config.imageServiceUrls.each { imageServiceUrl ->
+            if (url.startsWith(imageServiceUrl)) {
+                isRecognised = true
+            }
+        }
+        isRecognised
+    }
+
     /**
      * Batch update supporting bulk updates
      *
@@ -162,10 +172,31 @@ class ImageService {
                     def imageUrl = getImageUrl(imageSource) as String
                     if (imageUrl) {
                         Image image = null
-                        if (imageUrl.startsWith("http")){
-                            image = Image.findByOriginalFilename(imageUrl)
-                        } else {
-                            image = Image.findByOriginalFilenameAndDataResourceUid(imageUrl, imageSource.dataResourceUid)
+
+                        // is it as image service URL?
+                        // if so, no need to load the image, use the identifier.....
+                        if (isImageServiceUrl(imageUrl)){
+
+                            if (imageUrl.contains("=")) {
+                                //retrieve the image ID
+                                def imageID = imageUrl.substring(imageUrl.lastIndexOf("=") + 1)
+                                if (imageID) {
+                                    image = Image.findByImageIdentifier(imageID)
+                                }
+                            } else {
+                                def imageID = imageUrl.substring(imageUrl.lastIndexOf("/") + 1)
+                                if (imageID) {
+                                    image = Image.findByImageIdentifier(imageID)
+                                }
+                            }
+                        }
+
+                        if (!image){
+                            if (imageUrl.startsWith("http")){
+                                image = Image.findByOriginalFilename(imageUrl)
+                            } else {
+                                image = Image.findByOriginalFilenameAndDataResourceUid(imageUrl, imageSource.dataResourceUid)
+                            }
                         }
 
                         if (!image) {
