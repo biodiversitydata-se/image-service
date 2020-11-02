@@ -109,7 +109,7 @@ abstract class FlybernateSpec extends Specification {
      * @return The configuration
      */
     static Map getConfiguration() { // changed to static
-        Collections.singletonMap(Settings.SETTING_DB_CREATE, "validate") // CHANGED from 'create-drop' to 'validate'
+        Collections.singletonMap(Settings.SETTING_DB_CREATE,  (Object) "validate") // CHANGED from 'create-drop' to 'validate'
     }
 
     /**
