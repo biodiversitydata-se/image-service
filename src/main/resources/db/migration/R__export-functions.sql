@@ -72,3 +72,74 @@ BEGIN
         TO '${exportRoot}/images-index.csv' WITH CSV DELIMITER '$' HEADER;
 END;
 $$ LANGUAGE plpgsql;
+
+--  Function used for exporting metadata for images associated with a dataset
+CREATE OR REPLACE FUNCTION export_dataset(uid varchar) RETURNS void AS $$
+DECLARE
+    output_file CONSTANT varchar := CONCAT(CONCAT( '${exportRoot}/images-export-', uid), '.csv');
+BEGIN
+    EXECUTE format ('
+    COPY
+        (
+        select
+            image_identifier as "imageID",
+            original_filename as "identifier",
+            audience,
+            contributor,
+            created,
+            creator,
+            description,
+            mime_type as "format",
+            license,
+            publisher,
+            dc_references as "references",
+            rights_holder  as "rightsHolder",
+            source,
+            title,
+            type
+            from image i
+            where data_resource_uid = %L
+        )
+    TO %L (FORMAT CSV)'
+        , uid, output_file);
+END;
+$$ LANGUAGE plpgsql;
+
+--  Function used for exporting mapping of URL -> imageID for a dataset
+CREATE OR REPLACE FUNCTION export_dataset_mapping(uid varchar) RETURNS void AS $$
+DECLARE
+    output_file CONSTANT varchar := CONCAT(CONCAT( '${exportRoot}/images-mapping-', uid), '.csv');
+BEGIN
+    EXECUTE format ('
+    COPY
+        (
+        select
+            image_identifier as "imageID",
+            original_filename as "url"
+            from image i
+            where data_resource_uid = %L
+        )
+    TO %L (FORMAT CSV)'
+        , uid, output_file);
+END;
+$$ LANGUAGE plpgsql;
+
+--  Function used for exporting mapping of URL -> imageID for all dataset
+CREATE OR REPLACE FUNCTION export_mapping() RETURNS void AS $$
+DECLARE
+    output_file CONSTANT varchar :=  '${exportRoot}/images-mapping.csv';
+BEGIN
+    EXECUTE format ('
+    COPY
+        (
+        select
+            data_resource_uid,
+            image_identifier as "imageID",
+            original_filename as "url"
+            from image i
+            where data_resource_uid is NOT NULL
+        )
+    TO %L (FORMAT CSV)'
+        , output_file);
+END;
+$$ LANGUAGE plpgsql;
