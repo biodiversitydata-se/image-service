@@ -127,10 +127,6 @@ environments:
                 registerMbeans: true
                 connectionTimeout: 5000
     test:
-        grails:
-            config:
-                locations:
-                    - ~/image-service/test-image-service-config.yml
         flyway:
             baselineOnMigrate: false
         dataSource:
