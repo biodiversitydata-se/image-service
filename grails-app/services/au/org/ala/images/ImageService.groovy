@@ -41,6 +41,7 @@ class ImageService {
     def imageService
     def elasticSearchService
     def settingService
+    def collectoryService
 
     private final imageStoreLock = new Object()
 
@@ -1107,8 +1108,71 @@ class ImageService {
         return image
     }
 
-    def UUID_PATTERN = ~/\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b/
 
+    def addImageInfoToMap(Image image, Map results, Boolean includeTags, Boolean includeMetadata) {
+
+        results.imageIdentifier = image.imageIdentifier
+        results.mimeType = image.mimeType
+        results.originalFileName = image.originalFilename
+        results.sizeInBytes = image.fileSize
+        results.rights = image.rights ?: ''
+        results.rightsHolder = image.rightsHolder ?: ''
+        results.dateUploaded = image.dateUploaded ? image.dateUploaded.format( "yyyy-MM-dd HH:mm:ss") : null
+        results.dateTaken = image.dateTaken ? image.dateTaken.format( "yyyy-MM-dd HH:mm:ss") : null
+        if (results.mimeType && results.mimeType.startsWith('image')){
+            results.imageUrl = getImageUrl(image.imageIdentifier)
+            results.tileUrlPattern = "${getImageTilesUrlPattern(image.imageIdentifier)}"
+            results.mmPerPixel = image.mmPerPixel ?: ''
+            results.height = image.height
+            results.width = image.width
+            results.tileZoomLevels = image.zoomLevels ?: 0
+        }
+        results.description = image.description ?: ''
+        results.title = image.title ?: ''
+        results.type = image.type ?: ''
+        results.audience = image.audience ?: ''
+        results.references = image.references ?: ''
+        results.publisher = image.publisher ?: ''
+        results.contributor = image.contributor ?: ''
+        results.created = image.created ?: ''
+        results.source = image.source ?: ''
+        results.creator = image.creator ?: ''
+        results.license = image.license ?: ''
+        if (image.recognisedLicense) {
+            results.recognisedLicence = [
+                    'acronym' : image.recognisedLicense.acronym,
+                    'name' : image.recognisedLicense.name,
+                    'url' : image.recognisedLicense.url,
+                    'imageUrl' : image.recognisedLicense.imageUrl
+            ]
+        } else {
+            results.recognisedLicence = null
+        }
+        results.dataResourceUid = image.dataResourceUid ?: ''
+        results.occurrenceID = image.occurrenceId ?: ''
+
+        if (collectoryService) {
+            collectoryService.addMetadataForResource(results)
+        }
+
+        if (includeTags) {
+            results.tags = []
+            def imageTags = ImageTag.findAllByImage(image)
+            imageTags?.each { imageTag ->
+                results.tags << imageTag.tag.path
+            }
+        }
+
+        if (includeMetadata) {
+            results.metadata = []
+            def metaDataList = ImageMetaDataItem.findAllByImage(image)
+            metaDataList?.each { md ->
+                results.metadata << [key: md.name, value: md.value, source: md.source]
+            }
+        }
+    }
+
+    def UUID_PATTERN = ~/\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b/
 
     def getImageGUIDFromParams(params) {
 

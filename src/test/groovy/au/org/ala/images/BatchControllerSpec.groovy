@@ -8,9 +8,14 @@ class BatchControllerSpec extends Specification implements ControllerUnitTest<Ba
     def setup() {
     }
 
-    def cleanup() {
-    }
-
-    void "test something"() {
-    }
+//    def "test avro zip file upload"() {
+//        setup:
+//        params.path = '../../../etc/shadow'
+//
+//        when:
+//        controller.serve()
+//
+//        then:
+//        response.status == 400
+//    }
 }

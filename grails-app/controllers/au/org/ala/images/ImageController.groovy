@@ -564,8 +564,10 @@ class ImageController {
             json {
                 response.addHeader("Access-Control-Allow-Origin", "")
                 def imageInstance = imageService.getImageFromParams(params)
-                if(imageInstance) {
-                    def jsonStr = imageInstance as JSON
+                if (imageInstance) {
+                    def payload = [:]
+                    imageService.addImageInfoToMap(imageInstance, payload, false, false)
+                    def jsonStr = payload as JSON
                     if (params.callback) {
                         response.setContentType("text/javascript")
                         render("${params.callback}(${jsonStr})")
@@ -589,7 +591,6 @@ class ImageController {
                 }
             }
         }
-
     }
 
     private def getImageModel(Image image){

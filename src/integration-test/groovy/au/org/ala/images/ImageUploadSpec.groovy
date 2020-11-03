@@ -34,6 +34,7 @@ class ImageUploadSpec extends Specification {
     void "test home page"() {
         when:
         RestResponse resp = rest.get("${baseUrl}")
+        println(resp.status)
         then:
         resp.status == 200
     }

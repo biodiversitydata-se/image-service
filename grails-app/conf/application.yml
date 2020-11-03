@@ -86,13 +86,6 @@ grails:
 server:
     contextPath: ''
 
-environments:
-    test:
-        grails:
-            config:
-                locations:
-                    - ~/image-service/test-image-service-config.yml
-
 ---
 flyway:
     enabled: false

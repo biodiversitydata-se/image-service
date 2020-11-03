@@ -559,66 +559,6 @@ class WebServiceController {
         }
     }
 
-    private addImageInfoToMap(Image image, Map results, Boolean includeTags, Boolean includeMetadata) {
-
-        results.mimeType = image.mimeType
-        results.originalFileName = image.originalFilename
-        results.sizeInBytes = image.fileSize
-        results.rights = image.rights ?: ''
-        results.rightsHolder = image.rightsHolder ?: ''
-        results.dateUploaded = formatDate(date: image.dateUploaded, format: "yyyy-MM-dd HH:mm:ss")
-        results.dateTaken = formatDate(date: image.dateTaken, format: "yyyy-MM-dd HH:mm:ss")
-        if (results.mimeType && results.mimeType.startsWith('image')){
-            results.imageUrl = imageService.getImageUrl(image.imageIdentifier)
-            results.tileUrlPattern = "${imageService.getImageTilesUrlPattern(image.imageIdentifier)}"
-            results.mmPerPixel = image.mmPerPixel ?: ''
-            results.height = image.height
-            results.width = image.width
-            results.tileZoomLevels = image.zoomLevels ?: 0
-        }
-        results.description = image.description ?: ''
-        results.title = image.title ?: ''
-        results.type = image.type ?: ''
-        results.audience = image.audience ?: ''
-        results.references = image.references ?: ''
-        results.publisher = image.publisher ?: ''
-        results.contributor = image.contributor ?: ''
-        results.created = image.created ?: ''
-        results.source = image.source ?: ''
-        results.creator = image.creator ?: ''
-        results.license = image.license ?: ''
-        if (image.recognisedLicense) {
-            results.recognisedLicence = [
-                'acronym' : image.recognisedLicense.acronym,
-                'name' : image.recognisedLicense.name,
-                'url' : image.recognisedLicense.url,
-                'imageUrl' : image.recognisedLicense.imageUrl
-            ]
-        } else {
-            results.recognisedLicence = null
-        }
-        results.dataResourceUid = image.dataResourceUid ?: ''
-        results.occurrenceID = image.occurrenceId ?: ''
-
-        collectoryService.addMetadataForResource(results)
-
-        if (includeTags) {
-            results.tags = []
-            def imageTags = ImageTag.findAllByImage(image)
-            imageTags?.each { imageTag ->
-                results.tags << imageTag.tag.path
-            }
-        }
-
-        if (includeMetadata) {
-            results.metadata = []
-            def metaDataList = ImageMetaDataItem.findAllByImage(image)
-            metaDataList?.each { md ->
-                results.metadata << [key: md.name, value: md.value, source: md.source]
-            }
-        }
-    }
-
     @ApiOperation(
             value = "Get Image Details - optionally include tags and other metadata (e.g. EXIF)",
             nickname = "image/{imageID}",
@@ -644,7 +584,7 @@ class WebServiceController {
         def image = Image.findByImageIdentifier(imageId as String, [ cache: true])
         if (image) {
             results.success = true
-            addImageInfoToMap(image, results, params.boolean("includeTags"), params.boolean("includeMetadata"))
+            imageService.addImageInfoToMap(image, results, params.boolean("includeTags"), params.boolean("includeMetadata"))
             renderResults(results)
         } else {
             results["message"] = "image id not found"
@@ -675,7 +615,7 @@ class WebServiceController {
         if (image) {
             results.success = true
             results.data = [:]
-            addImageInfoToMap(image, results.data, false, false)
+            imageService.addImageInfoToMap(image, results.data, false, false)
             results.link = createLink(controller: "image", action:'details', id: image.id)
             results.linkText = "Image details..."
             results.title = "Image properties"
@@ -1296,6 +1236,8 @@ class WebServiceController {
                     metadata["tilesUrlPattern"]  = imageService.getImageTilesUrlPattern(metadata.imageIdentifier)
                     metadata.remove("fileSize")
                     metadata.remove("zoomLevels")
+                    metadata.remove("storageLocationId")
+                    metadata.remove("storageLocation")
                 }
             }
 
