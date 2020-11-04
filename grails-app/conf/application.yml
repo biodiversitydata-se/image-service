@@ -157,8 +157,8 @@ environments:
             logSql: false
             embeddedPort: 5432
             url: jdbc:postgresql://localhost/images_test?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
-            username: "images"
-            password: "images"
+            username: "postgres"
+            password: "postgres"
             type: "com.zaxxer.hikari.HikariDataSource"
             properties:
                 maximumPoolSize: 30
