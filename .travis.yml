@@ -8,6 +8,7 @@ branches:
     - develop
     - /^feature\/.*$/
 services:
+  - postgresql
   - docker
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
@@ -19,6 +20,7 @@ cache:
     - $HOME/.gradle/wrapper/
 
 before_install:
+  - psql -c 'create database images-test;' -U postgres
   - docker-compose -f elastic.yml up -d
   - 'export GRADLE_OPTS="-Dgrails.env=travis"'
 

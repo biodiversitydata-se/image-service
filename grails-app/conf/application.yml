@@ -109,7 +109,6 @@ dataSource:
 environments:
     development:
         dataSource:
-            driverClassName: "org.postgresql.Driver"
             logSql: false
             url: jdbc:postgresql://localhost/images?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
             username: "images"
@@ -137,15 +136,13 @@ environments:
             exportDir: '/tmp/image-service/exports'
     travis:
         flyway:
-            baselineOnMigrate: false
+            baselineOnMigrate: true
         dataSource:
-            embeddedPostgres: true
             pooled: true
             jmxExport: true
-            embeddedPort: 6543
             username: postgres
             password: postgres
-            url: jdbc:postgresql://localhost:6543/postgres?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
+            url: jdbc:postgresql://localhost/images-test?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
         imageservice:
             imagestore:
                 root: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-store'
@@ -285,5 +282,4 @@ collectory:
     baseURL: "https://collections.ala.org.au"
 biocache:
     baseURL: "https://biocache.ala.org.au"
-
 
