@@ -142,7 +142,7 @@ environments:
             jmxExport: true
             username: postgres
             password: postgres
-            url: jdbc:postgresql://localhost/images-test?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
+            url: jdbc:postgresql://localhost/images?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
         imageservice:
             imagestore:
                 root: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-store'
