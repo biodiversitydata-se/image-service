@@ -37,12 +37,12 @@ import spock.lang.Specification
 abstract class FlybernateSpec extends Specification {
 
     @ClassRule @Shared SingleInstancePostgresRule postgresRule = EmbeddedPostgresRules.singleInstance().customize { builder ->
-        builder.port = getConfig().getProperty('dataSource.embeddedPort', Integer)
+        builder.port = getConfig().getProperty('dataSource.embeddedPort',  Integer.class, 5432)
     }
 
     @Shared @AutoCleanup HibernateDatastore hibernateDatastore
     @Shared PlatformTransactionManager transactionManager
-    @Shared Flyway flyway = new Flyway()
+    @Shared Flyway flyway = null
 
     static Config getConfig() { // CHANGED extracted from setupSpec so postgresRule can access
         PropertySourcesLoader loader = new PropertySourcesLoader()
@@ -56,18 +56,17 @@ abstract class FlybernateSpec extends Specification {
 
     void setupSpec() {
         Config config = getConfig()
-
-        // CHANGED added flyway migrate
-        flyway.setDataSource(config.getProperty('dataSource.url'), config.getProperty('dataSource.username'), config.getProperty('dataSource.password'))
-        flyway.placeholders = [
-                'imageRoot': config.getProperty('imageservice.imagestore.root'),
-                'exportRoot': config.getProperty('imageservice.imagestore.exportDir', '/data/image-service/exports'),
-                'baseUrl': config.getProperty('grails.serverURL', 'https://devt.ala.org.au/image-service')
-        ]
-        flyway.setLocations('db/migration')
+        flyway = Flyway.configure()
+                .dataSource(config.getProperty('dataSource.url'), config.getProperty('dataSource.username'), config.getProperty('dataSource.password'))
+                .placeholders([
+                        'imageRoot': config.getProperty('imageservice.imagestore.root'),
+                        'exportRoot': config.getProperty('imageservice.imagestore.exportDir', '/data/image-service/exports'),
+                        'baseUrl': config.getProperty('grails.serverURL', 'https://devt.ala.org.au/image-service')
+                ])
+                .locations('db/migration')
+                .load()
         flyway.clean()
         flyway.migrate()
-        // end CHANGED
 
         List<Class> domainClasses = getDomainClasses()
         String packageName = getPackageToScan(config)
@@ -77,8 +76,7 @@ abstract class FlybernateSpec extends Specification {
             hibernateDatastore = new HibernateDatastore(
                     (PropertyResolver)config,
                     packageToScan)
-        }
-        else {
+        } else {
             hibernateDatastore = new HibernateDatastore(
                     (PropertyResolver)config,
                     domainClasses as Class[])

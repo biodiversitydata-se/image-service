@@ -20,7 +20,7 @@ cache:
     - $HOME/.gradle/wrapper/
 
 before_script:
-  - psql -c 'create database images;' -U postgres
+  - psql -c 'create database images_test;' -U postgres
 
 before_install:
   - docker-compose -f elastic.yml up -d

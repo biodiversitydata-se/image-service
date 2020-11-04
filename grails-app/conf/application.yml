@@ -122,27 +122,48 @@ environments:
         flyway:
             baselineOnMigrate: false
         dataSource:
-            embeddedPostgres: true
-            pooled: true
-            jmxExport: true
-            embeddedPort: 6543
-            username: postgres
-            password: postgres
-            url: jdbc:postgresql://localhost:6543/postgres?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
-        imageservice:
-            imagestore:
-                root: '/tmp/image-service/store'
-                inbox: '/tmp/image-service/incoming'
-            exportDir: '/tmp/image-service/exports'
+            embeddedPostgres: false
+            logSql: true
+            embeddedPort: 5432
+            url: jdbc:postgresql://localhost/images_test?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
+            username: "images"
+            password: "images"
+            type: "com.zaxxer.hikari.HikariDataSource"
+            properties:
+                maximumPoolSize: 30
+                registerMbeans: true
+                connectionTimeout: 5000
+#    test:
+#        flyway:
+#            baselineOnMigrate: false
+#        dataSource:
+#            embeddedPostgres: true
+#            pooled: true
+#            jmxExport: true
+#            embeddedPort: 6543
+#            username: postgres
+#            password: postgres
+#            url: jdbc:postgresql://localhost:6543/postgres
+#        imageservice:
+#            imagestore:
+#                root: '/tmp/image-service/store'
+#                inbox: '/tmp/image-service/incoming'
+#            exportDir: '/tmp/image-service/exports'
     travis:
         flyway:
-            baselineOnMigrate: true
+            baselineOnMigrate: false
         dataSource:
-            pooled: true
-            jmxExport: true
-            username: postgres
-            password: postgres
-            url: jdbc:postgresql://localhost/images?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
+            embeddedPostgres: false
+            logSql: false
+            embeddedPort: 5432
+            url: jdbc:postgresql://localhost/images_test?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
+            username: "images"
+            password: "images"
+            type: "com.zaxxer.hikari.HikariDataSource"
+            properties:
+                maximumPoolSize: 30
+                registerMbeans: true
+                connectionTimeout: 5000
         imageservice:
             imagestore:
                 root: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-store'

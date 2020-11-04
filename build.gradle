@@ -85,7 +85,7 @@ dependencies {
     compile 'org.imgscalr:imgscalr-lib:4.2'
     compile 'org.apache.commons:commons-imaging:1.0-SNAPSHOT'
     compile 'org.apache.tika:tika-core:1.23'
-    compile "org.flywaydb:flyway-core:4.2.0"
+    compile "org.flywaydb:flyway-core:7.1.1"
     compile 'com.github.jai-imageio:jai-imageio-core:1.4.0'
     compile 'au.org.ala:image-utils:1.9.0'
     compile 'org.grails.plugins:ala-ws-security-plugin:2.0.1'
