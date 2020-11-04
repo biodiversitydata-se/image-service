@@ -88,7 +88,7 @@ server:
 
 ---
 flyway:
-    enabled: false
+    enabled: true
     baselineOnMigrate: true
     baselineVersion: 1
     outOfOrder: false
@@ -99,6 +99,10 @@ hibernate:
         queries: true
         use_second_level_cache: false
         use_query_cache: true
+    jdbc:
+        lob:
+            #https://stackoverflow.com/questions/49110818/method-org-postgresql-jdbc-pgconnection-createclob-is-not-yet-implemented
+            non_contextual_creation: true
 
 dataSource:
     driverClassName: org.postgresql.Driver
@@ -118,58 +122,74 @@ environments:
                 maximumPoolSize: 30
                 registerMbeans: true
                 connectionTimeout: 5000
-    test:
-        flyway:
-            baselineOnMigrate: false
-        dataSource:
-            embeddedPostgres: false
-            logSql: true
-            embeddedPort: 5432
-            url: jdbc:postgresql://localhost/images_test?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
-            username: "images"
-            password: "images"
-            type: "com.zaxxer.hikari.HikariDataSource"
-            properties:
-                maximumPoolSize: 30
-                registerMbeans: true
-                connectionTimeout: 5000
 #    test:
 #        flyway:
 #            baselineOnMigrate: false
 #        dataSource:
-#            embeddedPostgres: true
-#            pooled: true
-#            jmxExport: true
-#            embeddedPort: 6543
-#            username: postgres
-#            password: postgres
-#            url: jdbc:postgresql://localhost:6543/postgres
-#        imageservice:
-#            imagestore:
-#                root: '/tmp/image-service/store'
-#                inbox: '/tmp/image-service/incoming'
-#            exportDir: '/tmp/image-service/exports'
+#            embeddedPostgres: false
+#            logSql: false
+#            embeddedPort: 5432
+#            url: jdbc:postgresql://localhost/images_test?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
+#            username: "images"
+#            password: "images"
+#            type: "com.zaxxer.hikari.HikariDataSource"
+#            properties:
+#                maximumPoolSize: 30
+#                registerMbeans: true
+#                connectionTimeout: 5000
+    test:
+        flyway:
+            baselineOnMigrate: false
+        dataSource:
+            embeddedPostgres: true
+            pooled: true
+            jmxExport: true
+            embeddedPort: 6543
+            username: postgres
+            password: postgres
+            url: jdbc:postgresql://localhost:6543/postgres?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
+        imageservice:
+            imagestore:
+                root: '/tmp/image-service/store'
+                inbox: '/tmp/image-service/incoming'
+            exportDir: '/tmp/image-service/exports'
     travis:
         flyway:
             baselineOnMigrate: false
         dataSource:
-            embeddedPostgres: false
-            logSql: false
-            embeddedPort: 5432
-            url: jdbc:postgresql://localhost/images_test?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
-            username: "postgres"
-            password: "postgres"
-            type: "com.zaxxer.hikari.HikariDataSource"
-            properties:
-                maximumPoolSize: 30
-                registerMbeans: true
-                connectionTimeout: 5000
+            embeddedPostgres: true
+            pooled: true
+            jmxExport: true
+            embeddedPort: 6543
+            username: postgres
+            password: postgres
+            url: jdbc:postgresql://localhost:6543/postgres?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
         imageservice:
             imagestore:
                 root: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-store'
                 inbox: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-incoming'
             exportDir: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-exports'
-
+#    travis:
+#        flyway:
+#            baselineOnMigrate: false
+#        dataSource:
+#            dbCreate: update
+#            embeddedPostgres: false
+#            logSql: false
+#            embeddedPort: 5432
+#            url: jdbc:postgresql://localhost/images_travis?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
+#            username: "postgres"
+#            password: "postgres"
+#            type: "com.zaxxer.hikari.HikariDataSource"
+#            properties:
+#                maximumPoolSize: 30
+#                registerMbeans: true
+#                connectionTimeout: 5000
+#        imageservice:
+#            imagestore:
+#                root: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-store'
+#                inbox: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-incoming'
+#            exportDir: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-exports'
     production:
         hibernate:
             dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -225,6 +245,13 @@ spring:
     groovy:
         template:
             check-template-location: false
+
+    jpa:
+        properties:
+            hibernate:
+                jdbc:
+                    lob:
+                        non_contextual_creation: true
 
 # Spring Actuator Endpoints are Disabled by Default
 endpoints:

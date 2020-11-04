@@ -8,7 +8,7 @@ branches:
     - develop
     - /^feature\/.*$/
 services:
-  - postgresql
+#  - postgresql
   - docker
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
@@ -19,8 +19,8 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 
-before_script:
-  - psql -c 'create database images_test;' -U postgres
+#before_script:
+#  - psql -c 'create database images_travis;' -U postgres
 
 before_install:
   - docker-compose -f elastic.yml up -d
