@@ -212,12 +212,12 @@ imageservice:
         root: '/data/image-service/store'
         inbox: '/data/image-service/incoming'
         staging: '/data/image-service/store/staging'
-        batchUpload: '/data/image-service/upload'
+    batchUpload: '/data/image-service/upload'
+    exportDir: '/data/image-service/exports'
     apache:
         root: '${grails.serverURL}${grails.contextPath}/store/'
         # space separated list
         multiple_roots: '${grails.serverURL}${grails.contextPath}/store/'
-    exportDir: '/data/image-service/exports'
     thumbnail:
         size: 300
 

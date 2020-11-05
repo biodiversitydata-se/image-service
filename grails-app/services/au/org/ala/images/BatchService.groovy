@@ -120,7 +120,7 @@ class BatchService {
                     dest: uploadedFile.getParentFile().getAbsolutePath(),
                     overwrite: "true")
 
-            File newDir = new File(grailsApplication.config.imageservice.imagestore.batchUpload + "/" + upload.getId() + "/")
+            File newDir = new File(grailsApplication.config.imageservice.batchUpload + "/" + upload.getId() + "/")
             uploadedFile.getParentFile().renameTo(newDir)
             upload.filePath = newDir.getAbsolutePath() + "/" +  uploadedFile.getName();
             upload.status = UNZIPPED
