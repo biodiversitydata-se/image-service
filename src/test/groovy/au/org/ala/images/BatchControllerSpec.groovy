@@ -1,18 +1,8 @@
 package au.org.ala.images
 
 import grails.testing.web.controllers.ControllerUnitTest
-import org.apache.avro.Schema
-import org.apache.avro.SchemaBuilder
-import org.apache.avro.file.DataFileWriter
-import org.apache.avro.generic.GenericDatumWriter
-import org.apache.avro.generic.GenericRecord
-import org.apache.avro.generic.GenericRecordBuilder
-import org.apache.avro.io.DatumWriter
 import org.grails.plugins.testing.GrailsMockMultipartFile
 import spock.lang.Specification
-
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream;
 
 class BatchControllerSpec extends Specification implements ControllerUnitTest<BatchController> {
 
@@ -39,7 +29,7 @@ class BatchControllerSpec extends Specification implements ControllerUnitTest<Ba
 
         def multipartFile = new GrailsMockMultipartFile(
                 'archive',
-                '/tmp/data.avro.zip',
+                'data.avro.zip',
                 'application/zip', uploadFile.bytes)
         request.addFile(multipartFile)
 
@@ -59,7 +49,7 @@ class BatchControllerSpec extends Specification implements ControllerUnitTest<Ba
 
         def multipartFile = new GrailsMockMultipartFile(
                 'archive',
-                '/tmp/data.avro.zip',
+                'data.avro.zip',
                 'application/zip',
                 uploadFile.bytes)
         request.addFile(multipartFile)

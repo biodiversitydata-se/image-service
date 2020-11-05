@@ -53,7 +53,9 @@ class BatchController {
             return
         }
 
-        File uploadDir = new File("/data/image-service/uploads/tmp-" + System.currentTimeMillis() + "/")
+        File uploadDir = new File(
+                grailsApplication.config.imageservice.imagestore.batchUpload +
+                "/tmp-" + System.currentTimeMillis() + "/")
         FileUtils.forceMkdir(uploadDir)
         File tmpFile = new File(uploadDir, zipFile.originalFilename)
         zipFile.transferTo(tmpFile)
