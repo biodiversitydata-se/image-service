@@ -16,8 +16,10 @@ import java.util.zip.ZipOutputStream;
 
 class BatchControllerSpec extends Specification implements ControllerUnitTest<BatchController> {
 
+    def uploadFile = null
+
     def setup() {
-        AvroUtils.generateTestArchive()
+        uploadFile = AvroUtils.generateTestArchive()
     }
 
     def "test avro zip file upload - missing zip file"() {
@@ -38,7 +40,7 @@ class BatchControllerSpec extends Specification implements ControllerUnitTest<Ba
         def multipartFile = new GrailsMockMultipartFile(
                 'archive',
                 '/tmp/data.avro.zip',
-                'application/zip', new File('/tmp/data.avro.zip').bytes)
+                'application/zip', uploadFile.bytes)
         request.addFile(multipartFile)
 
         when:
