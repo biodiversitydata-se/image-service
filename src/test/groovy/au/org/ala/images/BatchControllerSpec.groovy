@@ -61,7 +61,7 @@ class BatchControllerSpec extends Specification implements ControllerUnitTest<Ba
                 'archive',
                 '/tmp/data.avro.zip',
                 'application/zip',
-                new File('/tmp/data.avro.zip').bytes)
+                uploadFile.bytes)
         request.addFile(multipartFile)
         params.dataResourceUid = 'dr1'
 
