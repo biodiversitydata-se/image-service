@@ -17,50 +17,7 @@ import java.util.zip.ZipOutputStream;
 class BatchControllerSpec extends Specification implements ControllerUnitTest<BatchController> {
 
     def setup() {
-        generateTestArchive()
-    }
-
-    def generateTestArchive(){
-        Schema multimediaSchema = SchemaBuilder
-                .builder()
-                .record("multimedia")
-                .fields()
-                .requiredString("identifier")
-                .endRecord();
-
-        // generate a test archive
-        Schema multimediaRecordSchema = SchemaBuilder
-                .builder()
-                .record("multimediaRecord")
-                .fields()
-                .requiredString("id")
-                .name("multimediaItems").type().nullable().array().items(multimediaSchema)
-                .noDefault().endRecord()
-
-        org.apache.avro.generic.GenericRecord multimedia = new GenericRecordBuilder(multimediaSchema)
-                .set("identifier", "https://www.ala.org.au/app/uploads/2019/05/palm-cockatoo-by-Alan-Pettigrew-1920-1200-CCBY-28072018-640x480.jpg")
-                .build();
-
-        org.apache.avro.generic.GenericRecord record = new GenericRecordBuilder(multimediaRecordSchema)
-                .set("id", "1")
-                .set("multimediaItems", [multimedia])
-                .build();
-
-        File newArchive = new File("/tmp/data.avro.zip");
-        FileOutputStream fos = new FileOutputStream(newArchive);
-        ZipOutputStream zipOut = new ZipOutputStream(fos);
-        ZipEntry zipEntry = new ZipEntry("data.avro");
-        zipOut.putNextEntry(zipEntry);
-
-
-        DatumWriter<GenericRecord> writer = new GenericDatumWriter<GenericRecord>(multimediaRecordSchema);
-        DataFileWriter<GenericRecord> dataFileWriter = new DataFileWriter<GenericRecord>(writer);
-        dataFileWriter.create(multimediaRecordSchema, zipOut);
-        dataFileWriter.append(record);
-        dataFileWriter.close();
-
-        zipOut.close();
-        fos.close();
+        AvroUtils.generateTestArchive()
     }
 
     def "test avro zip file upload - missing zip file"() {

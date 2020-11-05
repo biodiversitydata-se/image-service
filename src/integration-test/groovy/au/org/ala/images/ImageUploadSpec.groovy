@@ -82,7 +82,6 @@ class ImageUploadSpec extends Specification {
         def url1 = "https://www.ala.org.au/app/uploads/2019/05/mycena-epipterygia-by-Reiner-Richter-CCBYNCInt-26052018-1920-1200--640x480.jpg"
         def url2 = "https://www.ala.org.au/app/uploads/2019/06/Rufous-Betting-by-Graham-Armstrong-CCBY-25-Apr-2019-1920-x-1200-640x480.jpg"
 
-
         RestResponse resp = rest.post("${baseUrl}/ws/uploadImagesFromUrls",{
             json {
                 [images:[[sourceUrl:url1], [sourceUrl: url2]]]
