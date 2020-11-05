@@ -1,4 +1,4 @@
-### image-service   [![Build Status](https://travis-ci.org/AtlasOfLivingAustralia/image-service.svg?branch=master)](https://travis-ci.org/AtlasOfLivingAustralia/image-service)
+# image-service   [![Build Status](https://travis-ci.org/AtlasOfLivingAustralia/image-service.svg?branch=master)](https://travis-ci.org/AtlasOfLivingAustralia/image-service)
 
 This Grails application provides the webservices and backend for the storage of all images in the Atlas.
 It includes:
@@ -14,6 +14,8 @@ It includes:
 * Administrator console for image management
 * Swagger API definition
 * Integration with google analytics to monitor image usage by data resource
+* Support for image storage in S3, Swift
+* Support for batch uploads with AVRO
 
 There are other related repositories to this one:
 * [images-client-plugin](https://github.com/AtlasOfLivingAustralia/images-client-plugin) - a grails plugin to provide a Javascript based viewer to be used in other applications requiring a image viewer. This viewer is based on LeafletJS.
@@ -22,10 +24,11 @@ There are other related repositories to this one:
 
 ## Architecture
 
-* Grails 3 web application ran in the tomcat 7 or as standalone executable jar
+* Grails 3 web application ran as standalone executable jar
 * Open JDK 8
 * Postgres database (9.6 or above)
 * Elastic search 7
+* Debian package install
 
 ## Installation
 
