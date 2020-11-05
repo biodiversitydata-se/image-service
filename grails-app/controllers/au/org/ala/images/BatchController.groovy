@@ -55,7 +55,7 @@ class BatchController {
 
         File uploadDir = new File("/data/image-service/uploads/tmp-" + System.currentTimeMillis() + "/")
         FileUtils.forceMkdir(uploadDir)
-        File tmpFile = new File(uploadDir, zipFile.filename)
+        File tmpFile = new File(uploadDir, zipFile.originalFilename)
         zipFile.transferTo(tmpFile)
 
         //write zip file to filesystem
