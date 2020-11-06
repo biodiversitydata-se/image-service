@@ -442,7 +442,16 @@ class BatchService {
     def purgeCompletedJobs(){
         ZonedDateTime now = ZonedDateTime.now()
         ZonedDateTime threeDaysAgo = now.minusDays(grailsApplication.config.purgeCompletedAgeInDays.toInteger())
+
+        //remove batch files
         BatchFile.findAllByStatus(COMPLETE).each {
+            if (it.dateCompleted.toInstant().isBefore(threeDaysAgo.toInstant())) {
+                it.delete(flush: true)
+            }
+        }
+
+        //remove batch file uploads
+        BatchFileUpload.findAllByStatus(COMPLETE).each {
             if (it.dateCompleted.toInstant().isBefore(threeDaysAgo.toInstant())) {
                 it.delete(flush: true)
             }
