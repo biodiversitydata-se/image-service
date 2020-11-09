@@ -174,6 +174,7 @@ days.
         <th>dateCreated</th>
         <th>dateCompleted</th>
         <th>status</th>
+        <th>message</th>
         <th></th>
     </thead>
     <tbody>
@@ -185,6 +186,7 @@ days.
             <td><prettytime:display date="${batchFileUpload.dateCreated}" /></td>
             <td><prettytime:display date="${batchFileUpload.dateCompleted}" /></td>
             <td>${batchFileUpload.status}</td>
+            <td>${batchFileUpload.message}</td>
             <td>
                 <g:link class="btn btn-default btn-sm" controller="admin" action="batchUpload" id="${batchFileUpload.id}">
                 View details

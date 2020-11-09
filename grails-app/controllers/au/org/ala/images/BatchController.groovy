@@ -53,6 +53,7 @@ class BatchController {
             return
         }
 
+        // move zip file from tmp working directory to uploads directory
         File uploadDir = new File(
                 grailsApplication.config.imageservice.batchUpload +
                 "/tmp-" + System.currentTimeMillis() + "/")
@@ -60,7 +61,7 @@ class BatchController {
         File tmpFile = new File(uploadDir, zipFile.originalFilename)
         zipFile.transferTo(tmpFile)
 
-        //write zip file to filesystem
+        // unpack zip
         def upload = batchService.createBatchFileUploadsFromZip(dataResourceUid, tmpFile)
 
         //return an async response
@@ -72,6 +73,8 @@ class BatchController {
                 status: upload.status,
                 files: []
         ]
+
+        // add file details to response for validation by client
         upload.batchFiles.each {
             response.files << [
                     status: it.status,

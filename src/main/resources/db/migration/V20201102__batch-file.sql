@@ -5,6 +5,7 @@ create table IF NOT EXISTS batch_file_upload (
     date_created timestamp without time zone NOT NULL,
     last_updated timestamp without time zone NOT NULL,
     status character varying(255) NOT NULL,
+    message character varying(255) NOT NULL,
     data_resource_uid character varying(255) NOT NULL,
     md5hash character varying(255) NOT NULL
 );

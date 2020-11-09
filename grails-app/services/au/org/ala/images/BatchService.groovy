@@ -97,6 +97,13 @@ class BatchService {
         BatchFile.countByStatusNotEqual(COMPLETE)
     }
 
+    /**
+     * Unpack the zip file.
+     *
+     * @param dataResourceUid
+     * @param uploadedFile
+     * @return
+     */
     BatchFileUpload createBatchFileUploadsFromZip(String dataResourceUid, File uploadedFile){
 
         String md5Hash = generateMD5(uploadedFile)
@@ -110,7 +117,9 @@ class BatchService {
                 filePath: uploadedFile.getAbsolutePath(),
                 md5Hash: md5Hash,
                 dataResourceUid: dataResourceUid,
-                status: "UNPACKING"
+                status: "UNPACKING",
+                message: "Unarchive zip file"
+
         )
         upload.save(flush:true)
 
@@ -124,10 +133,12 @@ class BatchService {
             uploadedFile.getParentFile().renameTo(newDir)
             upload.filePath = newDir.getAbsolutePath() + "/" +  uploadedFile.getName();
             upload.status = UNZIPPED
+            upload.message = "Successfully unzipped"
             upload.save(flush:true)
 
             def batchFiles = []
 
+            String message = ""
             //create BatchFileUpload jobs for each AVRO
             newDir.listFiles().each { File avroFile ->
                 //read the file
@@ -145,15 +156,23 @@ class BatchService {
                         batchFile.md5Hash = md5HashBatchFile
                         batchFiles << batchFile
                     } else {
-                        log.info("Ignoring " + avroFile.getAbsolutePath() + ", upload previously registered")
+                        message = "Ignoring previously uploaded files"
                     }
                 }
             }
+
             upload.batchFiles = batchFiles as Set
-            upload.status = WAITING__PROCESSING
+            if (upload.batchFiles) {
+                upload.message = "Awaiting processing"
+                upload.status = WAITING__PROCESSING
+            } else {
+                upload.message = message
+                upload.status = COMPLETE
+            }
 
         } catch (Exception e){
             log.error("Problem unpacking zip " + e.getMessage(), e)
+            upload.message = "Problem reading files: " + e.getMessage()
             upload.status = CORRUPT__AVRO__FILES
         }
 
@@ -379,12 +398,13 @@ class BatchService {
             // if all loaded, mark as complete
             boolean allComplete = batchFile.batchFileUpload.batchFiles.every { it.status == COMPLETE }
             if (allComplete){
+                batchFile.batchFileUpload.message = "All files processed"
                 batchFile.batchFileUpload.status =  COMPLETE
                 batchFile.batchFileUpload.dateCompleted = now
             } else {
+                batchFile.batchFileUpload.message = "Some files processed"
                 batchFile.batchFileUpload.status = PARTIALLY__COMPLETE
             }
-            batchFile.batchFileUpload.status = allComplete ? COMPLETE : PARTIALLY__COMPLETE
         } else {
             log.debug("No jobs to run.")
         }
