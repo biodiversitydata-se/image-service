@@ -46,19 +46,19 @@
                                 <a href="#tabProperties" data-toggle="tab">${mediaTitle}</a>
                             </li>
                             <li>
-                                <a href="#tabExif" data-toggle="tab">Embedded</a>
+                                <a href="#tabExif" data-toggle="tab"><g:message code="details.embedded" /></a>
                             </li>
                             <li>
-                                <a href="#tabSystem" data-toggle="tab">System</a>
+                                <a href="#tabSystem" data-toggle="tab"><g:message code="details.system" /></a>
                             </li>
                             <g:if test="${isImage}">
                                 <li>
-                                    <a href="#tabThumbnails" data-toggle="tab">Thumbnails</a>
+                                    <a href="#tabThumbnails" data-toggle="tab"><g:message code="details.thumbnails" /></a>
                                 </li>
                             </g:if>
                             <auth:ifAnyGranted roles="${CASRoles.ROLE_ADMIN}">
                                 <li>
-                                    <a href="#tabAuditMessages" data-toggle="tab">Audit</a>
+                                    <a href="#tabAuditMessages" data-toggle="tab"><g:message code="details.audit" /></a>
                                 </li>
                             </auth:ifAnyGranted>
                         </ul>
@@ -77,26 +77,26 @@
                             <div class="tab-pane" id="tabSystem" metadataSource="${au.org.ala.images.MetaDataSourceType.SystemDefined}" >
                                 <table class="table table-bordered table-condensed table-striped">
                                     <tr>
-                                        <td class="property-name">Data resource UID</td>
+                                        <td class="property-name"><g:message code="details.data.resource.uid" /></td>
                                         <td class="property-value">${imageInstance.dataResourceUid}</td>
                                     </tr>
                                     <g:if test="${isImage}">
                                         <tr>
-                                            <td class="property-name">Dimensions (w x h)</td>
+                                            <td class="property-name"><g:message code="details.dimensions.w.x.h" /></td>
                                             <td class="property-value">${imageInstance.width} x ${imageInstance.height}</td>
                                         </tr>
                                     </g:if>
                                     <tr>
-                                        <td class="property-name">File size</td>
+                                        <td class="property-name"><g:message code="details.file.size" /></td>
                                         <td class="property-value"><img:sizeInBytes size="${imageInstance.fileSize}" /></td>
                                     </tr>
                                     <tr>
-                                        <td class="property-name">Mime type</td>
+                                        <td class="property-name"><g:message code="details.mime.type" /></td>
                                         <td class="property-value">${imageInstance.mimeType}</td>
                                     </tr>
 
                                     <tr>
-                                        <td class="property-name">${mediaTitle} URL</td>
+                                        <td class="property-name"><g:message code="details..url" args="[mediaTitle]" /></td>
                                         <td class="property-value">
                                             <a href="${img.imageUrl([imageId: imageInstance.imageIdentifier])}">
                                                 <img:imageUrl imageId="${imageInstance.imageIdentifier}" />
@@ -104,15 +104,15 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="property-name">MD5 Hash</td>
+                                        <td class="property-name"><g:message code="details.md5.hash" /></td>
                                         <td class="property-value">${imageInstance.contentMD5Hash}</td>
                                     </tr>
                                     <tr>
-                                        <td class="property-name">SHA1 Hash</td>
+                                        <td class="property-name"><g:message code="details.sha1.hash" /></td>
                                         <td class="property-value">${imageInstance.contentSHA1Hash}</td>
                                     </tr>
                                     <tr>
-                                        <td class="property-name">Size on disk (including all artifacts)</td>
+                                        <td class="property-name"><g:message code="details.size.on.disk" /></td>
                                         <td class="property-value"><img:sizeInBytes size="${sizeOnDisk}" /></td>
                                     </tr>
                                     <auth:ifAnyGranted roles="${CASRoles.ROLE_ADMIN}">
@@ -229,17 +229,17 @@
 
                 $.ajax("${createLink(absolute: true, controller:'image', action:'scheduleArtifactGeneration', id: imageInstance.imageIdentifier)}").done(function(data) {
                     console.log(data);
-                    alert('Regeneration scheduled - ' + data.message);
+                    alert(<g:message code="details.regeneration.scheduled" /> + data.message);
                 }).fail(function(){
-                    alert("Problem scheduling regeneration");
+                    alert(<g:message code="details.problem.regeneration" />);
                 });
             });
 
             $("#btnDeleteImage").on('click', function(e) {
                 e.preventDefault();
                 var options = {
-                    message: "Warning! This operation cannot be undone. Are you sure you wish to permanently delete this image?",
-                    title: "Delete this image",
+                    message: <g:message code="details.warning.delete.this.image" />,
+                    title: <g:message code="details.delete.this.image" />,
                     affirmativeAction: function() {
                         $.ajax("${createLink(absolute: true, controller:'image', action:'deleteImage', id: imageInstance.imageIdentifier)}").done(function() {
                             window.location = "${createLink(absolute: true, controller:'search', action:'list')}";

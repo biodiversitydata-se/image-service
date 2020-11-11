@@ -7,11 +7,11 @@
         <g:else>
             <strong>${imageInstance.originalFilename}</strong>
         </g:else>
-        <div>${imageInstance.width} x ${imageInstance.height} (w x h)</div>
+        <div><g:message code="image.tooltip.frag.width.height" args="[imageInstance.width, imageInstance.height]" /></div>
         <div>${imageInstance.mimeType}&nbsp;&nbsp;<img:sizeInBytes size="${imageInstance.fileSize}" /></div>
-        <div>Uploaded on <img:formatDate date="${imageInstance.dateUploaded}" /></div>
+        <div><g:message code="image.tooltip.frag.uploaded.on" /> <img:formatDate date="${imageInstance.dateUploaded}" /></div>
         <g:if test="${imageInstance.dateTaken != imageInstance.dateUploaded}">
-            <div>Taken on <img:formatDate date="${imageInstance.dateTaken}" /></div>
+            <div><g:message code="image.tooltip.frag.taken.on" /> <img:formatDate date="${imageInstance.dateTaken}" /></div>
         </g:if>
         <g:if test="${imageInstance.creator}">
             <div>${imageInstance.creator}</div>
@@ -28,12 +28,12 @@
             </div>
         </g:if>
         <g:if test="${imageInstance.parent}">
-            <div><small>*Subimage of <strong>${imageInstance.parent.originalFilename}</strong></small></div>
+            <div><small>*<g:message code="image.tooltip.frag.subimage.of" args="[imageInstance.parent.originalFilename]" /></small></div>
         </g:if>
 
-        <a href="${createLink(absolute: true, controller: 'image', action: 'details', params:[id:imageInstance.id])}">View metadata</a>
+        <a href="${createLink(absolute: true, controller: 'image', action: 'details', params:[id:imageInstance.id])}"><g:message code="image.tooltip.frag.view.metadata" /></a>
     </div>
 </g:if>
 <g:else>
-    <div>Could not retrieve image for id ${params.id}</div>
+    <div><g:message code="image.tooltip.frag.could.not.retrieve.image.for.id" /> ${params.id}</div>
 </g:else>

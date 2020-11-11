@@ -25,8 +25,8 @@
 </div>
 
 <div id="buttonDiv">
-    <button id="btnSaveCriteria" type="button" class="btn btn-small btn-primary pull-right">Save changes</button>
-    <button id="btnCancelEdit" style="margin-right: 10px" type="button" class="btn btn-small pull-right">Cancel</button>
+    <button id="btnSaveCriteria" type="button" class="btn btn-small btn-primary pull-right"><g:message code="edit.search.save.changes" /></button>
+    <button id="btnCancelEdit" style="margin-right: 10px" type="button" class="btn btn-small pull-right"><g:message code="edit.search.cancel" /></button>
 </div>
 
 

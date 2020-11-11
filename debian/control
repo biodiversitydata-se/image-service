@@ -1,0 +1,24 @@
+Source: image-service
+Section: utils
+Priority: optional
+Maintainer: ALA Development Team <support@ala.org.au>
+Uploaders: ALA Development Team <support@ala.org.au>
+Build-Depends:
+ debhelper (>= 11),
+ default-jdk
+Standards-Version: 4.2.1
+Homepage: https://github.com/AtlasOfLivingAustralia/image-service
+Vcs-Browser: https://github.com/AtlasOfLivingAustralia/image-service
+Vcs-Git: https://github.com/AtlasOfLivingAustralia/image-service.git
+
+Package: ala-image
+Architecture: all
+Pre-Depends: openjdk-8-jdk, ca-certificates
+Depends: ${misc:Depends}, libpq-dev | dbconfig-no-thanks, python-psycopg2 | dbconfig-no-thanks, postgresql-10 | dbconfig-no-thanks, postgresql-contrib-10 | dbconfig-no-thanks, dbconfig-pgsql | dbconfig-no-thanks, postgresql-10-postgis-2.4 | dbconfig-no-thanks, postgresql-10-postgis-2.4-scripts | dbconfig-no-thanks, gdal-bin | dbconfig-no-thanks, python-pycurl | dbconfig-no-thanks, openjfx
+Suggests: apache2 | nginx
+Description: The Image storage and webservices application
+ This package contains the ala-image package from
+ Atlas of Living Australia, Free and open source IT infrastructure
+ for the aggregation and delivery of biodiversity data.
+ .
+ More info about this module.

@@ -1,19 +1,19 @@
 <!-- results list -->
 <div id="facetWell" class="col-md-2 well well-sm">
-    <h2 class="hidden-xs">Refine results</h2>
+    <h2 class="hidden-xs"><g:message code="imagethumb.refine.results" /></h2>
     <g:if test="${filters || searchCriteria}">
-        <h5>Selected filters</h5>
+        <h5><g:message code="imagethumb.selected.filters" /></h5>
         <ul class="facets list-unstyled">
             <g:each in="${filters}" var="filter">
                 <li>
-                    <a href="${raw(facet.selectedFacetLink([filter:filter.value]))}"  title="Click to remove this filter">
+                    <a href="${raw(facet.selectedFacetLink([filter:filter.value]))}"  title="${message(code:"imagethumb.click.to.remove.this.filter")}">
                      <span class="fa fa-check-square-o">&nbsp;</span> ${filter.key}
                     </a>
                 </li>
             </g:each>
             <g:each in="${searchCriteria}" var="criteria">
                 <li searchCriteriaId="${criteria.id}" >
-                    <a href="${raw(facet.selectedCriterionLink(criteriaId:  criteria.id))}" title="Click to remove this filter">
+                    <a href="${raw(facet.selectedCriterionLink(criteriaId:  criteria.id))}" title="${message(code:"imagethumb.click.to.remove.this.filter")}">
                         <span class="fa fa-check-square-o">&nbsp;</span>
                         <img:searchCriteriaDescription criteria="${criteria}"/>
                     </a>
@@ -52,7 +52,7 @@
             <g:if test="${facet.value.size() >= 10}">
             <a href="#multipleFacets" class="multipleFacetsLink" id="multi-${facet.key}"
                role="button" data-toggle="modal" data-target="#multipleFacets" data-facet="${facet.key}">
-                <span class="glyphicon glyphicon-hand-right" aria-hidden="true"></span> choose more...
+                <span class="glyphicon glyphicon-hand-right" aria-hidden="true"></span> <g:message code="imagethumb.choose.more" />
             </a>
             </g:if>
         </ul>
@@ -101,7 +101,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                <h3 id="multipleFacetsLabel">Refine your search</h3>
+                <h3 id="multipleFacetsLabel"><g:message code="imagethumb.refine.your.search" /></h3>
             </div>
             <div class="modal-body">
                 <div id="facetContent" class="tableContainer" style="max-height: 500px; overflow-y: auto;">
@@ -109,7 +109,7 @@
                 </div>
             </div>
             <div id='submitFacets' class="modal-footer" style="text-align: left;">
-                <button class="btn btn-default btn-small" data-dismiss="modal" aria-hidden="true" style="float:right;">Close</button>
+                <button class="btn btn-default btn-small" data-dismiss="modal" aria-hidden="true" style="float:right;"><g:message code="imagethumb.list.close" /></button>
             </div>
         </div>
     </div>

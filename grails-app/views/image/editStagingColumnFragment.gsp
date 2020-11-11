@@ -2,14 +2,14 @@
 <div class="form-horizontal">
 
     <div class="control-group">
-        <label class="control-label" for="fieldType">Field type</label>
+        <label class="control-label" for="fieldType"><g:message code="edit.staging.column.field.type" /></label>
         <div class="controls">
             <g:select class="fieldType" name="fieldType" from="${StagingColumnType.values()}" value="${fieldDefinition?.fieldDefinitionType}"/>
             <img:helpText tooltipPosition="topMiddle" targetPosition="bottomMiddle" tipPosition="topMiddle" width="600">
                 <ul>
-                    <li><code>NameRegex</code> extracts part of the filename out using a <em>regular expression</em> and a capturing group.</li>
-                    <li><code>Literal</code> to assign the same static field value to every task</li>
-                    <li><code>DataFileColumn</code> assigns a value from an uploaded csv file</li>
+                    <li><g:message code="edit.staging.column.li1" /></li>
+                    <li><g:message code="edit.staging.column.li2" /></li>
+                    <li><g:message code="edit.staging.column.li3" /></li>
                 </ul>
             </img:helpText>
         </div>
@@ -17,7 +17,7 @@
 
     <div id="formatBlock">
         <div class="control-group">
-            <label class="control-label" for="definition" id="formatLabel">Definition/Value</label>
+            <label class="control-label" for="definition" id="formatLabel"><g:message code="edit.staging.column.definition.value" /></label>
             <div class="controls">
                 <g:textField name="definition" value="${fieldDefinition?.format}" />
 
@@ -38,8 +38,8 @@
     <div class="control-group">
 
         <div class="controls">
-            <button class="btn" id="btnCancelEditFieldDefinition">Cancel</button>
-            <button class="btn btn-primary" id="btnSaveFieldDefinition">Save</button>
+            <button class="btn" id="btnCancelEditFieldDefinition"><g:message code="edit.staging.column.cancel" /></button>
+            <button class="btn btn-primary" id="btnSaveFieldDefinition"><g:message code="edit.staging.column.save" /></button>
         </div>
     </div>
 
@@ -103,17 +103,17 @@
             } else {
                 $("#formatBlock").css('display', 'block');
                 if (fieldType == 'NameRegex') {
-                    $("#formatLabel").html("Expression")
+                    $("#formatLabel").html(<g:message code="edit.staging.column.expression" />)
                 } else if (fieldType == 'NamePattern') {
-                    $("#formatLabel").html("Pattern")
+                    $("#formatLabel").html(<g:message code="edit.staging.column.pattern" />)
                 } else if (fieldType == 'DataFileColumn') {
-                    $("#formatLabel").html("Column (leave blank to use field name)")
+                    $("#formatLabel").html(<g:message code="edit.staging.column.leave.blank.to.use.field.name" />)
                     <g:if test="${hasDataFile && dataFileColumns}">
                     $("#definition").css("display", "none");
                     $("#dataFileColumn").css("display", "block");
                     </g:if>
                 } else {
-                    $("#formatLabel").html("Value")
+                    $("#formatLabel").html(<g:message code="edit.staging.column.value" />)
                 }
             }
         }

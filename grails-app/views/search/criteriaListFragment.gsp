@@ -16,14 +16,14 @@
 <%@ page import="au.org.ala.images.CriteriaValueType; au.org.ala.images.SearchCriteriaUtils" %>
 <div>
     <g:if test="${searchCriteria}">
-        <h5 style="margin-top:10px; margin-bottom:10px;">Each of the following criteria must be met:</h5>
+        <h5 style="margin-top:10px; margin-bottom:10px;"><g:message code="criteria.list.each.criteria.must.be.met" /></h5>
         <ul class="list-unstyled list-inline">
         <g:each in="${searchCriteria}" var="criteria">
             <li searchCriteriaId="${criteria.id}">
                 <div class="alert alert-info">
                     <img:searchCriteriaDescription criteria="${criteria}" />
                     <button type="button" class="btn-danger btn-sm pull-right btnDeleteCriteria" title="Remove this search criteria">
-                        <i class="glyphicon glyphicon-icon-remove"> </i> delete
+                        <i class="glyphicon glyphicon-icon-remove"> </i> <g:message code="criteria.list.delete" />
                     </button>&nbsp;
                 </div>
             </li>

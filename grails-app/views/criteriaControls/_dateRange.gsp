@@ -30,25 +30,25 @@
     <div class="radio">
         <label>
             <g:radio class="radioButton" name="operator" value="lt" checked="${evaluator == null || evaluator?.operator == 'lt' ? 'checked' : ''}"/>
-            Before
+            <g:message code="date.range.before" />
         </label>
     </div>
     <div class="radio">
         <label>
             <g:radio class="radioButton" name="operator" value="gt" checked="${evaluator?.operator == 'gt' ? 'checked' : ''}" />
-            After
+            <g:message code="date.range.after" />
         </label>
     </div>
     <div class="radio">
         <label>
             <g:radio class="radioButton" name="operator" value="bt" checked="${evaluator?.operator == 'bt' ? 'checked' : ''}" />
-            Between
+            <g:message code="date.range.between" />
         </label>
     </div>
     <div style="margin-top: 15px">
         <g:textField class="dateValue form-control" name="dateValue1" id="dateValue1" value="${evaluator?.startDate?.format("dd/MM/yyyy")}" />
         <span class="dateRangeOther" style="display: ${evaluator?.operator == 'bt' ? 'inline-block' : 'none'}">
-            &nbsp;and&nbsp;
+            &nbsp;<g:message code="date.range.and" />&nbsp;
             <g:textField class="dateValue  form-control" name="dateValue2" id="dateValue2" value="${evaluator?.endDate?.format("dd/MM/yyyy")}" />
         </span>
     </div>
