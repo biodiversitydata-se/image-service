@@ -20,6 +20,11 @@ class LicenseMatchingBackgroundTask extends BackgroundTask {
             image.save(flush:true)
         }
     }
+
+    @Override
+    String toString() {
+        return "LicenseMatchingBackgroundTask," + _imageId
+    }
 }
 
 

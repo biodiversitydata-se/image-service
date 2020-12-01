@@ -564,8 +564,10 @@ class ImageController {
             json {
                 response.addHeader("Access-Control-Allow-Origin", "")
                 def imageInstance = imageService.getImageFromParams(params)
-                if(imageInstance) {
-                    def jsonStr = imageInstance as JSON
+                if (imageInstance) {
+                    def payload = [:]
+                    imageService.addImageInfoToMap(imageInstance, payload, false, false)
+                    def jsonStr = payload as JSON
                     if (params.callback) {
                         response.setContentType("text/javascript")
                         render("${params.callback}(${jsonStr})")
@@ -589,7 +591,6 @@ class ImageController {
                 }
             }
         }
-
     }
 
     private def getImageModel(Image image){
@@ -702,182 +703,6 @@ class ImageController {
             analyticsService.sendAnalytics(imageInstance, 'imagelargeviewer', request.getHeader("User-Agent"))
         }
         [imageInstance: imageInstance, auxDataUrl: params.infoUrl]
-    }
-
-    @AlaSecured(value = [CASRoles.ROLE_USER, CASRoles.ROLE_ADMIN], anyRole = true, redirectUri = "/")
-    def stagedImages() {
-        def userId = AuthenticationUtils.getUserId(request)
-        if (!userId) {
-            throw new Exception("Must be logged in to use this service")
-        }
-
-        def stagedFiles = imageStagingService.buildStagedImageData(userId, params)
-        def columns = StagingColumnDefinition.findAllByUserId(userId, [sort:'id', order:'asc'])
-
-        [stagedFiles: stagedFiles, userId: userId, hasDataFile: imageStagingService.hasDataFileUploaded(userId),
-         dataFileUrl: imageStagingService.getDataFileUrl(userId), dataFileColumns: columns]
-    }
-
-    @AlaSecured(value = [CASRoles.ROLE_USER, CASRoles.ROLE_ADMIN], anyRole = true, redirectUri = "/")
-    def stageImages() {
-        def userId = AuthenticationUtils.getUserId(request)
-        if (!userId) {
-            throw new Exception("Must be logged in to use this service")
-        }
-        if(request instanceof MultipartHttpServletRequest) {
-            def filelist = []
-            def errors = []
-
-            ((MultipartHttpServletRequest) request).getMultiFileMap().imageFile.each { f ->
-                if (f != null) {
-                    try {
-                        def stagedFile = imageStagingService.stageFile(userId, f)
-                        if (stagedFile) {
-                            filelist << stagedFile
-                        } else {
-                            errors << f
-                        }
-                    } catch (Exception ex) {
-                        flash.message = "Failed to upload image file: " + ex.message;
-                    }
-                }
-
-            }
-        }
-        redirect(action:'stagedImages')
-    }
-
-    @AlaSecured(value = [CASRoles.ROLE_USER, CASRoles.ROLE_ADMIN], anyRole = true, redirectUri = "/")
-    def deleteStagedImage(int stagedImageId) {
-        def userId = AuthenticationUtils.getUserId(request)
-        if (!userId) {
-            throw new Exception("Must be logged in to use this service")
-        }
-        def stagedFile = StagedFile.get(stagedImageId)
-        if (stagedFile) {
-            imageStagingService.deleteStagedFile(stagedFile)
-        }
-        redirect(action:'stagedImages')
-    }
-
-    @AlaSecured(value = [CASRoles.ROLE_USER, CASRoles.ROLE_ADMIN], anyRole = true, redirectUri = "/")
-    def uploadStagingDataFile() {
-
-        def userId = AuthenticationUtils.getUserId(request)
-        if (!userId) {
-            throw new Exception("Must be logged in to use this service")
-        }
-
-        if(request instanceof MultipartHttpServletRequest) {
-            MultipartFile f = ((MultipartHttpServletRequest) request).getFile('dataFile')
-            if (f != null) {
-                def allowedMimeTypes = ['text/plain','text/csv', 'application/octet-stream', 'application/vnd.ms-excel']
-                if (!allowedMimeTypes.contains(f.getContentType())) {
-                    flash.message = "The data file must be one of: ${allowedMimeTypes}, recieved '${f.getContentType()}'}"
-                    redirect(action:'stagedImages')
-                    return
-                }
-
-                if (f.size == 0 || !f.originalFilename) {
-                    flash.message = "You must select a file to upload"
-                    redirect(action:'stagedImages')
-                    return
-                }
-                imageStagingService.uploadDataFile(userId, f)
-            }
-        }
-        redirect(action:'stagedImages')
-    }
-
-    @AlaSecured(value = [CASRoles.ROLE_USER, CASRoles.ROLE_ADMIN], anyRole = true, redirectUri = "/")
-    def clearStagingDataFile() {
-        def userId = AuthenticationUtils.getUserId(request)
-        if (!userId) {
-            throw new Exception("Must be logged in to use this service")
-        }
-        imageStagingService.deleteDataFile(userId)
-        redirect(action:'stagedImages')
-    }
-
-    @AlaSecured(value = [CASRoles.ROLE_USER, CASRoles.ROLE_ADMIN], anyRole = true, redirectUri = "/")
-    def saveStagingColumnDefinition() {
-        def userId = AuthenticationUtils.getUserId(request)
-        if (!userId) {
-            throw new Exception("Must be logged in to use this service")
-        }
-
-        def fieldName = params.fieldName
-        if (fieldName) {
-
-            def fieldType = (params.fieldType as StagingColumnType) ?: StagingColumnType.Literal
-            def format = params.definition ?: ""
-            def fieldDefinition = StagingColumnDefinition.get(params.int("columnDefinitionId"))
-            if (fieldDefinition) {
-                // this is a 'save', not a 'create'
-                fieldDefinition.fieldName = fieldName
-                fieldDefinition.fieldDefinitionType = fieldType
-                fieldDefinition.format = format
-            } else {
-                new StagingColumnDefinition(userId: userId, fieldDefinitionType: fieldType, format: format,
-                        fieldName: fieldName).save(failOnError: true)
-            }
-
-        }
-        redirect(action: 'stagedImages')
-    }
-
-    @AlaSecured(value = [CASRoles.ROLE_USER, CASRoles.ROLE_ADMIN], anyRole = true, redirectUri = "/")
-    def editStagingColumnFragment() {
-        def fieldDefinition = StagingColumnDefinition.get(params.int("columnDefinitionId"))
-        def userId = AuthenticationUtils.getUserId(request)
-        if (!userId) {
-            throw new Exception("Must be logged in to use this service")
-        }
-
-        def hasDataFile = imageStagingService.hasDataFileUploaded(userId)
-
-        def dataFileColumns = []
-        if (hasDataFile) {
-            dataFileColumns = ['']
-            dataFileColumns.addAll(imageStagingService.getDataFileColumns(userId))
-        }
-
-        [fieldDefinition: fieldDefinition, hasDataFile: hasDataFile, dataFileColumns: dataFileColumns]
-    }
-
-    @AlaSecured(value = [CASRoles.ROLE_USER, CASRoles.ROLE_ADMIN], anyRole = true, redirectUri = "/")
-    def deleteStagingColumnDefinition() {
-        def userId = AuthenticationUtils.getUserId(request)
-        if (!userId) {
-            throw new Exception("Must be logged in to use this service")
-        }
-        def fieldDefinition = StagingColumnDefinition.get(params.int("columnDefinitionId"))
-        if (fieldDefinition) {
-            fieldDefinition.delete()
-        }
-        redirect(action:"stagedImages")
-    }
-
-    @AlaSecured(value = [CASRoles.ROLE_USER, CASRoles.ROLE_ADMIN], anyRole = true, redirectUri = "/")
-    def uploadStagedImages() {
-        def userId = AuthenticationUtils.getUserId(request)
-        if (!userId) {
-            throw new Exception("Must be logged in to use this service")
-        }
-
-        def harvestable = params.boolean("harvestable")
-
-        def stagedFiles = imageStagingService.buildStagedImageData(userId, [:])
-
-        def batchId = batchService.createNewBatch()
-        int imageCount = 0
-        stagedFiles.each { stagedFileMap ->
-            def stagedFile = StagedFile.get(stagedFileMap.id)
-            batchService.addTaskToBatch(batchId, new UploadFromStagedFileTask(stagedFile, stagedFileMap,
-                    imageStagingService, batchId, harvestable))
-            imageCount++
-        }
-        redirect(action:"stagedImages")
     }
 
     private renderResults(Object results, int responseCode = SC_OK) {

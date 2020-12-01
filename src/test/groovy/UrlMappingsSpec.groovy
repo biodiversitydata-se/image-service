@@ -1,5 +1,5 @@
 import au.org.ala.images.ImageController
-import au.org.ala.images.StagingController
+
 import grails.testing.web.UrlMappingsUnitTest
 import spock.lang.Specification
 
@@ -7,7 +7,6 @@ class UrlMappingsSpec extends Specification implements UrlMappingsUnitTest<UrlMa
 
     void setup() {
         mockController(ImageController)
-        mockController(StagingController)
     }
 
     void "verify image urls match store urls (assuming no context path)"() {
@@ -66,16 +65,6 @@ class UrlMappingsSpec extends Specification implements UrlMappingsUnitTest<UrlMa
             b = 3
             c = 2
             d = 1
-        }
-
-        then:
-        noExceptionThrown()
-    }
-
-    def "verify staging urls"() {
-        when:
-        assertUrlMapping('/store/staging/1234/datafile/datafile.txt', controller: 'staging', action: 'serve') {
-            path = '1234/datafile/datafile.txt'
         }
 
         then:

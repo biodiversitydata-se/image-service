@@ -14,7 +14,7 @@ class UploadFromUrlTask extends BackgroundTask {
 
     @Override
     void execute() {
-        def results = _imageService.batchUploadFromUrl([_imageSource], _userId)
+        def results = _imageService.batchUpdate([_imageSource], _userId)
         def newImage = results[_imageSource.sourceUrl ?: _imageSource.imageUrl]
         if (newImage && newImage.success) {
             Image.withNewTransaction {

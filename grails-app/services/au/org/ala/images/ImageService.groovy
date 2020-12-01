@@ -24,6 +24,10 @@ import org.hibernate.FlushMode
 import org.springframework.web.multipart.MultipartFile
 import java.text.SimpleDateFormat
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
 
 class ImageService {
 
@@ -37,6 +41,25 @@ class ImageService {
     def imageService
     def elasticSearchService
     def settingService
+    def collectoryService
+
+    private final imageStoreLock = new Object()
+
+    final static List<String> SUPPORTED_UPDATE_FIELDS = [
+        "audience",
+        "contributor",
+        "created",
+        "creator",
+        "description",
+        "license",
+        "publisher",
+        "references",
+        "rights",
+        "rightsHolder",
+        "source",
+        "title",
+        "type"
+    ]
 
     private static Queue<BackgroundTask> _backgroundQueue = new ConcurrentLinkedQueue<BackgroundTask>()
     private static Queue<BackgroundTask> _tilingQueue = new ConcurrentLinkedQueue<BackgroundTask>()
@@ -56,6 +79,15 @@ class ImageService {
             return result
         }
         return null
+    }
+
+    def dumpQueueToFile(){
+        def fw = new FileWriter(new File("/tmp/backgroundQueue.txt"))
+        _backgroundQueue.each {
+            fw.write(it.toString() + "\n")
+        }
+        fw.flush()
+        fw.close()
     }
 
     ImageStoreResult storeImageFromUrl(String imageUrl, String uploader, Map metadata = [:]) {
@@ -108,30 +140,108 @@ class ImageService {
         return null
     }
 
-    Map batchUploadFromUrl(List<Map<String, String>> imageSources, String uploader) {
+    def getImageUrl(Map<String, String> imageSource){
+        if (imageSource.sourceUrl) return imageSource.sourceUrl
+        if (imageSource.imageUrl) return imageSource.imageUrl
+        imageSource.identifier
+    }
+
+    boolean isImageServiceUrl(String url){
+        boolean isRecognised = false
+        grailsApplication.config.imageServiceUrls.each { imageServiceUrl ->
+            if (url.startsWith(imageServiceUrl)) {
+                isRecognised = true
+            }
+        }
+        isRecognised
+    }
+
+    /**
+     * Batch update supporting bulk updates
+     *
+     * @param batch
+     * @param uploader
+     * @return
+     */
+    Map batchUpdate(List<Map<String, String>> batch, String uploader) {
         def results = [:]
         Image.withNewTransaction {
-
             sessionFactory.currentSession.setFlushMode(FlushMode.MANUAL)
             try {
-                imageSources.each { imageSource ->
-                    def imageUrl = (imageSource.sourceUrl ?: imageSource.imageUrl) as String
+                batch.each { imageSource ->
+
+                    def imageUrl = getImageUrl(imageSource) as String
                     if (imageUrl) {
-                        def result = [success: false]
-                        try {
-                            def url = new URL(imageUrl)
-                            def bytes = url.bytes
-                            def contentType = detectMimeTypeFromBytes(bytes, imageUrl)
-                            ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length, contentType, uploader, imageSource)
-                            result.imageId = storeResult.image.imageIdentifier
-                            result.image = storeResult.image
-                            result.success = true
-                            auditService.log(storeResult.image, "Image (batch) downloaded from ${imageUrl}", uploader ?: "<unknown>")
-                        } catch (Exception ex) {
-                            log.error("Problem storing image - " + ex.getMessage(), ex)
-                            result.message = ex.message
+                        Image image = null
+
+                        // is it as image service URL?
+                        // if so, no need to load the image, use the identifier.....
+                        if (isImageServiceUrl(imageUrl)){
+
+                            if (imageUrl.contains("=")) {
+                                //retrieve the image ID
+                                def imageID = imageUrl.substring(imageUrl.lastIndexOf("=") + 1)
+                                if (imageID) {
+                                    image = Image.findByImageIdentifier(imageID)
+                                }
+                            } else {
+                                def imageID = imageUrl.substring(imageUrl.lastIndexOf("/") + 1)
+                                if (imageID) {
+                                    image = Image.findByImageIdentifier(imageID)
+                                }
+                            }
                         }
-                        results[imageUrl] = result
+
+                        if (!image){
+                            if (imageUrl.startsWith("http")){
+                                image = Image.findByOriginalFilename(imageUrl)
+                            } else {
+                                image = Image.findByOriginalFilenameAndDataResourceUid(imageUrl, imageSource.dataResourceUid)
+                            }
+                        }
+
+                        if (!image) {
+                            def result = [success: false, alreadyStored: false]
+                            try {
+                                def url = new URL(imageUrl)
+                                def bytes = url.bytes
+                                def contentType = detectMimeTypeFromBytes(bytes, imageUrl)
+                                ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length, contentType, uploader, imageSource)
+                                result.imageId = storeResult.image.imageIdentifier
+                                result.image = storeResult.image
+                                result.success = true
+                                result.alreadyStored = storeResult.alreadyStored
+                                result.metadataUpdated = false
+                            } catch (Exception ex) {
+                                //log to batch update error file
+                                log.error("Problem storing image - " + ex.getMessage(), ex)
+                                result.message = ex.message
+                            }
+                            results[imageUrl] = result
+                        } else {
+
+                            def metadataUpdated = false
+
+                            SUPPORTED_UPDATE_FIELDS.each { updateField ->
+
+                                if (image[updateField] != imageSource[updateField]){
+                                    image[updateField] = imageSource[updateField]
+                                    metadataUpdated = true
+                                }
+                            }
+
+                            if (metadataUpdated){
+                                image.save()
+                            }
+
+                            //update metadata if required
+                            results[imageUrl] = [success: true,
+                                                 imageId: image.imageIdentifier,
+                                                 image: image,
+                                                 alreadyStored: true,
+                                                 metadataUpdated: metadataUpdated
+                            ]
+                        }
                     }
                 }
             } finally {
@@ -139,7 +249,8 @@ class ImageService {
                 sessionFactory.currentSession.setFlushMode(FlushMode.AUTO)
             }
         }
-        return results
+
+        results
     }
 
     int getImageTaskQueueLength() {
@@ -191,85 +302,90 @@ class ImageService {
         }
     }
 
-    @Synchronized
+    private final ReentrantLock lock = new ReentrantLock();
+
     ImageStoreResult storeImageBytes(byte[] bytes, String originalFilename, long filesize, String contentType,
                           String uploaderId, Map metadata = [:]) {
 
-        def md5Hash = MD5CodecExtensionMethods.encodeAsMD5(bytes)
+        try {
+            lock.lock()
 
-        //check for existing image using MD5 hash
-        def image = Image.findByContentMD5Hash(md5Hash)
-        def preExisting = false
-        if (!image) {
-            def sha1Hash = SHA1CodecExtensionMethods.encodeAsSHA1(bytes)
+            def md5Hash = MD5CodecExtensionMethods.encodeAsMD5(bytes)
 
-            StorageLocation sl = StorageLocation.get(settingService.getStorageLocationDefault())
+            //check for existing image using MD5 hash
+            def image = Image.findByContentMD5Hash(md5Hash)
+            def preExisting = false
+            if (!image) {
+                def sha1Hash = SHA1CodecExtensionMethods.encodeAsSHA1(bytes)
 
-            def imgDesc = imageStoreService.storeImage(bytes, sl, contentType)
-            // Create the image record, and set the various attributes
-            image = new Image(
-                    imageIdentifier: imgDesc.imageIdentifier,
-                    contentMD5Hash: md5Hash,
-                    contentSHA1Hash: sha1Hash,
-                    uploader: uploaderId,
-                    storageLocation: sl
-            )
+                Long defaultStorageLocationID = settingService.getStorageLocationDefault()
 
+                StorageLocation sl = StorageLocation.get(defaultStorageLocationID)
 
-            if(metadata.extension){
-                image.extension = metadata.extension
+                def imgDesc = imageStoreService.storeImage(bytes, sl, contentType)
+
+                // Create the image record, and set the various attributes
+                image = new Image(
+                        imageIdentifier: imgDesc.imageIdentifier,
+                        contentMD5Hash: md5Hash,
+                        contentSHA1Hash: sha1Hash,
+                        uploader: uploaderId,
+                        storageLocation: sl
+                )
+
+                if (metadata.extension){
+                    image.extension = metadata.extension
+                } else {
+                    // this is known to be problematic
+                    def extension =  FilenameUtils.getExtension(originalFilename) ?: 'jpg'
+                    if (extension && extension.contains("?")){
+                        def cleanedExtension = extension.substring(0, extension.indexOf("?"))
+                        if (cleanedExtension && cleanedExtension.length() > 0){
+                            extension  = cleanedExtension
+                        }
+                    }
+                    image.extension = extension
+                }
+
+                image.height = imgDesc.height
+                image.width = imgDesc.width
+                image.fileSize = filesize
+                image.mimeType = contentType
+                image.dateUploaded = new Date()
+                image.originalFilename = originalFilename
+                image.dateTaken = getImageTakenDate(bytes) ?: image.dateUploaded
             } else {
-                // this is known to be problematic
-                def extension =  FilenameUtils.getExtension(originalFilename) ?: 'jpg'
-                if (extension && extension.contains("?")){
-                    def cleanedExtension = extension.substring(0, extension.indexOf("?"))
-                    if (cleanedExtension && cleanedExtension.length() > 0){
-                        extension  = cleanedExtension
-                    }
-                }
-                image.extension = extension
+                image.dateDeleted = null //reset date deleted if image resubmitted...
+                preExisting = true
             }
 
-            image.height = imgDesc.height
-            image.width = imgDesc.width
-            image.fileSize = filesize
-            image.mimeType = contentType
-            image.dateUploaded = new Date()
-            image.originalFilename = originalFilename
-            image.dateTaken = getImageTakenDate(bytes) ?: image.dateUploaded
-        } else {
-            image.dateDeleted = null //reset date deleted if image resubmitted...
-            preExisting = true
-        }
+            if (!preExisting){
 
-        if (preExisting){
-            //stick it on a queue
-            scheduleMetadataUpdate(image.imageIdentifier, metadata)
-            scheduleLicenseUpdate(image.id)
-        } else {
-            //update metadata
-            metadata.each { kvp ->
-                def propertyName = hasImageCaseFriendlyProperty(image, kvp.key)
-                if (propertyName && kvp.value){
-                    if(!(propertyName in ["dateTaken", "dateUploaded", "id"])){
-                        image[propertyName] = kvp.value
+                //update metadata stored in the `image` table
+                metadata.each { kvp ->
+                    def propertyName = hasImageCaseFriendlyProperty(image, kvp.key)
+                    if (propertyName && kvp.value){
+                        if (!(propertyName in ["dateTaken", "dateUploaded", "id"])){
+                            image[propertyName] = kvp.value
+                        }
                     }
+                }
+
+                //try to match licence
+                updateLicence(image)
+
+                try {
+                    image.save(flush: true, failOnError: true)
+                } catch (Exception ex){
+                    log.error("Problem ${preExisting ? 'updating' : 'saving'} image ${originalFilename}  - " + ex.getMessage(), ex)
                 }
             }
 
-            //try to match licence
-            updateLicence(image)
-
-            try {
-                image.save(flush: true, failOnError: true)
-            } catch (Exception ex){
-                log.error("Problem ${preExisting ? 'updating' : 'saving'} image ${originalFilename}  - " + ex.getMessage(), ex)
-            }
+            new ImageStoreResult(image, preExisting)
+        } finally {
+            lock.unlock()
         }
-
-        new ImageStoreResult(image, preExisting)
     }
-
 
     def hasImageCaseFriendlyProperty(Image image, String propertyName){
         if (!imagePropertyMap) {
@@ -463,16 +579,36 @@ class ImageService {
         int taskCount = 0
         BackgroundTask task = null
 
+        Integer batchThreads = settingService.getBackgroundTasksThreads()
+
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(batchThreads);
+
         while (taskCount < BACKGROUND_TASKS_BATCH_SIZE && (task = _backgroundQueue.poll()) != null) {
             if (task) {
                 try {
-                    task.execute()
+                    final BackgroundTask taskToRun = task
+                    executor.execute(new Runnable() {
+                        @Override
+                        void run() {
+                            taskToRun.execute()
+                        }
+                    });
                 } catch (Exception e){
                     log.error("Error executing task: " + task)
                     log.error("Error executing task: " + e.getMessage(), e)
                 }
                 taskCount++
             }
+        }
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException ex) {
+            log.error(ex.getMessage(), ex)
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -972,8 +1108,71 @@ class ImageService {
         return image
     }
 
-    def UUID_PATTERN = ~/\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b/
 
+    def addImageInfoToMap(Image image, Map results, Boolean includeTags, Boolean includeMetadata) {
+
+        results.imageIdentifier = image.imageIdentifier
+        results.mimeType = image.mimeType
+        results.originalFileName = image.originalFilename
+        results.sizeInBytes = image.fileSize
+        results.rights = image.rights ?: ''
+        results.rightsHolder = image.rightsHolder ?: ''
+        results.dateUploaded = image.dateUploaded ? image.dateUploaded.format( "yyyy-MM-dd HH:mm:ss") : null
+        results.dateTaken = image.dateTaken ? image.dateTaken.format( "yyyy-MM-dd HH:mm:ss") : null
+        if (results.mimeType && results.mimeType.startsWith('image')){
+            results.imageUrl = getImageUrl(image.imageIdentifier)
+            results.tileUrlPattern = "${getImageTilesUrlPattern(image.imageIdentifier)}"
+            results.mmPerPixel = image.mmPerPixel ?: ''
+            results.height = image.height
+            results.width = image.width
+            results.tileZoomLevels = image.zoomLevels ?: 0
+        }
+        results.description = image.description ?: ''
+        results.title = image.title ?: ''
+        results.type = image.type ?: ''
+        results.audience = image.audience ?: ''
+        results.references = image.references ?: ''
+        results.publisher = image.publisher ?: ''
+        results.contributor = image.contributor ?: ''
+        results.created = image.created ?: ''
+        results.source = image.source ?: ''
+        results.creator = image.creator ?: ''
+        results.license = image.license ?: ''
+        if (image.recognisedLicense) {
+            results.recognisedLicence = [
+                    'acronym' : image.recognisedLicense.acronym,
+                    'name' : image.recognisedLicense.name,
+                    'url' : image.recognisedLicense.url,
+                    'imageUrl' : image.recognisedLicense.imageUrl
+            ]
+        } else {
+            results.recognisedLicence = null
+        }
+        results.dataResourceUid = image.dataResourceUid ?: ''
+        results.occurrenceID = image.occurrenceId ?: ''
+
+        if (collectoryService) {
+            collectoryService.addMetadataForResource(results)
+        }
+
+        if (includeTags) {
+            results.tags = []
+            def imageTags = ImageTag.findAllByImage(image)
+            imageTags?.each { imageTag ->
+                results.tags << imageTag.tag.path
+            }
+        }
+
+        if (includeMetadata) {
+            results.metadata = []
+            def metaDataList = ImageMetaDataItem.findAllByImage(image)
+            metaDataList?.each { md ->
+                results.metadata << [key: md.name, value: md.value, source: md.source]
+            }
+        }
+    }
+
+    def UUID_PATTERN = ~/\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b/
 
     def getImageGUIDFromParams(params) {
 
@@ -1027,6 +1226,59 @@ class ImageService {
         FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
         def exportFile = grailsApplication.config.imageservice.exportDir + "/images.csv"
         new Sql(dataSource).call("""{ call export_images() }""")
+        new File(exportFile)
+    }
+
+    /**
+     * Export CSV. This uses a stored procedure that needs to be installed as part of the
+     * service installation.
+     *
+     * @param outputStream
+     * @return
+     */
+    def exportMappingCSV(outputStream){
+        exportMappingCSVToFile().withInputStream { stream ->
+            outputStream << stream
+        }
+    }
+
+    /**
+     * Export CSV. This uses a stored procedure that needs to be installed as part of the
+     * service installation.
+     *
+     * @param outputStream
+     * @return
+     */
+    def exportDatasetMappingCSV(String datasetID, outputStream){
+        exportMappingForDatasetCSVToFile(datasetID).withInputStream { stream ->
+            outputStream << stream
+        }
+    }
+
+    def exportDatasetCSV(String datasetID, outputStream){
+        exportDatasetCSVToFile(datasetID).withInputStream { stream ->
+            outputStream << stream
+        }
+    }
+
+    File exportDatasetCSVToFile(String datasetID){
+        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
+        def exportFile = grailsApplication.config.imageservice.exportDir + "/images-export-${datasetID}.csv"
+        new Sql(dataSource).call("""{ call export_dataset(?) }""", [datasetID])
+        new File(exportFile)
+    }
+
+    File exportMappingForDatasetCSVToFile(String datasetID){
+        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
+        def exportFile = grailsApplication.config.imageservice.exportDir + "/images-mapping-${datasetID}.csv"
+        new Sql(dataSource).call("""{ call export_dataset_mapping(?) }""", [datasetID])
+        new File(exportFile)
+    }
+
+    File exportMappingCSVToFile(){
+        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
+        def exportFile = grailsApplication.config.imageservice.exportDir + "/images-mapping.csv"
+        new Sql(dataSource).call("""{ call export_mapping() }""")
         new File(exportFile)
     }
 

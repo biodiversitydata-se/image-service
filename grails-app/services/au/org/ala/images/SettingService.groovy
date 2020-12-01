@@ -24,6 +24,11 @@ class SettingService {
         return getBoolSetting()
     }
 
+    @ImageServiceSetting(name = 'background.tasks.threads', description = "Number of threads the service perform thumbnailing and ingesting", defaultValue = "3")
+    Integer getBackgroundTasksThreads() {
+        return getIntSetting()
+    }
+
     @ImageServiceSetting(name = 'outsourced.task.checking.enabled', description = "Should the service check the status of outsourced tiling jobs", defaultValue = "true")
     boolean getOutsourcedTaskCheckingEnabled() {
         return getBoolSetting()
@@ -44,6 +49,34 @@ class SettingService {
         return getLongSetting()
     }
 
+    @ImageServiceSetting(name = 'batch.service.threads', description = "Number of download threads to use", defaultValue = '5')
+    Long getBatchServiceThreads() {
+        return getLongSetting()
+    }
+
+    @ImageServiceSetting(name = 'batch.service.throttle.milliseconds', description = "Time to sleep between download requests", defaultValue = '0')
+    Long getBatchServiceThrottleInMillis() {
+        return getLongSetting()
+    }
+
+    @ImageServiceSetting(name = 'batch.service.read.size', description = "Number of records to read in single batch", defaultValue = '250')
+    Long getBatchServiceReadSize() {
+        return getLongSetting()
+    }
+
+    @ImageServiceSetting(name = 'batch.service.processing.enabled', description = "Should the service process files on the queue", defaultValue = "true")
+    boolean getBatchServiceProcessingEnabled() {
+        getBoolSetting()
+    }
+
+    void enableBatchProcessing(){
+        setSettingValue( 'batch.service.processing.enabled', "true")
+    }
+
+    void disableBatchProcessing(){
+        setSettingValue( 'batch.service.processing.enabled', "false")
+    }
+
     void setStorageLocationDefault(Long value) {
         setSettingValue('storage.location.default', value.toString())
     }
@@ -60,7 +93,7 @@ class SettingService {
             Boolean.parseBoolean(value)
         }
         setting.value = value
-        setting.save()
+        setting.save(flush:true)
     }
 
     /**

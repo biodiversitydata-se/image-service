@@ -3,7 +3,6 @@ package au.org.ala.images.helper
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import grails.config.Config
-import grails.persistence.Entity
 import groovy.transform.CompileStatic
 import org.flywaydb.core.Flyway
 import org.grails.config.PropertySourcesConfig
@@ -12,15 +11,13 @@ import org.grails.orm.hibernate.cfg.Settings
 import org.hibernate.Session
 import org.hibernate.SessionFactory
 import org.junit.ClassRule
-import org.springframework.beans.factory.config.BeanDefinition
 import org.springframework.boot.env.PropertySourcesLoader
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider
+import org.springframework.context.annotation.Bean
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.env.MutablePropertySources
 import org.springframework.core.env.PropertyResolver
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.core.io.ResourceLoader
-import org.springframework.core.type.filter.AnnotationTypeFilter
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionStatus
 import org.springframework.transaction.interceptor.DefaultTransactionAttribute
@@ -37,11 +34,12 @@ import spock.lang.Specification
 abstract class FlybernateSpec extends Specification {
 
     @ClassRule @Shared SingleInstancePostgresRule postgresRule = EmbeddedPostgresRules.singleInstance().customize { builder ->
-        builder.port = getConfig().getProperty('dataSource.embeddedPort', Integer)
+        builder.port = getConfig().getProperty('dataSource.embeddedPort',  Integer.class, 6543)
     }
 
     @Shared @AutoCleanup HibernateDatastore hibernateDatastore
     @Shared PlatformTransactionManager transactionManager
+//    @Shared Flyway flyway = null
     @Shared Flyway flyway = new Flyway()
 
     static Config getConfig() { // CHANGED extracted from setupSpec so postgresRule can access
@@ -56,7 +54,6 @@ abstract class FlybernateSpec extends Specification {
 
     void setupSpec() {
         Config config = getConfig()
-
         // CHANGED added flyway migrate
         flyway.setDataSource(config.getProperty('dataSource.url'), config.getProperty('dataSource.username'), config.getProperty('dataSource.password'))
         flyway.placeholders = [
@@ -65,9 +62,17 @@ abstract class FlybernateSpec extends Specification {
                 'baseUrl': config.getProperty('grails.serverURL', 'https://devt.ala.org.au/image-service')
         ]
         flyway.setLocations('db/migration')
+//        flyway = Flyway.configure()
+//                .dataSource(config.getProperty('dataSource.url'), config.getProperty('dataSource.username'), config.getProperty('dataSource.password'))
+//                .placeholders([
+//                        'imageRoot': config.getProperty('imageservice.imagestore.root'),
+//                        'exportRoot': config.getProperty('imageservice.imagestore.exportDir', '/data/image-service/exports'),
+//                        'baseUrl': config.getProperty('grails.serverURL', 'https://devt.ala.org.au/image-service')
+//                ])
+//                .locations('db/migration')
+//                .load()
         flyway.clean()
         flyway.migrate()
-        // end CHANGED
 
         List<Class> domainClasses = getDomainClasses()
         String packageName = getPackageToScan(config)
@@ -77,8 +82,7 @@ abstract class FlybernateSpec extends Specification {
             hibernateDatastore = new HibernateDatastore(
                     (PropertyResolver)config,
                     packageToScan)
-        }
-        else {
+        } else {
             hibernateDatastore = new HibernateDatastore(
                     (PropertyResolver)config,
                     domainClasses as Class[])
@@ -109,7 +113,7 @@ abstract class FlybernateSpec extends Specification {
      * @return The configuration
      */
     static Map getConfiguration() { // changed to static
-        Collections.singletonMap(Settings.SETTING_DB_CREATE, "validate") // CHANGED from 'create-drop' to 'validate'
+        Collections.singletonMap(Settings.SETTING_DB_CREATE,  (Object) "validate") // CHANGED from 'create-drop' to 'validate'
     }
 
     /**

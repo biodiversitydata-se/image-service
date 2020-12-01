@@ -61,12 +61,15 @@ class ContentNegotiationSpec extends Specification {
         RestResponse resp = rest.get("${baseUrl}/image/${imageId}"){
             accept "application/json"
         }
-
+        println("response received")
         def jsonResponse = new JsonSlurper().parseText(resp.body)
+        println("response parsed")
 
         then:
         resp.status == 200
-        jsonResponse.originalFilename != null
+        println("checking")
+        jsonResponse.originalFileName != null
+        println("checked")
     }
 
     /**
