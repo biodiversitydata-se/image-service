@@ -1,11 +1,12 @@
 package au.org.ala.images
 
+
 import groovyx.gpars.GParsPool
+import net.lingala.zip4j.ZipFile
 import org.apache.avro.file.DataFileStream
 import org.apache.avro.generic.GenericDatumReader
 import org.apache.avro.generic.GenericRecord
 
-import java.security.MessageDigest
 import java.time.Duration
 import java.time.Instant
 import java.time.ZonedDateTime
@@ -106,7 +107,7 @@ class BatchService {
      */
     BatchFileUpload createBatchFileUploadsFromZip(String dataResourceUid, File uploadedFile){
 
-        String md5Hash = generateMD5(uploadedFile)
+        String md5Hash = ImageUtils.generateMD5(uploadedFile)
         BatchFileUpload upload = BatchFileUpload.findByMd5Hash(md5Hash)
         if (upload){
             // prevent multiple uploads of the same file
@@ -124,10 +125,7 @@ class BatchService {
         upload.save(flush:true)
 
         try {
-            def ant = new AntBuilder()   // create an antbuilder
-            ant.unzip(src: uploadedFile.getAbsolutePath(),
-                    dest: uploadedFile.getParentFile().getAbsolutePath(),
-                    overwrite: "true")
+            new ZipFile(uploadedFile).extractAll(uploadedFile.parentFile.absolutePath)
 
             File newDir = new File(grailsApplication.config.imageservice.batchUpload + "/" + upload.getId() + "/")
             uploadedFile.getParentFile().renameTo(newDir)
@@ -143,7 +141,7 @@ class BatchService {
             newDir.listFiles().each { File avroFile ->
                 //read the file
                 if (avroFile.getName().toLowerCase().endsWith(".avro")){
-                    String md5HashBatchFile = generateMD5(avroFile)
+                    String md5HashBatchFile = ImageUtils.generateMD5(avroFile)
                     // have we seen this file before
                     BatchFile batchFile = BatchFile.findByMd5Hash(md5HashBatchFile)
                     if (!batchFile) {
@@ -200,20 +198,6 @@ class BatchService {
             }
         }
         [recordCount: recordCount]
-    }
-
-    String generateMD5(final file) {
-        MessageDigest digest = MessageDigest.getInstance("MD5")
-        file.withInputStream(){is->
-            byte[] buffer = new byte[8192]
-            int read = 0
-            while( (read = is.read(buffer)) > 0) {
-                digest.update(buffer, 0, read);
-            }
-        }
-        byte[] md5sum = digest.digest()
-        BigInteger bigInt = new BigInteger(1, md5sum)
-        bigInt.toString(16).padLeft(32, '0')
     }
 
     boolean batchEnabled(){
@@ -376,15 +360,15 @@ class BatchService {
             //load batch file
             def start = Instant.now()
             def complete = loadBatchFile(batchFile)
-            def minsTaken = Duration.between(start, Instant.now()).toMillis()
+            def millisTaken = Duration.between(start, Instant.now()).toMillis()
 
             Date now = new Date()
             if (complete) {
                 batchFile.status = COMPLETE
                 batchFile.lastUpdated = now
                 batchFile.dateCompleted = now
-                if (minsTaken)
-                    batchFile.timeTakenToLoad = minsTaken / 1000
+                if (millisTaken)
+                    batchFile.timeTakenToLoad = millisTaken / 1000
                 else
                     batchFile.timeTakenToLoad = 0
 

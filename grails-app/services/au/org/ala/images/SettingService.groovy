@@ -93,7 +93,7 @@ class SettingService {
             Boolean.parseBoolean(value)
         }
         setting.value = value
-        setting.save(flush:true)
+        setting.save()
     }
 
     /**

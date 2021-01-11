@@ -43,7 +43,7 @@ class ImageStoreService {
         return imgDesc
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     byte[] retrieveImage(String imageIdentifier) {
         return Image.findByImageIdentifier(imageIdentifier, [ cache: true] ).retrieve()
     }

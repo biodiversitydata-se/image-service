@@ -109,6 +109,8 @@ dataSource:
     dbCreate: validate
     pooled: true
     jmxExport: true
+    type: "com.zaxxer.hikari.HikariDataSource"
+
 
 environments:
     development:
@@ -117,26 +119,10 @@ environments:
             url: jdbc:postgresql://localhost/images?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
             username: "images"
             password: "images"
-            type: "com.zaxxer.hikari.HikariDataSource"
             properties:
-                maximumPoolSize: 30
+                maximumPoolSize: 10
                 registerMbeans: true
                 connectionTimeout: 5000
-#    test:
-#        flyway:
-#            baselineOnMigrate: false
-#        dataSource:
-#            embeddedPostgres: false
-#            logSql: false
-#            embeddedPort: 5432
-#            url: jdbc:postgresql://localhost/images_test?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
-#            username: "images"
-#            password: "images"
-#            type: "com.zaxxer.hikari.HikariDataSource"
-#            properties:
-#                maximumPoolSize: 30
-#                registerMbeans: true
-#                connectionTimeout: 5000
     test:
         flyway:
             baselineOnMigrate: false

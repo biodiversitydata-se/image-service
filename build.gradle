@@ -59,6 +59,9 @@ dependencies {
     compile "org.grails:grails-web-boot"
     compile group: 'org.grails.plugins', name: 'grails-pretty-time', version: '4.0.0'
 
+    compile group: 'org.grails', name: 'grails-async'
+    compile group: 'org.grails', name: 'grails-async-gpars'
+
     compile 'xml-apis:xml-apis:1.4.01'
     compile 'org.grails.plugins:csv:1.0.1'
 
@@ -68,8 +71,6 @@ dependencies {
     compile group: 'org.grails.plugins', name: 'ala-admin-plugin', version: '2.2', changing: true
     compile group: 'org.grails.plugins', name: 'ala-auth', version: '3.2.2', changing: true
     compile group: 'au.org.ala.plugins.grails', name:'images-client-plugin', version: '1.1', changing: true
-
-    compile group: 'org.grails', name: 'grails-async-gpars', version: '4.0.0.RC2'
 
     // Added dependencies
     compile 'org.grails.plugins:cache-headers:2.0.2'
@@ -85,7 +86,6 @@ dependencies {
     compile 'org.imgscalr:imgscalr-lib:4.2'
     compile 'org.apache.commons:commons-imaging:1.0-SNAPSHOT'
     compile 'org.apache.tika:tika-core:1.23'
-//    compile "org.flywaydb:flyway-core:7.1.1"
     compile "org.flywaydb:flyway-core:4.2.0"
     compile 'com.github.jai-imageio:jai-imageio-core:1.4.0'
     compile 'au.org.ala:image-utils:1.9.0'

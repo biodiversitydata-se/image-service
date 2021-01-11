@@ -6,6 +6,7 @@ import au.org.ala.images.tiling.TileFormat
 import grails.gorm.transactions.Transactional
 import groovy.sql.Sql
 import groovy.transform.Synchronized
+import okhttp3.HttpUrl
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.imaging.Imaging
 import org.apache.commons.imaging.common.ImageMetadata
@@ -22,6 +23,8 @@ import org.grails.plugins.codecs.MD5CodecExtensionMethods
 import org.grails.plugins.codecs.SHA1CodecExtensionMethods
 import org.hibernate.FlushMode
 import org.springframework.web.multipart.MultipartFile
+import org.springframework.web.util.UriComponents
+
 import java.text.SimpleDateFormat
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
@@ -42,8 +45,6 @@ class ImageService {
     def elasticSearchService
     def settingService
     def collectoryService
-
-    private final imageStoreLock = new Object()
 
     final static List<String> SUPPORTED_UPDATE_FIELDS = [
         "audience",
@@ -178,17 +179,15 @@ class ImageService {
                         // if so, no need to load the image, use the identifier.....
                         if (isImageServiceUrl(imageUrl)){
 
-                            if (imageUrl.contains("=")) {
-                                //retrieve the image ID
-                                def imageID = imageUrl.substring(imageUrl.lastIndexOf("=") + 1)
-                                if (imageID) {
-                                    image = Image.findByImageIdentifier(imageID)
-                                }
-                            } else {
-                                def imageID = imageUrl.substring(imageUrl.lastIndexOf("/") + 1)
-                                if (imageID) {
-                                    image = Image.findByImageIdentifier(imageID)
-                                }
+                            def imageHttpUrl = HttpUrl.parse(imageUrl)
+                            def imageID
+                            if (imageHttpUrl?.queryParameterNames()?.contains('id')) {
+                                imageID = imageHttpUrl.queryParameter('id')
+                            } else if (!imageHttpUrl?.pathSegments()?.empty) {
+                                imageID = imageHttpUrl.pathSegments().last()
+                            }
+                            if (imageID) {
+                                image = Image.findByImageIdentifier(imageID)
                             }
                         }
 
