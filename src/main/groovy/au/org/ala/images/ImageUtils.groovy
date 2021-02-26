@@ -1,5 +1,9 @@
 package au.org.ala.images
 
+import com.google.common.hash.Hashing
+import com.google.common.io.BaseEncoding
+import com.google.common.io.Files
+
 import java.awt.Color
 import java.awt.Rectangle
 import java.awt.geom.AffineTransform
@@ -139,4 +143,14 @@ class ImageUtils {
         return "${new DecimalFormat( '0.#' ).format( filesize )} $label"
     }
 
+    /**
+     * Generates a lower case hex encoded MD5 hash of the given file's contents.  The resulting
+     * string will always exactly 32 characters long.
+     *
+     * @param file The file to hash
+     * @return The md5 hash of the file as a 32 character long hex string
+     */
+    static String generateMD5(final file) {
+        return BaseEncoding.base16().lowerCase().encode(Files.asByteSource(file).hash(Hashing.md5()).asBytes()).padLeft(32, '0')
+    }
 }

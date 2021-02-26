@@ -1,9 +1,8 @@
 package au.org.ala.images;
 
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  *
@@ -11,6 +10,8 @@ import java.util.List;
  *
  */
 public class CodeTimer {
+
+    Logger logger = Logger.getLogger("CodeTimer");
 
     private static String EOL = System.getProperty("line.separator");
 
@@ -25,8 +26,6 @@ public class CodeTimer {
 
     private long _frequency;
 
-    private Writer _writer = null;
-
     /**
      * ctor Starts the timer
      *
@@ -38,7 +37,6 @@ public class CodeTimer {
         _times = new ArrayList<Long>();
         _startCounter = System.nanoTime();
         _frequency = 1000000000;
-        _writer = new OutputStreamWriter(System.out);
     }
 
     /** start/restart the timer */
@@ -91,7 +89,7 @@ public class CodeTimer {
             } else {
                 msg = String.format("%s: %d ms%s", _description, getElapsedMillis(), (auxmsg == null ? "" : " (" + auxmsg + ")"));
             }
-            if (msg != null && _writer != null) {
+            if (msg != null && logger != null) {
                 writeln(msg);
             }
         }
@@ -125,17 +123,7 @@ public class CodeTimer {
     }
 
     private void writeln(String msg) {
-        try {
-            _writer.write(msg + EOL);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        } finally {
-            try {
-                _writer.flush();
-            } catch (Exception ex2) {
-                // ignore
-            }
-        }
+        logger.info(msg);
     }
 
     /**
@@ -149,7 +137,7 @@ public class CodeTimer {
             total += l;
         }
         long avg = (_times.size() == 0 ? 0 : total / _times.size());
-        if (dump && _writer != null) {
+        if (dump && logger != null) {
             writeln("Average : " + avg);
         }
         return avg;

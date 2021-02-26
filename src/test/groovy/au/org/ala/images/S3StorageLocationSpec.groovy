@@ -2,13 +2,16 @@ package au.org.ala.images
 
 import au.org.ala.images.helper.LocalstackRule
 import cloud.localstack.Localstack
-import cloud.localstack.TestUtils
+import cloud.localstack.deprecated.TestUtils
 import cloud.localstack.docker.annotation.LocalstackDockerProperties
+import com.amazonaws.ClientConfiguration
+import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import grails.testing.gorm.DomainUnitTest
 import org.junit.ClassRule
 import spock.lang.Shared
 
-import static cloud.localstack.TestUtils.DEFAULT_REGION
+import static cloud.localstack.deprecated.TestUtils.DEFAULT_REGION
 
 @LocalstackDockerProperties(services = [ "s3" ])
 class S3StorageLocationSpec extends StorageLocationSpec implements DomainUnitTest<S3StorageLocation> {
@@ -29,9 +32,18 @@ class S3StorageLocationSpec extends StorageLocationSpec implements DomainUnitTes
     S3StorageLocation alternateStorageLocation
 
     def setupSpec() {
-        TestUtils.clientS3.createBucket('bouquet')
-        TestUtils.clientS3.createBucket('bucket')
-        TestUtils.clientS3.createBucket('other-bucket')
+
+        AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard().
+                withEndpointConfiguration(cloud.localstack.awssdkv1.TestUtils.getEndpointConfigurationS3()).
+                withCredentials(cloud.localstack.awssdkv1.TestUtils.getCredentialsProvider()).
+                withClientConfiguration(
+                        new ClientConfiguration()
+                                .withValidateAfterInactivityMillis(200))
+        builder.setPathStyleAccessEnabled(true)
+        AmazonS3 clientS3 = builder.build()
+        clientS3.createBucket('bouquet')
+        clientS3.createBucket('bucket')
+        clientS3.createBucket('other-bucket')
     }
 
     def setup() {

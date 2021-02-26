@@ -35,9 +35,30 @@
         <td class="property-value"><img:imageMetadata image="${imageInstance}" resource="${resourceLevel}" field="creator"/></td>
     </tr>
     <tr>
+        <td class="property-name"><g:message code="core.image.metadata.created" /></td>
+        <td class="property-value">${imageInstance.created}</td>
+    </tr>
+    <tr>
         <td class="property-name"><g:message code="core.image.metadata.description" /></td>
         <td class="property-value">${imageInstance.description}</td>
     </tr>
+    <tr>
+        <td class="property-name"><g:message code="core.image.metadata.publisher" /></td>
+        <td class="property-value">${imageInstance.publisher}</td>
+    </tr>
+    <tr>
+        <td class="property-name"><g:message code="core.image.metadata.references" /></td>
+        <td class="property-value">${imageInstance.references}</td>
+    </tr>
+    <tr>
+        <td class="property-name"><g:message code="core.image.metadata.audience" /></td>
+        <td class="property-value">${imageInstance.audience}</td>
+    </tr>
+    <tr>
+        <td class="property-name"><g:message code="core.image.metadata.source" /></td>
+        <td class="property-value">${imageInstance.source}</td>
+    </tr>
+
     <g:if test="${isAdminView}">
         <tr>
             <td class="property-name"><g:message code="core.image.metadata.zoom.levels" /></td>

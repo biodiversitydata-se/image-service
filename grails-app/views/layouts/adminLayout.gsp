@@ -25,6 +25,7 @@
                     <h1>Admin tools</h1>
                     <ul class="nav nav-pills nav-stacked">
                         <img:menuNavItem href="${createLink(controller: 'admin', action: 'dashboard')}" title="Dashboard" />
+                        <img:menuNavItem href="${createLink(controller: 'admin', action: 'batchUploads')}" title="Batch uploads" />
                         <img:menuNavItem href="${createLink(controller: 'admin', action: 'upload')}" title="Upload images" />
                         <img:menuNavItem href="${createLink(controller: 'admin', action: 'tools')}" title="Tools" />
                         <img:menuNavItem href="${createLink(controller: 'admin', action: 'duplicates')}" title="Duplicates" />

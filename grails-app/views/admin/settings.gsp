@@ -6,25 +6,26 @@
 </head>
 
 <body>
-    <content tag="pageTitle">Settings</content>
+    <h3>Settings</h3>
+    <p>Below is a listing of dynamic settings the system is using.
+        These can manipulated in the database to have an effect on the running service.
+    </p>
     <table class="table table-bordered table-striped">
+        <thead>
+            <th>Property name</th>
+            <th>Description</th>
+            <th>Current value</th>
+        </thead>
         <g:each in="${settings}" var="setting">
             <tr>
                 <td>
-                    <small>
-                        ${setting.name}
-                    </small>
+                    ${setting.name}
                 </td>
                 <td>
                     ${setting.description}
                 </td>
                 <td>
-                    <g:if test="${setting.type == au.org.ala.images.SettingType.Boolean}">
-                        <g:checkBox name="${setting.name}" data-size="small" checked="${Boolean.parseBoolean(setting.value)}" />
-                    </g:if>
-                    <g:else>
-                        ${setting.value}
-                    </g:else>
+                    ${setting.value}
                 </td>
             </tr>
         </g:each>
