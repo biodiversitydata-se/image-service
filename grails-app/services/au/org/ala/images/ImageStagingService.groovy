@@ -1,5 +1,6 @@
 package au.org.ala.images
 
+import grails.web.mapping.LinkGenerator
 import org.apache.commons.io.ByteOrderMark
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.input.BOMInputStream
@@ -16,6 +17,7 @@ class ImageStagingService {
     def logService
     def imageService
     def auditService
+    LinkGenerator grailsLinkGenerator
 
     ResultsPageList<StagedFile> getFileList(String userId, GrailsParameterMap params) {
 
@@ -53,8 +55,8 @@ class ImageStagingService {
     }
 
     private String getStagingDirectory(String userId) {
-        def basedir = grailsApplication.config.imageservice.imagestore.root as String
-        def userdir = new File(combine(basedir, "staging/${userId}"))
+        def basedir = grailsApplication.config.imageservice.imagestore.staging as String
+        def userdir = new File(combine(basedir, userId))
         if (!userdir.exists()) {
             userdir.mkdirs()
         }
@@ -122,13 +124,11 @@ class ImageStagingService {
     }
 
     public String getDataFileUrl(String userId) {
-        def root = grailsApplication.config.imageservice.apache.root
-        return root + "/staging/${userId}/datafile/datafile.txt"
+        grailsLinkGenerator.link(absolute: true, controller: 'staging', action: 'serve', params: [ path: "${userId}/datafile/datafile.txt"] )
     }
 
     public String getStagedFileUrl(StagedFile stagedFile) {
-        def root = grailsApplication.config.imageservice.apache.root
-        return root + "/staging/${stagedFile.userId}/${stagedFile.filename}"
+        grailsLinkGenerator.link(absolute: true, controller: 'staging', action: 'serve', params: [ path: "${stagedFile.userId}/${stagedFile.filename}"] )
     }
 
     def deleteDataFile(String userId) {

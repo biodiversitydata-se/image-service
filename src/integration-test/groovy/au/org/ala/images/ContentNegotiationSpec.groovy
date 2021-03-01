@@ -6,10 +6,6 @@ import grails.testing.mixin.integration.Integration
 import grails.transaction.Rollback
 import groovy.json.JsonSlurper
 import image.service.Application
-import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.servlet.DefaultServlet
-import org.eclipse.jetty.servlet.ServletContextHandler
-import org.eclipse.jetty.servlet.ServletHolder
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 import spock.lang.Shared
@@ -31,7 +27,6 @@ class ContentNegotiationSpec extends Specification {
 
     def imageId
     def grailsApplication
-    Server server
 
     private String getBaseUrl() {
         def serverContextPath = grailsApplication.config.getProperty('server.contextPath', String, '')
@@ -40,21 +35,6 @@ class ContentNegotiationSpec extends Specification {
     }
 
     def setup() {
-
-        // Create HTTP Server to emulate nginx
-        server = new Server(8880)
-        ServletContextHandler context = new ServletContextHandler()
-        ServletHolder defaultServ = new ServletHolder("default", DefaultServlet.class)
-        def imageStoreDir = new File(grailsApplication.config.imageservice.imagestore.root)
-        defaultServ.setInitParameter("resourceBase",imageStoreDir.getParent())
-        defaultServ.setInitParameter("dirAllowed","true")
-        context.addServlet(defaultServ,"/")
-        server.setHandler(context)
-
-        // Start Server
-        server.start()
-
-
         MultiValueMap<String, String> form = new LinkedMultiValueMap<String, String>()
         form.add("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/e/ed/Puma_concolor_camera_trap_Arizona_2.jpg")
 
@@ -70,10 +50,6 @@ class ContentNegotiationSpec extends Specification {
     }
 
     def cleanup() {
-        // Start Server
-        if (server != null) {
-            server.stop()
-        }
     }
 
     /**
@@ -85,12 +61,15 @@ class ContentNegotiationSpec extends Specification {
         RestResponse resp = rest.get("${baseUrl}/image/${imageId}"){
             accept "application/json"
         }
-
+        println("response received")
         def jsonResponse = new JsonSlurper().parseText(resp.body)
+        println("response parsed")
 
         then:
         resp.status == 200
-        jsonResponse.originalFilename != null
+        println("checking")
+        jsonResponse.originalFileName != null
+        println("checked")
     }
 
     /**

@@ -94,7 +94,10 @@
                                         <td class="property-name"><g:message code="details.mime.type" /></td>
                                         <td class="property-value">${imageInstance.mimeType}</td>
                                     </tr>
-
+                                    <tr>
+                                        <td class="property-name"><g:message code="details.dc.type" /></td>
+                                        <td class="property-value">${imageInstance.type}</td>
+                                    </tr>
                                     <tr>
                                         <td class="property-name"><g:message code="details..url" args="[mediaTitle]" /></td>
                                         <td class="property-value">
@@ -115,6 +118,12 @@
                                         <td class="property-name"><g:message code="details.size.on.disk" /></td>
                                         <td class="property-value"><img:sizeInBytes size="${sizeOnDisk}" /></td>
                                     </tr>
+                                    <auth:ifAnyGranted roles="${CASRoles.ROLE_ADMIN}">
+                                    <tr>
+                                        <td class="property-name">Storage location</td>
+                                        <td class="property-value">${imageInstance.storageLocation}</td>
+                                    </tr>
+                                    </auth:ifAnyGranted>
                                 </table>
 
                                 <div class="metadataSource-container"></div>
@@ -175,8 +184,8 @@
 
             var options = {
                 auxDataUrl : "${auxDataUrl ? auxDataUrl : ''}",
-                imageServiceBaseUrl : "${grailsApplication.config.grails.serverURL}${grailsApplication.config.server.contextPath}",
-                imageClientBaseUrl : "${grailsApplication.config.grails.serverURL}${grailsApplication.config.server.contextPath}",
+                imageServiceBaseUrl : "${createLink(absolute: true, uri: '/')}",
+                imageClientBaseUrl : "${createLink(absolute: true, uri: '/')}",
                 zoomFudgeFactor: 0.65
             };
 

@@ -31,6 +31,12 @@ class AdminController {
         redirect(action:'dashboard')
     }
 
+    def debugBackgroundQueue(){
+        imageService.dumpQueueToFile()
+        flash.message = "Background queue dumped to file."
+        redirect(action:'dashboard')
+    }
+
     def image() {
         def image = imageService.getImageFromParams(params)
         if (!image) {
@@ -38,18 +44,13 @@ class AdminController {
             redirect(action:'list')
         } else {
             def subimages = Subimage.findAllByParentImage(image)*.subimage
-            def sizeOnDisk = imageStoreService.getConsumedSpaceOnDisk(image.imageIdentifier)
+
+            def sizeOnDisk = image.consumedSpace()
 
             //accessible from cookie
-            def userEmail = AuthenticationUtils.getEmailAddress(request)
-            def userDetails = authService.getUserForEmailAddress(userEmail, true)
-            def userId = userDetails ? userDetails.id : ""
+            def userId = authService.userId
 
-            def isAdmin = false
-            if (userDetails){
-                if (userDetails.getRoles().contains("ROLE_ADMIN"))
-                    isAdmin = true
-            }
+            def isAdmin = request.isUserInRole('ROLE_ADMIN')
 
             def thumbUrls = imageService.getAllThumbnailUrls(image.imageIdentifier)
 
@@ -64,6 +65,7 @@ class AdminController {
     }
 
     def upload() { }
+
     def analytics() {
         render(view: 'analytics', model:[results:analyticsService.byAll()])
     }
@@ -138,8 +140,8 @@ class AdminController {
                     }
                     lineCount++
                 }
-                scheduleImagesUpload(batch, authService.getUserId())
-                renderResults([success: true, message:'Image upload started'])
+                def batchId = scheduleImagesUpload(batch, authService.getUserId())
+                renderResults([success: true, batchId: batchId, message:'Image upload started'])
             } catch (Exception e){
                 log.error(e.getMessage(), e)
                 renderResults([success: false, message: "Problem reading CSV file. Please check contents."])
@@ -159,6 +161,17 @@ class AdminController {
             }
             batchService.addTaskToBatch(batchId, new UploadFromUrlTask(srcImage, imageService, userId))
             imageCount++
+        }
+        return batchId
+    }
+
+    def getBatchProgress() {
+        def batchId = params.batchId
+        def batchStatus = batchService.getBatchStatus(batchId)
+        if (batchStatus) {
+            render(batchStatus as JSON, contentType: 'application/json')
+        } else {
+            render([error: 'batch not found'] as JSON, contentType: 'application/json', status: 404)
         }
     }
 
@@ -184,6 +197,28 @@ class AdminController {
             csvWriter2.writeNext(licenceCSVMapping)
         }
         [licenceCSV:licenceCSV.toString(), licenceCSVMapping:licenceCSVMappings.toString()]
+    }
+
+    def batchUploads(){
+        [results: batchService.getUploads(), files: batchService.getNonCompleteFiles(), batchServiceProcessingEnabled: settingService.getBatchServiceProcessingEnabled()]
+    }
+
+    def batchUpload(){
+        BatchFileUpload batchFileUpload = batchService.getBatchFileUpload(params.id)
+        [batchFileUpload: batchFileUpload, files: batchService.getFilesForUpload(params.id),
+         batchServiceProcessingEnabled: settingService.getBatchServiceProcessingEnabled()]
+    }
+
+    def batchReloadFile(){
+        batchService.reloadFile(params.fileId)
+        flash.message = "Reload initiated for ${params.fileId}"
+        redirect(action:'batchUploads', message: "Reload initiated for ${params.fileId}")
+    }
+
+    def batchFileDeleteFromQueue(){
+        batchService.deleteFileFromQueue(params.fileId)
+        flash.message = "File ${params.fileId} deleted"
+        redirect(action:'batchUploads', message: "File removed from queue for ${params.fileId}")
     }
 
     def updateStoredLicences(){
@@ -300,7 +335,9 @@ class AdminController {
 
     def dashboard() {}
 
-    def tools() {}
+    def tools() {
+        [batchProcessingEnabled: settingService.getBatchServiceProcessingEnabled()]
+    }
 
     def localIngest() {}
 
@@ -312,7 +349,8 @@ class AdminController {
 
     def reindexImages() {
         flash.message = "Reindexing scheduled. Monitor progress using the search interface."
-        imageService.scheduleBackgroundTask(new ScheduleReindexAllImagesTask(imageService, elasticSearchService))
+        imageService.scheduleBackgroundTask(new ScheduleReindexAllImagesTask(imageService, elasticSearchService,
+                grailsApplication.config.elasticsearch.batchIndexSize))
         redirect(action:'tools')
     }
 
@@ -420,6 +458,8 @@ class AdminController {
 
     def tags() {}
 
+    def storageLocations() {}
+
     def uploadTagsFragment() {}
 
     def clearQueues(){
@@ -449,6 +489,30 @@ class AdminController {
         imageService.scheduleBackgroundTask(new ScheduleLicenseReMatchAllBackgroundTask(imageService))
         flash.message = "Rematching licenses scheduled. Monitor progress using the dashboard.";
         redirect(action:'tools', message: flash.message)
+    }
+
+    def disableBatchProcessing(){
+        settingService.disableBatchProcessing()
+        flash.message = "Batch processing disabled.";
+        redirect(action:'batchUploads', message: flash.message)
+    }
+
+    def clearFileQueue(){
+        batchService.clearFileQueue()
+        flash.message = "File queue cleared.";
+        redirect(action:'batchUploads', message: flash.message)
+    }
+
+    def clearUploads(){
+        batchService.clearUploads()
+        flash.message = "File queue cleared";
+        redirect(action:'batchUploads', message: flash.message)
+    }
+
+    def enableBatchProcessing(){
+        settingService.enableBatchProcessing()
+        flash.message = "Batch processing enabled.";
+        redirect(action:'batchUploads', message: flash.message)
     }
 
     def checkForMissingImages(){

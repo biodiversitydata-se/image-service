@@ -1,6 +1,5 @@
 package au.org.ala.images
 
-import groovy.time.Duration
 import groovy.time.TimeCategory
 
 import java.text.SimpleDateFormat

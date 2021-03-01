@@ -1,10 +1,3 @@
-
-CREATE ROLE images WITH LOGIN PASSWORD 'images';
-CREATE DATABASE images;
-GRANT ALL PRIVILEGES ON DATABASE images TO images;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO images;
-ALTER ROLE images WITH SUPERUSER;
-
 --  Function used for full DB exports
 CREATE OR REPLACE FUNCTION export_images() RETURNS void AS $$
 BEGIN
@@ -13,7 +6,7 @@ BEGIN
         select
             data_resource_uid AS "dataResourceUid",
             occurrence_id as "occurrenceID",
-            CONCAT( 'http://dev.ala.org.au:8080/image/proxyImageThumbnailLarge?imageId=', image_identifier) AS identifier,
+            CONCAT( '${baseUrl}/image/proxyImageThumbnailLarge?imageId=', image_identifier) AS identifier,
             regexp_replace(creator, E'[\\n\\r]+', ' ', 'g' ) AS creator,
             date_taken AS created,
             regexp_replace(title, E'[\\n\\r]+', ' ', 'g' ) AS title,
@@ -21,7 +14,7 @@ BEGIN
             regexp_replace(license, E'[\\n\\r]+', ' ', 'g' ) AS license,
             regexp_replace(rights, E'[\\n\\r]+', ' ', 'g' ) AS rights,
             regexp_replace(rights_holder, E'[\\n\\r]+', ' ', 'g' ) AS "rightsHolder",
-            CONCAT('http://dev.ala.org.au:8080/image/', image_identifier) AS "references",
+            CONCAT('${baseUrl}/image/', image_identifier) AS "references",
             regexp_replace(title, E'[\\n\\r]+', ' ', 'g' ) as title,
             regexp_replace(description, E'[\\n\\r]+', ' ', 'g' ) as description,
             extension as extension,
@@ -37,7 +30,7 @@ BEGIN
                  left outer join license l ON l.id = i.recognised_license_id
         order by data_resource_uid
         )
-        TO '/data/image-service/exports/images.csv' DELIMITER ',' CSV HEADER;
+        TO '${exportRoot}/images.csv' DELIMITER ',' CSV HEADER;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -76,6 +69,77 @@ BEGIN
                  left outer join license l ON l.id = i.recognised_license_id
         where date_deleted is NULL
         )
-        TO '/data/image-service/exports/images-index.csv' WITH CSV DELIMITER '$' HEADER;
+        TO '${exportRoot}/images-index.csv' WITH CSV DELIMITER '$' HEADER;
+END;
+$$ LANGUAGE plpgsql;
+
+--  Function used for exporting metadata for images associated with a dataset
+CREATE OR REPLACE FUNCTION export_dataset(uid varchar) RETURNS void AS $$
+DECLARE
+    output_file CONSTANT varchar := CONCAT(CONCAT( '${exportRoot}/images-export-', uid), '.csv');
+BEGIN
+    EXECUTE format ('
+    COPY
+        (
+        select
+            image_identifier as "imageID",
+            original_filename as "identifier",
+            audience,
+            contributor,
+            created,
+            creator,
+            description,
+            mime_type as "format",
+            license,
+            publisher,
+            dc_references as "references",
+            rights_holder  as "rightsHolder",
+            source,
+            title,
+            type
+            from image i
+            where data_resource_uid = %L
+        )
+    TO %L (FORMAT CSV)'
+        , uid, output_file);
+END;
+$$ LANGUAGE plpgsql;
+
+--  Function used for exporting mapping of URL -> imageID for a dataset
+CREATE OR REPLACE FUNCTION export_dataset_mapping(uid varchar) RETURNS void AS $$
+DECLARE
+    output_file CONSTANT varchar := CONCAT(CONCAT( '${exportRoot}/images-mapping-', uid), '.csv');
+BEGIN
+    EXECUTE format ('
+    COPY
+        (
+        select
+            image_identifier as "imageID",
+            original_filename as "url"
+            from image i
+            where data_resource_uid = %L
+        )
+    TO %L (FORMAT CSV)'
+        , uid, output_file);
+END;
+$$ LANGUAGE plpgsql;
+
+--  Function used for exporting mapping of URL -> imageID for all dataset
+CREATE OR REPLACE FUNCTION export_mapping() RETURNS void AS $$
+DECLARE
+    output_file CONSTANT varchar :=  '${exportRoot}/images-mapping.csv';
+BEGIN
+    EXECUTE format ('
+    COPY
+        (
+        select
+            data_resource_uid,
+            image_identifier as "imageID",
+            original_filename as "url"
+            from image i
+            where data_resource_uid is NOT NULL
+        )
+    TO %L (FORMAT CSV)'
+        , output_file);
 END;
 $$ LANGUAGE plpgsql;

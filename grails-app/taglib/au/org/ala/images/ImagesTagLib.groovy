@@ -101,9 +101,7 @@ class ImagesTagLib {
     }
 
     def imageThumbUrl = { attrs, body ->
-        if (attrs.imageId && attrs.idx) {
-            out << imageService.getImageThumbUrl(attrs.imageId as String, attrs.idx)
-        } else if (attrs.imageId ){
+        if (attrs.imageId ) {
             out << imageService.getImageThumbUrl(attrs.imageId as String)
         }
     }
@@ -148,18 +146,6 @@ class ImagesTagLib {
             valueToRender = message(code: attrs.dataResourceUid, default: attrs.dataResourceUid)
         }
         out <<  "<span class='resource-name'>${valueToRender}</span>"
-    }
-
-    def imageSquareThumbUrl = { attrs, body ->
-        if (attrs.imageId) {
-            out << imageService.getImageSquareThumbUrl(attrs.imageId as String, attrs.backgroundColor ?: '')
-        }
-    }
-
-    def imageTileBaseUrl = { attrs, body ->
-        if (attrs.imageId) {
-            out << imageService.getImageTilesRootUrl(attrs.imageId as String)
-        }
     }
 
     def sizeInBytes = { attrs, body ->

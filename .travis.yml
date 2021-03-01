@@ -7,6 +7,8 @@ branches:
     - master
     - develop
     - /^feature\/.*$/
+services:
+  - docker
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
 
@@ -18,10 +20,10 @@ cache:
 
 before_install:
   - docker-compose -f elastic.yml up -d
+  - 'export GRADLE_OPTS="-Dgrails.env=travis"'
 
 after_success:
-  - 'export GRADLE_OPTS="-Dgrails.env=travis"'
-  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && travis_retry ./gradlew publish --stacktrace --debug'
+  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && GRADLE_OPTS="-Dgrails.env=production" travis_retry ./gradlew clean assemble publish --stacktrace'
 
 after_script:
   - docker-compose -f elastic.yml kill

@@ -64,7 +64,6 @@ class SearchSpec extends Specification {
         int counter = 0
         int MAX_CHECKS = 10
 
-
         while (hasBacklog && counter < MAX_CHECKS) {
             RestResponse statsResp = rest.get("${baseUrl}/ws/backgroundQueueStats")
             def json = new JsonSlurper().parseText(statsResp.body)
@@ -81,13 +80,12 @@ class SearchSpec extends Specification {
         def jsonCount = new JsonSlurper().parseText(countsResp.body)
         jsonCount
 
-//        def occurrenceID = "f4c13adc-2926-44c8-b2cd-fb2d62378a1a"
         //search by occurrence ID
         RestResponse resp = rest.post("${baseUrl}/ws/findImagesByMetadata", {
             json {
                 [
-                        "key"   : "occurrenceid",
-                        "values": ["f4c13adc-2926-44c8-b2cd-fb2d62378a1a"]
+                    "key"   : "occurrenceid",
+                    "values": ["f4c13adc-2926-44c8-b2cd-fb2d62378a1a"]
                 ]
             }
         })

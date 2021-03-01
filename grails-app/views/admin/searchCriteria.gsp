@@ -92,8 +92,10 @@
                         <td>${criteria.fieldName}</td>
                         <td>${criteria.units}</td>
                         <td style="">
-                            <button class="btn btn-mini btn-danger btnDeleteCriteria"><i class="icon-remove icon-white"></i></button>
-                            <button class="btn btn-mini btnEditCriteria"><i class="icon-edit"></i></button>
+                            <div class="btn-group-vertical">
+                                <button class="btn btn-sm btn-danger btnDeleteCriteria"><span class="glyphicon glyphicon-remove icon-white"></span> Delete</button>
+                                <button class="btn btn-sm btn-default btnEditCriteria"><span class="glyphicon glyphicon-edit"></span> Edit</button>
+                            </div>
                         </td>
                     </tr>
                 </g:each>

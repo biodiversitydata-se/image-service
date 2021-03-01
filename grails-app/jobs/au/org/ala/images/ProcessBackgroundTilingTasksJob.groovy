@@ -6,7 +6,7 @@ class ProcessBackgroundTilingTasksJob {
     def logService
     def settingService
 
-    def concurrent = false
+    static concurrent = false
 
     static triggers = {
         simple repeatInterval: 10000l

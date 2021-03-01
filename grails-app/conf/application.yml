@@ -20,14 +20,13 @@ grails:
             - file:///data/image-service/config/image-service-config.yml
             - file:///data/image-service/config/image-service-config.groovy
     mime:
+        use:
+            accept:
+                header: true
         disable:
             accept:
                 header:
                     userAgents:
-                        - Gecko
-                        - WebKit
-                        - Presto
-                        - Trident
         types:
             all: '*/*'
             atom: application/atom+xml
@@ -37,6 +36,15 @@ grails:
             html:
               - text/html
               - application/xhtml+xml
+            image:
+              - image/jpeg
+              - image/jpg
+              - image/png
+              - image/bmp
+              - image/tiff
+              - image/webp
+              - image/apng
+              - image/*
             js: text/javascript
             json:
               - application/json
@@ -72,95 +80,115 @@ grails:
                 scriptlets: html
                 taglib: none
                 staticparts: none
+    databinding:
+        convertEmptyStringsToNull: false
 
 server:
     contextPath: ''
 
 ---
+flyway:
+    enabled: true
+    baselineOnMigrate: true
+    baselineVersion: 1
+    outOfOrder: false
+---
 hibernate:
+    dialect: org.hibernate.dialect.PostgreSQLDialect
     cache:
-        queries: false
+        queries: true
         use_second_level_cache: false
-        use_query_cache: false
+        use_query_cache: true
+    jdbc:
+        lob:
+            #https://stackoverflow.com/questions/49110818/method-org-postgresql-jdbc-pgconnection-createclob-is-not-yet-implemented
+            non_contextual_creation: true
 
 dataSource:
+    driverClassName: org.postgresql.Driver
+    dbCreate: validate
     pooled: true
     jmxExport: true
-    username: images
-    password: 'images'
+    type: "com.zaxxer.hikari.HikariDataSource"
+
 
 environments:
     development:
-#        hibernate:
-#            dialect: org.hibernate.dialect.PostgreSQLDialect
         dataSource:
-            dbCreate: update
-#            driverClassName: org.postgresql.Driver
+            logSql: false
             url: jdbc:postgresql://localhost/images?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
             username: "images"
             password: "images"
+            properties:
+                maximumPoolSize: 10
+                registerMbeans: true
+                connectionTimeout: 5000
     test:
-        hibernate:
-            dialect: org.hibernate.dialect.H2Dialect
+        flyway:
+            baselineOnMigrate: false
         dataSource:
+            embeddedPostgres: true
             pooled: true
             jmxExport: true
-            driverClassName: org.h2.Driver
-            username: 'images'
-            password: 'images'
-            dbCreate: update
-            url: jdbc:h2:mem:images;MVCC=TRUE;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
+            embeddedPort: 6543
+            username: postgres
+            password: postgres
+            url: jdbc:postgresql://localhost:6543/postgres?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
         imageservice:
             imagestore:
                 root: '/tmp/image-service/store'
                 inbox: '/tmp/image-service/incoming'
             exportDir: '/tmp/image-service/exports'
+            batchUpload: '/tmp/image-service/uploads'
     travis:
-        hibernate:
-            dialect: org.hibernate.dialect.H2Dialect
+        flyway:
+            baselineOnMigrate: false
         dataSource:
+            embeddedPostgres: true
             pooled: true
             jmxExport: true
-            driverClassName: org.h2.Driver
-            username: 'images'
-            password: 'images'
-            dbCreate: update
-            url: jdbc:h2:mem:images;MVCC=TRUE;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
+            embeddedPort: 6543
+            username: postgres
+            password: postgres
+            url: jdbc:postgresql://localhost:6543/postgres?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
         imageservice:
             imagestore:
                 root: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-store'
                 inbox: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-incoming'
             exportDir: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-exports'
-
+            batchUpload: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-uploads'
+#    travis:
+#        flyway:
+#            baselineOnMigrate: false
+#        dataSource:
+#            dbCreate: update
+#            embeddedPostgres: false
+#            logSql: false
+#            embeddedPort: 5432
+#            url: jdbc:postgresql://localhost/images_travis?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
+#            username: "postgres"
+#            password: "postgres"
+#            type: "com.zaxxer.hikari.HikariDataSource"
+#            properties:
+#                maximumPoolSize: 30
+#                registerMbeans: true
+#                connectionTimeout: 5000
+#        imageservice:
+#            imagestore:
+#                root: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-store'
+#                inbox: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-incoming'
+#            exportDir: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-exports'
     production:
         hibernate:
             dialect: org.hibernate.dialect.PostgreSQLDialect
         dataSource:
-            dbCreate: update
+            dbCreate: validate
             driverClassName: org.postgresql.Driver
             url: jdbc:postgresql://localhost/images?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
-            properties:
-                jmxEnabled: true
-                initialSize: 5
-                maxActive: 50
-                minIdle: 5
-                maxIdle: 25
-                maxWait: 10000
-                maxAge: 600000
-                timeBetweenEvictionRunsMillis: 5000
-                minEvictableIdleTimeMillis: 60000
-                validationQuery: SELECT 1
-                validationQueryTimeout: 3
-                validationInterval: 15000
-                testOnBorrow: true
-                testWhileIdle: true
-                testOnReturn: false
-                jdbcInterceptors: ConnectionState
-                defaultTransactionIsolation: 2 # TRANSACTION_READ_COMMITTED
 security:
     cas:
         appServerName: 'http://dev.ala.org.au:8080'
-        uriFilterPattern: '/admin/.*,/admin,/admin/,/image/deleteImage/.*'
+        uriFilterPattern: '/admin/.*,/admin,/admin/,/image/deleteImage/.*,/storageLocation,/storageLocation/.*'
         authenticateOnlyIfLoggedInPattern:  '/ws/createSubimage'
         bypass: false
         disableCAS: false
@@ -169,11 +197,13 @@ imageservice:
     imagestore:
         root: '/data/image-service/store'
         inbox: '/data/image-service/incoming'
-    apache:
-        root: 'http://localhost:8880/store/'
-        # space separated list
-        multiple_roots: 'http://localhost:8880/store/'
+        staging: '/data/image-service/store/staging'
+    batchUpload: '/data/image-service/upload'
     exportDir: '/data/image-service/exports'
+    apache:
+        root: '${grails.serverURL}${grails.contextPath}/store/'
+        # space separated list
+        multiple_roots: '${grails.serverURL}${grails.contextPath}/store/'
     thumbnail:
         size: 300
 
@@ -205,6 +235,13 @@ spring:
         template:
             check-template-location: false
 
+    jpa:
+        properties:
+            hibernate:
+                jdbc:
+                    lob:
+                        non_contextual_creation: true
+
 # Spring Actuator Endpoints are Disabled by Default
 endpoints:
     enabled: true
@@ -213,13 +250,13 @@ endpoints:
 
 placeholder:
     sound:
-        thumbnail: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Speaker_Icon.svg/200px-Speaker_Icon.svg.png"
-        large: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Speaker_Icon.svg/500px-Speaker_Icon.svg.png"
+        thumbnail: "classpath:images/200px-Speaker_Icon.svg.png"
+        large: "classpath:images/500px-Speaker_Icon.svg.png"
     document:
-        thumbnail: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Document_icon_%28the_Noun_Project_27904%29.svg/200px-Document_icon_%28the_Noun_Project_27904%29.svg.png"
-        large: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Document_icon_%28the_Noun_Project_27904%29.svg/500px-Document_icon_%28the_Noun_Project_27904%29.svg.png"
+        thumbnail: "classpath:images/200px-Document_icon.svg.png"
+        large: "classpath:images/500px-Document_icon.svg.png"
     missing:
-        thumbnail: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Document_icon_%28the_Noun_Project_27904%29.svg/200px-Document_icon_%28the_Noun_Project_27904%29.svg.png"
+        thumbnail: "classpath:images/200px-Document_icon.svg.png"
 
 swagger:
     info:
@@ -268,6 +305,14 @@ elasticsearch:
   maxOffset: 10000
   maxPageSize: 200
   defaultPageSize: 10
+  batchIndexSize: 1000
+
+# Number of days to wait before purging completed batch jobs
+purgeCompletedAgeInDays: 3
+
+# The URLs to recognise as image service URL for the purposes of recognising incoming
+# URLs for images (to avoid re-downloading the images)
+imageServiceUrls: ["http://dev.ala.org.au:8080","https://images.ala.org.au"]
 
 # External links
 collectory:

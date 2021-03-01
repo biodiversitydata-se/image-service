@@ -80,7 +80,7 @@ class WebServiceController {
             response.sendError(HttpStatus.SC_BAD_REQUEST, "Must include API key")
         } else {
             def message = ""
-            def image = Image.findByImageIdentifier(params.imageID as String)
+            def image = Image.findByImageIdentifier(params.imageID as String, [ cache: true])
             if (image) {
                 success = imageService.scheduleImageDeletion(image.id, userId)
                 message = "Image scheduled for deletion."
@@ -129,7 +129,7 @@ class WebServiceController {
             @ApiImplicitParam(name = "imageID", paramType = "path", required = true, value = "Image Id", dataType = "string")
     ])
     def scheduleThumbnailGeneration() {
-        def imageInstance = Image.findByImageIdentifier(params.id as String)
+        def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
         def userId = getUserIdForRequest(request)
         def results = [success: true]
 
@@ -172,7 +172,7 @@ class WebServiceController {
     ])
     def scheduleArtifactGeneration() {
 
-        def imageInstance = Image.findByImageIdentifier(params.id as String)
+        def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
         def userId = request.getHeader(ApiKeyInterceptor.API_KEY_HEADER_NAME)
         def results = [success: true]
 
@@ -215,7 +215,7 @@ class WebServiceController {
             @ApiImplicitParam(name = "imageID", paramType = "path", required = true, value = "Image Id", dataType = "string")
     ])
     def scheduleKeywordRegeneration() {
-        def imageInstance = Image.findByImageIdentifier(params.id as String)
+        def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
         def userId = request.getHeader(ApiKeyInterceptor.API_KEY_HEADER_NAME)
         def results = [success:true]
         if (params.id && !imageInstance) {
@@ -457,7 +457,7 @@ class WebServiceController {
         def success = false
         def message = ""
         def status = HttpStatus.SC_OK
-        def image = Image.findByImageIdentifier(params.imageId as String)
+        def image = Image.findByImageIdentifier(params.imageId as String, [ cache: true])
         def tag = Tag.get(params.int("tagId"))
         if (!image){
             message =  "Unrecognised image ID"
@@ -549,57 +549,13 @@ class WebServiceController {
     ])
     def detachTagFromImage() {
         def success = false
-        def image = Image.findByImageIdentifier(params.imageId as String)
+        def image = Image.findByImageIdentifier(params.imageId as String, [ cache: true])
         def tag = Tag.get(params.int("tagId"))
         if (image && tag) {
             success = tagService.detachTagFromImage(image, tag)
             renderResults([success: success])
         } else {
             renderResults([success: success, message:'Image or tag not found'], HttpStatus.SC_NOT_FOUND)
-        }
-    }
-
-    private addImageInfoToMap(Image image, Map results, Boolean includeTags, Boolean includeMetadata) {
-
-        results.mimeType = image.mimeType
-        results.originalFileName = image.originalFilename
-        results.sizeInBytes = image.fileSize
-        results.rights = image.rights ?: ''
-        results.rightsHolder = image.rightsHolder ?: ''
-        results.dateUploaded = formatDate(date: image.dateUploaded, format: "yyyy-MM-dd HH:mm:ss")
-        results.dateTaken = formatDate(date: image.dateTaken, format: "yyyy-MM-dd HH:mm:ss")
-        if (results.mimeType && results.mimeType.startsWith('image')){
-            results.imageUrl = imageService.getImageUrl(image.imageIdentifier)
-            results.tileUrlPattern = "${imageService.getImageTilesRootUrl(image.imageIdentifier)}/{z}/{x}/{y}.png"
-            results.mmPerPixel = image.mmPerPixel ?: ''
-            results.height = image.height
-            results.width = image.width
-            results.tileZoomLevels = image.zoomLevels ?: 0
-        }
-        results.description = image.description ?: ''
-        results.title = image.title ?: ''
-        results.creator = image.creator ?: ''
-        results.license = image.license ?: ''
-        results.recognisedLicence = image.recognisedLicense
-        results.dataResourceUid = image.dataResourceUid ?: ''
-        results.occurrenceID = image.occurrenceId ?: ''
-
-        collectoryService.addMetadataForResource(results)
-
-        if (includeTags) {
-            results.tags = []
-            def imageTags = ImageTag.findAllByImage(image)
-            imageTags?.each { imageTag ->
-                results.tags << imageTag.tag.path
-            }
-        }
-
-        if (includeMetadata) {
-            results.metadata = []
-            def metaDataList = ImageMetaDataItem.findAllByImage(image)
-            metaDataList?.each { md ->
-                results.metadata << [key: md.name, value: md.value, source: md.source]
-            }
         }
     }
 
@@ -625,10 +581,10 @@ class WebServiceController {
     def getImageInfo() {
         def results = [success:false]
         def imageId = params.id ? params.id : params.imageID
-        def image = Image.findByImageIdentifier(imageId as String)
+        def image = Image.findByImageIdentifier(imageId as String, [ cache: true])
         if (image) {
             results.success = true
-            addImageInfoToMap(image, results, params.boolean("includeTags"), params.boolean("includeMetadata"))
+            imageService.addImageInfoToMap(image, results, params.boolean("includeTags"), params.boolean("includeMetadata"))
             renderResults(results)
         } else {
             results["message"] = "image id not found"
@@ -655,11 +611,11 @@ class WebServiceController {
     ])
     def imagePopupInfo() {
         def results = [success:false]
-        def image = Image.findByImageIdentifier(params.id as String)
+        def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (image) {
             results.success = true
             results.data = [:]
-            addImageInfoToMap(image, results.data, false, false)
+            imageService.addImageInfoToMap(image, results.data, false, false)
             results.link = createLink(controller: "image", action:'details', id: image.id)
             results.linkText = "Image details..."
             results.title = "Image properties"
@@ -710,7 +666,6 @@ class WebServiceController {
         results.deletedImageCount = Image.countByDateDeletedIsNotNull()
         results.licenceCount = License.count()
         results.licenceMappingCount = LicenseMapping.count()
-        results.sizeOnDisk =
         renderResults(results)
     }
 
@@ -750,11 +705,12 @@ class WebServiceController {
         def results = [:]
         results.queueLength = imageService.getImageTaskQueueLength()
         results.tilingQueueLength = imageService.getTilingTaskQueueLength()
+        results.batchUploads = batchService.getActiveBatchUploadCount()
         renderResults(results)
     }
 
     def createSubimage() {
-        def image = Image.findByImageIdentifier(params.id as String)
+        def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"])
             return
@@ -778,7 +734,7 @@ class WebServiceController {
         }
 
         def userId = getUserIdForRequest(request)
-        if(!userId){
+        if (!userId) {
             renderResults([success:false, message:"User needs to be logged in to create sub image"])
             return
         }
@@ -804,7 +760,7 @@ class WebServiceController {
     )
     @RequireApiKey
     def subimage() {
-        def image = Image.findByImageIdentifier(params.id as String)
+        def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"], HttpStatus.SC_NOT_FOUND)
             return
@@ -846,7 +802,7 @@ class WebServiceController {
 
     def getSubimageRectangles() {
 
-        def image = Image.findByImageIdentifier(params.id as String)
+        def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"])
             return
@@ -862,7 +818,7 @@ class WebServiceController {
     }
 
     def addUserMetadataToImage() {
-        def image = Image.findByImageIdentifier(params.id as String)
+        def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"], HttpStatus.SC_NOT_FOUND)
             return
@@ -977,7 +933,7 @@ class WebServiceController {
 
     @RequireApiKey
     def bulkAddUserMetadataToImage(String id) {
-        def image = Image.findByImageIdentifier(id)
+        def image = Image.findByImageIdentifier(id, [ cache: true])
         def userId = getUserIdForRequest(request)
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"])
@@ -993,7 +949,7 @@ class WebServiceController {
 
     @RequireApiKey
     def removeUserMetadataFromImage() {
-        def image = Image.findByImageIdentifier(params.id as String)
+        def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"], HttpStatus.SC_BAD_REQUEST)
             return
@@ -1127,7 +1083,7 @@ class WebServiceController {
 
             imageIds.each { imageId ->
 
-                def image = Image.findByImageIdentifier(imageId)
+                def image = Image.findByImageIdentifier(imageId, [ cache: true])
 
                 if (image) {
                     def map = imageService.getImageInfoMap(image)
@@ -1277,9 +1233,11 @@ class WebServiceController {
                     metadata["largeThumbUrl"] = imageService.getImageThumbLargeUrl(metadata.imageIdentifier)
                     metadata["squareThumbUrl"]  = imageService.getImageSquareThumbUrl(metadata.imageIdentifier)
                     metadata["thumbUrl"]  = imageService.getImageThumbUrl(metadata.imageIdentifier)
-                    metadata["tilesUrlPattern"]  = imageService.getImageTilesRootUrl(metadata.imageIdentifier) + "/{z}/{x}/{y}.png"
+                    metadata["tilesUrlPattern"]  = imageService.getImageTilesUrlPattern(metadata.imageIdentifier)
                     metadata.remove("fileSize")
                     metadata.remove("zoomLevels")
+                    metadata.remove("storageLocationId")
+                    metadata.remove("storageLocation")
                 }
             }
 
@@ -1349,7 +1307,7 @@ class WebServiceController {
                 return
             }
 
-            if (imageStoreService.storeTilesArchiveForImage(job.image.imageIdentifier, file)) {
+            if (imageStoreService.storeTilesArchiveForImage(job.image, file)) {
                 job.image.zoomLevels = zoomLevels
                 job.delete()
                 renderResults([success: true])
@@ -1387,7 +1345,7 @@ class WebServiceController {
 
         CodeTimer ct = new CodeTimer("Update Image metadata ${params.imageIdentifier}")
 
-        Image image = Image.findByImageIdentifier(params.imageIdentifier)
+        Image image = Image.findByImageIdentifier(params.imageIdentifier, [ cache: true])
         if (image){
             def userId = getUserIdForRequest(request)
             def metadata = {
@@ -1415,7 +1373,28 @@ class WebServiceController {
      * @return
      */
     @ApiOperation(
-            value = "Upload a single image, with by URL or multipart HTTP file upload. For multipart the image must be posted in a 'image' property",
+            value = """
+                Upload a single image, with by URL or multipart HTTP file upload. 
+                For multipart the image must be posted in a 'image' property.
+            """,
+            notes = """
+               The following metadata properties can be set/updated:    
+                
+                audience      - http://purl.org/dc/terms/audience
+                contributor   - http://purl.org/dc/terms/contributor
+                creator       - http://purl.org/dc/terms/creator
+                created       - http://purl.org/dc/terms/created  
+                description   - http://purl.org/dc/terms/description 
+                format        - http://purl.org/dc/terms/format (see https://www.iana.org/assignments/media-types/media-types.xhtml) 
+                license       - http://purl.org/dc/terms/license
+                publisher     - http://purl.org/dc/terms/publisher
+                references    - http://purl.org/dc/terms/references   
+                rights        - http://purl.org/dc/terms/rights 
+                rightsHolder  - http://purl.org/dc/terms/rightsHolder
+                source        - http://purl.org/dc/terms/source
+                title         - http://purl.org/dc/terms/title
+                type          - http://purl.org/dc/terms/type
+            """,
             nickname = "uploadImage",
             produces = "application/json",
             consumes = "application/json",
@@ -1480,8 +1459,10 @@ class WebServiceController {
                 CodeTimer ct = new CodeTimer("Setting Image metadata ${params.imageIdentifier}")
 
                 tagService.updateTags(storeResult.image, params.tags, userId)
-                if(!storeResult.alreadyStored) {
-                    imageService.schedulePostIngestTasks(storeResult.image.id, storeResult.image.imageIdentifier, storeResult.image.originalFilename, userId)
+
+                if (!storeResult.alreadyStored) {
+                    //reindex if already stored
+                    imageService.scheduleImageIndex(storeResult.image.id)
                 }
 
                 ct.stop(true)
@@ -1549,7 +1530,7 @@ class WebServiceController {
             }
 
             // first create the images
-            def results = imageService.batchUploadFromUrl(imageList, userId)
+            def results = imageService.batchUpdate(imageList, userId)
 
             imageList.each { srcImage ->
                 def newImage = results[srcImage.sourceUrl ?: srcImage.imageUrl]
@@ -1569,7 +1550,7 @@ class WebServiceController {
 
     def calibrateImageScale() {
         def userId = getUserIdForRequest(request)
-        def image = Image.findByImageIdentifier(params.imageId)
+        def image = Image.findByImageIdentifier(params.imageId, [ cache: true])
         def units = params.units ?: "mm"
         def pixelLength = params.double("pixelLength") ?: 0
         def actualLength = params.double("actualLength") ?: 0
@@ -1582,7 +1563,7 @@ class WebServiceController {
     }
 
     def resetImageCalibration() {
-        def image = Image.findByImageIdentifier(params.imageId)
+        def image = Image.findByImageIdentifier(params.imageId, [ cache: true])
         if (image) {
             imageService.resetImageLinearScale(image)
             renderResults([success: true, message:"Image linear scale has been reset"])
@@ -1593,7 +1574,7 @@ class WebServiceController {
 
     def setHarvestable() {
         def userId = getUserIdForRequest(request)
-        def image = Image.findByImageIdentifier(params.imageId)
+        def image = Image.findByImageIdentifier(params.imageId, [ cache: true])
         if (image) {
             imageService.setHarvestable(image, (params.value ?: params.harvest ?: "").toBoolean(), userId)
             renderResults([success: true, message:"Image harvestable now set to ${image.harvestable}", harvestable: image.harvestable])
@@ -1727,7 +1708,7 @@ class WebServiceController {
     @ApiOperation(
             value = "Export CSV of entire image catalogue",
             nickname = "exportCSV",
-            produces = "application/json",
+            produces = "application/gzip",
             consumes = "application/json",
             httpMethod = "GET",
             response = Map.class,
@@ -1744,5 +1725,104 @@ class WebServiceController {
         imageService.exportCSV(bos)
         bos.flush()
         bos.close()
+    }
+
+    @ApiOperation(
+            value = "Export CSV of URL to imageIdentifier mappings",
+            nickname = "exportMapping",
+            produces = "application/gzip",
+            consumes = "application/json",
+            httpMethod = "GET",
+            response = Map.class,
+            tags = ["Export"]
+    )
+    @ApiResponses([
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+    )
+    def exportMapping(){
+        response.setHeader("Content-disposition", "attachment;filename=image-mapping.csv.gz")
+        response.contentType = "application/gzip"
+        def bos = new GZIPOutputStream(response.outputStream)
+        imageService.exportMappingCSV(bos)
+        bos.flush()
+        bos.close()
+    }
+
+    @ApiOperation(
+            value = "Export CSV of URL to imageIdentifier mappings",
+            nickname = "exportDatasetMapping/{dataResourceUid}",
+            produces = "application/gzip",
+            consumes = "application/json",
+            httpMethod = "GET",
+            response = Map.class,
+            tags = ["Export"]
+    )
+    @ApiResponses([
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Missing dataResourceUid parameter"),
+            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+    )
+    @ApiImplicitParams([
+            @ApiImplicitParam(name = "dataResourceUid", paramType = "path", required = true, value = "Data resource UID", dataType = "string")
+    ])
+    def exportDatasetMapping(){
+        if (!params.id){
+            renderResults([success: false, message: "Failed to store image!"], 400)
+        } else {
+            response.setHeader("Content-disposition", "attachment;filename=image-mapping-${params.id}.csv.gz")
+            response.contentType = "application/gzip"
+            def bos = new GZIPOutputStream(response.outputStream)
+            imageService.exportDatasetMappingCSV(params.id, bos)
+            bos.flush()
+            bos.close()
+        }
+    }
+
+    @ApiOperation(
+            value = "Export CSV of URL to imageIdentifier mappings",
+            notes = """Exports the following fields in CSV:
+                image_identifier as "imageID"
+                identifier
+                audience
+                contributor
+                created
+                creator
+                description
+                format
+                license
+                publisher
+                references
+                rightsHolder
+                source
+                title
+                type
+            """,
+            nickname = "exportDataset/{dataResourceUid}",
+            produces = "application/gzip",
+            consumes = "application/json",
+            httpMethod = "GET",
+            response = Map.class,
+            tags = ["Export"]
+    )
+    @ApiResponses([
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 400, message = "Missing dataResourceUid parameter"),
+            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+    )
+    @ApiImplicitParams([
+            @ApiImplicitParam(name = "dataResourceUid", paramType = "path", required = true, value = "Data resource UID", dataType = "string")
+    ])
+    def exportDataset(){
+        if (!params.id){
+            renderResults([success: false, message: "Failed to store image!"], 400)
+        } else {
+            response.setHeader("Content-disposition", "attachment;filename=image-export-${params.id}.csv.gz")
+            response.contentType = "application/gzip"
+            def bos = new GZIPOutputStream(response.outputStream)
+            imageService.exportDatasetCSV(params.id, bos)
+            bos.flush()
+            bos.close()
+        }
     }
 }
