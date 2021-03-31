@@ -26,6 +26,7 @@ class AdminController {
     def analyticsService
     def imageStoreService
     def authService
+    def sessionFactory
 
     def index() {
         redirect(action:'dashboard')
@@ -543,6 +544,12 @@ class AdminController {
     def clearCollectoryCache(){
         collectoryService.clearCache()
         flash.message = 'Collectory cache cleared'
+        redirect(action:'tools', message: 'Cache is cleared')
+    }
+
+    def clearHibernateCache() {
+        sessionFactory.cache?.evictAllRegions()
+        flash.message = 'Hibernate cache cleared'
         redirect(action:'tools', message: 'Cache is cleared')
     }
 }

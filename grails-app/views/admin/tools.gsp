@@ -104,6 +104,14 @@
         </tr>
         <tr>
             <td>
+                <button id="btnClearHibernateCache" class="btn btn-default">Clear hibernate query cache</button>
+            </td>
+            <td>
+                Clear the hibernate query cache of cached data
+            </td>
+        </tr>
+        <tr>
+            <td>
                 <button id="btnMissingImagesCheck" class="btn btn-default">Missing images check</button>
             </td>
             <td>
@@ -183,6 +191,11 @@
         $("#btnClearCollectoryCache").on('click', function(e) {
             e.preventDefault();
             window.location = "${createLink(action:'clearCollectoryCache')}";
+        });
+
+        $("#btnClearHibernateCache").on('click', function(e) {
+            e.preventDefault();
+            window.location = "${createLink(action:'clearHibernateCache')}";
         });
 
         $("#btnPurgeDeletedImages").on('click', function(e) {
