@@ -24,7 +24,21 @@ alter table image
 insert into storage_location (version, class, base_path, date_created, last_updated)
 values (0, 'au.org.ala.images.FileSystemStorageLocation', '${imageRoot}', default, default);
 
+DROP INDEX IF EXISTS image_datetaken_idx;
+DROP INDEX IF EXISTS image_dateuploaded;
+DROP INDEX IF EXISTS image_md5hash_idx;
+DROP INDEX IF EXISTS image_originalfilename_idx;
+DROP INDEX IF EXISTS imageidentifier_idx;
+DROP INDEX IF EXISTS new_image_originalfilename_idx;
+
 update image set storage_location_id = (select id from storage_location limit 1);
+
+CREATE INDEX image_datetaken_idx ON image USING btree (date_taken DESC);
+CREATE INDEX image_dateuploaded ON image USING btree (date_uploaded, id);
+CREATE INDEX image_md5hash_idx ON image USING btree (id, contentmd5hash);
+CREATE INDEX image_originalfilename_idx ON image USING btree (original_filename_old);
+CREATE INDEX imageidentifier_idx ON image USING btree (image_identifier);
+CREATE INDEX new_image_originalfilename_idx ON image USING btree (original_filename);
 
 alter table image
     alter column storage_location_id set not null,
