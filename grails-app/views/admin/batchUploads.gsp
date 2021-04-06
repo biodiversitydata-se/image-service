@@ -96,49 +96,108 @@
     </div>
 </div>
 
-<h3>File queue</h3>
-<g:if test="${files}">
+<h3>Loading (${active ? active.size() : 0})</h3>
+<g:if test="${active}">
+    <table class="table table-condensed table-bordered ">
+        <thead class="thead-dark">
+        <th>batchID</th>
+        <th>fileID</th>
+        <th>dataResourceUid</th>
+        <th>recordCount</th>
+        <th>processedCount</th>
+        <th>newImages</th>
+        <th>metadataUpdates</th>
+        <th>errors</th>
+        <th>created</th>
+        <th>lastUpdated</th>
+        <th>timeTaken</th>
+        <th>status</th>
+        <th>reload</th>
+        </thead>
+        <tbody>
+        <g:each in="${active}" var="batchFile">
+            <tr class="${batchFile.status == 'LOADING' ? 'active' : ''} ${batchFile.status == 'COMPLETE' ? 'success' : ''} ${batchFile.status == 'QUEUED' ? 'warning' : ''} ${batchFile.status == 'STOPPED' ? 'danger' : ''}">
+                <td><g:link controller="admin" action="batchUpload" id="${batchFile.batchFileUpload.id}">
+                    ${batchFile.batchFileUpload.id}
+                </g:link></td>
+                <td>
+                    <a href="#" title="${batchFile.filePath}">
+                    ${batchFile.id}
+                    </a>
+                </td>
+                <td>${batchFile.batchFileUpload.dataResourceUid}</td>
+                <td>${batchFile.recordCount}</td>
+                <td>${batchFile.processedCount} (${Math.round( (batchFile.processedCount/batchFile.recordCount) * 10000) / 100 }%)</td>
+                <td>${batchFile.newImages}</td>
+                <td>${batchFile.metadataUpdates}</td>
+                <td>${batchFile.errorCount}</td>
+                <td><prettytime:display date="${batchFile.dateCreated}" /></td>
+                <td><prettytime:display date="${batchFile.lastUpdated}" /></td>
+                <td>
+                        <g:if test="${batchFile.timeTakenToLoad}">
+                        <g:set var="hours" value="${((batchFile.timeTakenToLoad.toInteger() / 60).toInteger() /60).toInteger() }"/>
+                        <g:set var="minutes" value="${(batchFile.timeTakenToLoad.toInteger() / 60).toInteger() % 60}"/>
+                        <g:set var="seconds" value="${batchFile.timeTakenToLoad.toInteger()  % 60}"/>
+                        <g:if test="${hours}">${hours} hr</g:if>
+                        <g:if test="${minutes}">${minutes} min</g:if>
+                        <g:if test="${seconds}">${seconds} secs</g:if>
+                    </g:if>
+                    <g:elseif test="${!batchFile.dateCompleted}">
+                        <g:message code="batch.processing.not.loaded" />
+                    </g:elseif>
+                    <g:else>
+                        0 secs
+                    </g:else>
+                <td>${batchFile.status}</td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <g:link action="batchReloadFile" params="${[fileId: batchFile.id]}" class="btn btn-default btn-sm ">
+                            <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
+                            Reload</g:link>
+                        <g:link action="batchFileDeleteFromQueue" params="${[fileId: batchFile.id]}" class="btn btn-danger btn-sm ">
+                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                            Delete
+                        </g:link>
+                    </div>
+                </td>
+            </tr>
+        </g:each>
+        </tbody>
+    </table>
+</g:if>
+<g:else>
+    Batch file processing will appear here when available.
+</g:else>
+
+<h3>Queued files (${queued ? queued.size() : 0})</h3>
+<p>Showing first 10 in queue. Click file upload details to view complete list.</p>
+<g:if test="${queued}">
     <table class="table table-condensed table-bordered ">
     <thead class="thead-dark">
     <th>batchID</th>
     <th>fileID</th>
     <th>dataResourceUid</th>
     <th>recordCount</th>
-    <th>processedCount</th>
-    <th>newImages</th>
-    <th>metadataUpdates</th>
     <th>created</th>
-    <th>lastUpdated</th>
-    <th>timeTaken</th>
-    <th>dateCompleted</th>
     <th>status</th>
     <th>reload</th>
     </thead>
     <tbody>
-    <g:each in="${files}" var="batchFile">
+    <g:each in="${queued.take(10)}" var="batchFile">
         <tr class="${batchFile.status == 'LOADING' ? 'active' : ''} ${batchFile.status == 'COMPLETE' ? 'success' : ''} ${batchFile.status == 'QUEUED' ? 'warning' : ''} ${batchFile.status == 'STOPPED' ? 'danger' : ''}">
-            <td>${batchFile.batchFileUpload.id}</td>
-            <td>${batchFile.id}</td>
+            <td>
+                <g:link controller="admin" action="batchUpload" id="${batchFile.batchFileUpload.id}">
+                    ${batchFile.batchFileUpload.id}
+                </g:link>
+            </td>
+            <td>
+                <a href="#" title="${batchFile.filePath}">
+                ${batchFile.id}
+                </a>
+            </td>
             <td>${batchFile.batchFileUpload.dataResourceUid}</td>
             <td>${batchFile.recordCount}</td>
-            <td>${batchFile.processedCount}</td>
-            <td>${batchFile.newImages}</td>
-            <td>${batchFile.metadataUpdates}</td>
             <td><prettytime:display date="${batchFile.dateCreated}" /></td>
-            <td><prettytime:display date="${batchFile.lastUpdated}" /></td>
-            <td>
-                <g:if test="${batchFile.timeTakenToLoad}">
-                    <g:set var="hours" value="${((batchFile.timeTakenToLoad.toInteger() / 60).toInteger() /60).toInteger() }"/>
-                    <g:set var="minutes" value="${(batchFile.timeTakenToLoad.toInteger() / 60).toInteger() % 60}"/>
-                    <g:set var="seconds" value="${batchFile.timeTakenToLoad.toInteger()  % 60}"/>
-                    <g:if test="${hours}">${hours} hr</g:if>
-                    <g:if test="${minutes}">${minutes} min</g:if>
-                    <g:if test="${seconds}">${seconds} secs</g:if>
-                </g:if>
-                <g:else>
-                    <g:message code="batch.processing.not.loaded" />
-                </g:else>
-            <td><prettytime:display date="${batchFile.dateCompleted}" /></td>
             <td>${batchFile.status}</td>
             <td>
                 <div class="btn-group" role="group">
@@ -160,7 +219,7 @@
     Batch file processing will appear here when available.
 </g:else>
 
-<h3>Uploads</h3>
+<h3>Uploads (${results.size()})</h3>
 <p>
     Uploads with a <b>COMPLETE</b> will be removed from this list in ${grailsApplication.config.purgeCompletedAgeInDays}
 days.
@@ -169,8 +228,12 @@ days.
     <table class="table table-condensed table-bordered ">
     <thead class="thead-dark">
         <th>batchID</th>
-        <th>files</th>
+        <th>AVRO files</th>
         <th>dataResourceUid</th>
+        <th>recordCount</th>
+        <th>newImages</th>
+        <th>metadataUpdates</th>
+        <th>errors</th>
         <th>dateCreated</th>
         <th>dateCompleted</th>
         <th>status</th>
@@ -179,12 +242,30 @@ days.
     </thead>
     <tbody>
     <g:each in="${results}" var="batchFileUpload">
-        <tr class="${batchFileUpload.status == 'COMPLETE' ? 'success' : 'warning'}">
-            <td>${batchFileUpload.id}</td>
+        <tr class="${batchFileUpload.status == 'LOADING' ? 'active' : ''} ${batchFileUpload.status == 'COMPLETE' ? 'success' : ''} ${batchFileUpload.status == 'PARTIALLY_COMPLETE' ? 'warning' : ''} ${batchFileUpload.status == 'WAITING_PROCESSING' ? 'warning' : ''} ${batchFileUpload.status == 'QUEUED' ? 'warning' : ''} ${batchFileUpload.status == 'STOPPED' ? 'danger' : ''}">
+            <td title="${batchFileUpload.filePath}">
+                <g:link controller="admin" action="batchUpload" id="${batchFileUpload.id}">
+                    ${batchFileUpload.id}
+                </g:link>
+            </td>
             <td>${batchFileUpload.batchFiles.size()}</td>
             <td>${batchFileUpload.dataResourceUid}</td>
-            <td><prettytime:display date="${batchFileUpload.dateCreated}" /></td>
-            <td><prettytime:display date="${batchFileUpload.dateCompleted}" /></td>
+            <td>${batchFileUpload.getRecordCount()}</td>
+            <td>${batchFileUpload.getNewImagesCount()}</td>
+            <td>${batchFileUpload.getMetadataUpdateCount()}</td>
+            <td>${batchFileUpload.getErrorCount()}</td>
+            <td>
+            <g:if test="${batchFileUpload.dateCreated}">
+                <g:formatDate format="dd-MMM HH:mm" date="${batchFileUpload.dateCreated}"/>
+                (<prettytime:display date="${batchFileUpload.dateCreated}" />)
+            </g:if>
+            </td>
+            <td>
+            <g:if test="${batchFileUpload.dateCompleted}">
+                <g:formatDate format="dd-MMM HH:mm" date="${batchFileUpload.dateCompleted}"/>
+                (<prettytime:display date="${batchFileUpload.dateCompleted}" />)
+            </g:if>
+            </td>
             <td>${batchFileUpload.status}</td>
             <td>${batchFileUpload.message}</td>
             <td>

@@ -113,11 +113,6 @@ class ImageStoreService {
     }
 
     String getImageThumbLargeUrl(String imageIdentifier) {
-//        def a = imageIdentifier[-1]
-//        def b = imageIdentifier[-2]
-//        def c = imageIdentifier[-3]
-//        def d = imageIdentifier[-4]
-//        return grailsLinkGenerator.link(absolute: true, controller: 'image', action: 'proxyImageThumbnailType', id: imageIdentifier, params: [thumbnailType: 'large', a: a, b: b, c: c, d: d])
         getThumbUrlByName(imageIdentifier, 'large')
     }
 

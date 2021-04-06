@@ -206,7 +206,10 @@ class AdminController {
     }
 
     def batchUploads(){
-        [results: batchService.getUploads(), files: batchService.getNonCompleteFiles(), batchServiceProcessingEnabled: settingService.getBatchServiceProcessingEnabled()]
+        [results: batchService.getUploads(),
+         active: batchService.getActiveFiles(),
+         queued: batchService.getQueuedFiles(),
+         batchServiceProcessingEnabled: settingService.getBatchServiceProcessingEnabled()]
     }
 
     def batchUpload(){

@@ -97,7 +97,7 @@ class ImageService {
                 def image = Image.findByOriginalFilename(imageUrl)
                 if (image && image.stored()) {
                     scheduleMetadataUpdate(image.imageIdentifier, metadata)
-                    return new ImageStoreResult(image, true)
+                    return new ImageStoreResult(image, true, image.isDuplicateOf != null)
                 }
                 def url = new URL(imageUrl)
                 def bytes = url.bytes
@@ -191,6 +191,9 @@ class ImageService {
                             }
                         }
 
+                        // Its not an image service URL, check DB
+                        // For full URLs, we can treat these as unique identifiers
+                        // For filenames (non URLs), use the filename and dataResourceUid to unique identify
                         if (!image){
                             if (imageUrl.startsWith("http")){
                                 image = Image.findByOriginalFilename(imageUrl)
@@ -205,7 +208,8 @@ class ImageService {
                                 def url = new URL(imageUrl)
                                 def bytes = url.bytes
                                 def contentType = detectMimeTypeFromBytes(bytes, imageUrl)
-                                ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length, contentType, uploader, imageSource)
+                                ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length,
+                                        contentType, uploader, imageSource)
                                 result.imageId = storeResult.image.imageIdentifier
                                 result.image = storeResult.image
                                 result.success = true
@@ -250,6 +254,113 @@ class ImageService {
         }
 
         results
+    }
+
+    def logBadUrl(String url){
+        new FailedUpload(url: url).save()
+    }
+
+    boolean isBadUrl(String url){
+        FailedUpload.findByUrl(url) != null
+    }
+
+    @Transactional
+    Map uploadImage(Map imageSource, String uploader){
+
+        def imageUrl = getImageUrl(imageSource) as String
+
+        if (imageUrl) {
+
+            Image image = null
+
+            // is it as image service URL?
+            // if so, no need to load the image, use the identifier.....
+            if (isImageServiceUrl(imageUrl)){
+
+                def imageHttpUrl = HttpUrl.parse(imageUrl)
+                def imageID
+                if (imageHttpUrl?.queryParameterNames()?.contains('id')) {
+                    imageID = imageHttpUrl.queryParameter('id')
+                } else if (!imageHttpUrl?.pathSegments()?.empty) {
+                    imageID = imageHttpUrl.pathSegments().last()
+                }
+                if (imageID) {
+                    image = Image.findByImageIdentifier(imageID)
+                }
+            }
+
+            // Its not an image service URL, check DB
+            // For full URLs, we can treat these as unique identifiers
+            // For filenames (non URLs), use the filename and dataResourceUid to unique identify
+            if (!image){
+                if (imageUrl.startsWith("http")){
+                    image = Image.findByOriginalFilename(imageUrl)
+                } else {
+                    image = Image.findByOriginalFilenameAndDataResourceUid(imageUrl, imageSource.dataResourceUid)
+                }
+            }
+
+            if (!image && isBadUrl(imageUrl)){
+                if (log.isDebugEnabled()) {
+                    log.debug("We have already attempted to load {} without success. Skipping.", imageUrl)
+                }
+                return [success: false, alreadyStored: false]
+            }
+
+            if (!image) {
+                def result = [success: false, alreadyStored: false]
+                def bytes
+                try {
+                    def url = new URL(imageUrl)
+                    bytes = url.bytes
+                } catch (Exception e){
+                    log.error("Unable to load image from URL: {}. Logging as failed URL", imageUrl)
+                    logBadUrl(imageUrl)
+                    return result
+                }
+                try {
+                    def contentType = detectMimeTypeFromBytes(bytes, imageUrl)
+                    ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length, contentType, uploader, imageSource)
+                    result.imageId = storeResult.image.imageIdentifier
+                    result.image = storeResult.image
+                    result.success = true
+                    result.alreadyStored = storeResult.alreadyStored
+                    result.isDuplicate = storeResult.isDuplicate
+                    result.metadataUpdated = false
+                } catch (Exception ex) {
+                    //log to batch update error file
+                    log.error("Problem storing image - " + ex.getMessage(), ex)
+                    result.message = ex.message
+                    result.success = false
+                }
+                result
+            } else {
+
+                def metadataUpdated = false
+
+                SUPPORTED_UPDATE_FIELDS.each { updateField ->
+                    if (image[updateField] != imageSource[updateField]){
+                        image[updateField] = imageSource[updateField]
+                        metadataUpdated = true
+                    }
+                }
+
+                if (metadataUpdated){
+                    image.save()
+                }
+
+                //update metadata if required
+                 [success: true,
+                     imageId: image.imageIdentifier,
+                     image: image,
+                     alreadyStored: true,
+                     metadataUpdated: metadataUpdated,
+                     isDuplicate: image.isDuplicateOf != null
+                ]
+            }
+        }  else {
+            [success: false]
+        }
     }
 
     int getImageTaskQueueLength() {
@@ -314,6 +425,7 @@ class ImageService {
             //check for existing image using MD5 hash
             def image = Image.findByContentMD5Hash(md5Hash)
             def preExisting = false
+            def isDuplicate = false
             if (!image) {
                 def sha1Hash = SHA1CodecExtensionMethods.encodeAsSHA1(bytes)
 
@@ -353,36 +465,63 @@ class ImageService {
                 image.dateUploaded = new Date()
                 image.originalFilename = originalFilename
                 image.dateTaken = getImageTakenDate(bytes) ?: image.dateUploaded
-            } else {
+            } else if (image.dateDeleted) {
+                log.warn("Image moved at source from ${image.originalFilename} to ${originalFilename}. Will rename.")
                 image.dateDeleted = null //reset date deleted if image resubmitted...
+                preExisting = true
+            } else {
+                // we have seen this image before, but the URL has changed at source
+                // so lets update it so that subsequent loads dont need
+                // to re-download this image
+                Image duplicate = new Image()
+                setMetadataOnImage(metadata, duplicate)
+                duplicate.contentMD5Hash = image.contentMD5Hash
+                duplicate.imageIdentifier = UUID.randomUUID().toString() //share ID or new one
+                duplicate.contentSHA1Hash = image.contentSHA1Hash
+                duplicate.uploader = uploaderId
+                duplicate.storageLocation = image.storageLocation
+                duplicate.extension = image.extension
+                duplicate.height = image.height
+                duplicate.width = image.width
+                duplicate.fileSize = image.fileSize
+                duplicate.mimeType = image.mimeType
+                duplicate.dateUploaded = new Date()
+                duplicate.originalFilename = originalFilename
+                duplicate.dateTaken = image.dateTaken
+                duplicate.isDuplicateOf = image
+                duplicate.originalFilename = originalFilename
+                duplicate.save()
+                isDuplicate = true
                 preExisting = true
             }
 
             if (!preExisting){
-
                 //update metadata stored in the `image` table
-                metadata.each { kvp ->
-                    def propertyName = hasImageCaseFriendlyProperty(image, kvp.key)
-                    if (propertyName && kvp.value){
-                        if (!(propertyName in ["dateTaken", "dateUploaded", "id"])){
-                            image[propertyName] = kvp.value
-                        }
-                    }
-                }
-
+                setMetadataOnImage(metadata, image)
                 //try to match licence
                 updateLicence(image)
-
-                try {
-                    image.save(flush: true, failOnError: true)
-                } catch (Exception ex){
-                    log.error("Problem ${preExisting ? 'updating' : 'saving'} image ${originalFilename}  - " + ex.getMessage(), ex)
-                }
             }
 
-            new ImageStoreResult(image, preExisting)
+            try {
+                image.save(flush: true, failOnError: true)
+            } catch (Exception ex){
+                log.error("Problem ${preExisting ? 'updating' : 'saving'} image ${originalFilename}  - " + ex.getMessage(), ex)
+            }
+
+            new ImageStoreResult(image, preExisting, isDuplicate)
         } finally {
             lock.unlock()
+        }
+    }
+
+    private Map<Object, Object> setMetadataOnImage(Map metadata, image) {
+        metadata.each { kvp ->
+            def propertyName = hasImageCaseFriendlyProperty(image, kvp.key)
+            if (propertyName && kvp.value) {
+                if (!(propertyName in ["dateTaken", "dateUploaded", "id"])) {
+                    image[propertyName] = kvp.value
+                }
+            }
         }
     }
 
@@ -1149,6 +1288,9 @@ class ImageService {
         }
         results.dataResourceUid = image.dataResourceUid ?: ''
         results.occurrenceID = image.occurrenceId ?: ''
+        if (image.isDuplicateOf){
+            results.isDuplicateOf = image.isDuplicateOf.imageIdentifier
+        }
 
         if (collectoryService) {
             collectoryService.addMetadataForResource(results)
@@ -1263,6 +1405,7 @@ class ImageService {
     File exportDatasetCSVToFile(String datasetID){
         FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
         def exportFile = grailsApplication.config.imageservice.exportDir + "/images-export-${datasetID}.csv"
+        def exportFileCleaned = grailsApplication.config.imageservice.exportDir + "/images-export-${datasetID}-cleaned.csv"
         new Sql(dataSource).call("""{ call export_dataset(?) }""", [datasetID])
         new File(exportFile)
     }
