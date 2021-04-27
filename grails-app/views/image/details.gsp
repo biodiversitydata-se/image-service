@@ -197,7 +197,7 @@
             imgvwr.viewImage($("#viewerContainerId"), '${imageInstance.imageIdentifier}', "", "", options);
             </g:if>
             <g:elseif test="${imageInstance.mimeType.startsWith('audio')}">
-            $('#viewerContainerId .document-icon').css('background-image', 'url("${grailsApplication.config.placeholder.sound.large}")');
+            $('#viewerContainerId .document-icon').css('background-image', 'url("<img:imageThumbUrl imageId='${imageInstance.imageIdentifier}'/>")');
             $('#viewerContainerId .document-icon').css('background-repeat', 'no-repeat');
             $('#viewerContainerId').css('background-position', 'center');
 
@@ -205,7 +205,7 @@
             audiojs.createAll({});
             </g:elseif>
             <g:else>
-            $('#viewerContainerId .document-icon').css('background-image', 'url("${grailsApplication.config.placeholder.document.large}")');
+            $('#viewerContainerId .document-icon').css('background-image', 'url("<img:imageThumbUrl imageId='${imageInstance.imageIdentifier}'/>")');
             $('#viewerContainerId .document-icon').css('background-repeat', 'no-repeat');
             $('#viewerContainerId .document-icon').css('background-position', 'center');
             </g:else>

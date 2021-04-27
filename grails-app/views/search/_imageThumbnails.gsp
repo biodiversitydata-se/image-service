@@ -67,15 +67,7 @@
                     <g:render template="${headerTemplate}" model="${[image: image]}" />
                 </g:if>
                 <a href="${createLink(mapping: 'image_url', params: [imageId: image.imageIdentifier])}">
-                    <g:if test="${image.format.startsWith("image")}">
-                        <img src="<img:imageThumbUrl imageId='${image.imageIdentifier}'/>" />
-                    </g:if>
-                    <g:elseif test="${image.format.startsWith("audio")}">
-                      <img src="${grailsApplication.config.placeholder.sound.thumbnail}"/>
-                    </g:elseif>
-                    <g:else>
-                        <img src="${grailsApplication.config.placeholder.document.thumbnail}"/>
-                    </g:else>
+                    <img src="<img:imageThumbUrl imageId='${image.imageIdentifier}'/>" />
                 </a>
                 <g:if test="${footerTemplate}">
                     <g:render template="${footerTemplate}" model="${[image: image]}" />
