@@ -1460,9 +1460,15 @@ class WebServiceController {
 
                 tagService.updateTags(storeResult.image, params.tags, userId)
 
-                if (!storeResult.alreadyStored) {
+                if (storeResult.alreadyStored) {
                     //reindex if already stored
                     imageService.scheduleImageIndex(storeResult.image.id)
+                } else {
+                    if (storeResult.image) {
+                        imageService.schedulePostIngestTasks(storeResult.image.id, storeResult.image.imageIdentifier, storeResult.image.originalFilename, userId)
+                    } else {
+                        imageService.scheduleNonImagePostIngestTasks(storeResult.image.id)
+                    }
                 }
 
                 ct.stop(true)

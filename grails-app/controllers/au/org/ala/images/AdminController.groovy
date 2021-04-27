@@ -104,10 +104,15 @@ class AdminController {
         ]
 
         ImageStoreResult storeResult = imageService.storeImage(file, userId, metadata)
-        if (storeResult.image) {
-            imageService.schedulePostIngestTasks(storeResult.image.id, storeResult.image.imageIdentifier, storeResult.image.originalFilename, userId)
+        if (storeResult.alreadyStored) {
+            //reindex if already stored
+            imageService.scheduleImageIndex(storeResult.image.id)
         } else {
-            imageService.scheduleNonImagePostIngestTasks(storeResult.image.id)
+            if (storeResult.image) {
+                imageService.schedulePostIngestTasks(storeResult.image.id, storeResult.image.imageIdentifier, storeResult.image.originalFilename, userId)
+            } else {
+                imageService.scheduleNonImagePostIngestTasks(storeResult.image.id)
+            }
         }
         flash.message = "Image uploaded with identifier: ${storeResult.image?.imageIdentifier}"
         redirect(action:'upload', params:[newImageId:storeResult.image?.imageIdentifier])
