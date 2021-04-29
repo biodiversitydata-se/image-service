@@ -4,6 +4,8 @@ import au.org.ala.images.metadata.MetadataExtractor
 import au.org.ala.images.thumb.ThumbnailingResult
 import au.org.ala.images.tiling.TileFormat
 import grails.gorm.transactions.Transactional
+import grails.plugins.csv.CSVWriter
+import grails.web.mapping.LinkGenerator
 import groovy.sql.Sql
 import groovy.transform.Synchronized
 import okhttp3.HttpUrl
@@ -23,8 +25,8 @@ import org.grails.plugins.codecs.MD5CodecExtensionMethods
 import org.grails.plugins.codecs.SHA1CodecExtensionMethods
 import org.hibernate.FlushMode
 import org.springframework.web.multipart.MultipartFile
-import org.springframework.web.util.UriComponents
 
+import java.sql.ResultSetMetaData
 import java.text.SimpleDateFormat
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
@@ -1359,98 +1361,94 @@ class ImageService {
     }
 
     /**
-     * Export CSV. This uses a stored procedure that needs to be installed as part of the
-     * service installation.
+     * Export CSV.
      *
      * @param outputStream
      * @return
      */
-    def exportCSV(outputStream){
-        exportCSVToFile().withInputStream { stream ->
-            outputStream << stream
-        }
+    def exportCSV(OutputStream outputStream) {
+        eachRowToCSV(outputStream.newWriter('UTF-8'), """SELECT * FROM export_images;""")
     }
 
     /**
-     * Export CSV. This uses a stored procedure that needs to be installed as part of the
-     * service installation.
+     * Export Mapping CSV.
      *
      * @param outputStream
      * @return
      */
-    File exportCSVToFile(){
-        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
-        def exportFile = grailsApplication.config.imageservice.exportDir + "/images.csv"
-        new Sql(dataSource).call("""{ call export_images() }""")
-        new File(exportFile)
+    def exportMappingCSV(OutputStream outputStream) {
+        eachRowToCSV(outputStream.newWriter('UTF-8'), """SELECT * FROM export_mapping;""")
     }
 
     /**
-     * Export CSV. This uses a stored procedure that needs to be installed as part of the
-     * service installation.
+     * Export Dataset Mapping CSV.
      *
      * @param outputStream
      * @return
      */
-    def exportMappingCSV(outputStream){
-        exportMappingCSVToFile().withInputStream { stream ->
-            outputStream << stream
-        }
+    def exportDatasetMappingCSV(String datasetID, OutputStream outputStream) {
+        eachRowToCSV(outputStream.newWriter('UTF-8'), """{ call export_dataset_mapping(?) }""", [datasetID])
+    }
+
+    def exportDatasetCSV(String datasetID, OutputStream outputStream) {
+        eachRowToCSV(outputStream.newWriter('UTF-8'), """{ call export_dataset(?); }""", [datasetID])
     }
 
     /**
-     * Export CSV. This uses a stored procedure that needs to be installed as part of the
-     * service installation.
-     *
-     * @param outputStream
-     * @return
+     * Stream the results from an SQL query to a CSV
+     * @param writer The ultimate location of the CSV
+     * @param sql The SQL to execute - must not contain embedded variables or this could lead to SQLi
+     * @param params The SQL params to be passed to the query
+     * @param separator The value separator for the CSV output
+     * @return The CSV results will have been written to a writer
      */
-    def exportDatasetMappingCSV(String datasetID, outputStream){
-        exportMappingForDatasetCSVToFile(datasetID).withInputStream { stream ->
-            outputStream << stream
+    private def eachRowToCSV(Writer writer, String sql, List<Object> params = [], String separator = ",") {
+        CSVWriter csvWriter = null
+        new Sql(dataSource).eachRow(sql, params) { result ->
+            if (csvWriter == null) {
+                log.debug("Creating new CSV Writer around {}", writer)
+                ResultSetMetaData rsmd = result.getMetaData()
+                int columnCount = rsmd.getColumnCount()
+
+                csvWriter = new CSVWriter(writer, {
+                    // The column count starts from 1
+                    for (int i = 1; i <= columnCount; i++) {
+                        String name = rsmd.getColumnName(i)
+                        // CSVWriter takes a closure for
+                        // CSVWriterColumnsBuilder, which essentially involves
+                        // calling a function for each column like "column name"(Closure) where the
+                        // closure extracts the value for the given column from the row object (in this case
+                        // a GroovyResultSet).
+                        // This is a generic version that maps each column name from the Result Set into a
+                        // CSV column definition
+                        "$name"({ String colName, Object rowResult ->
+                            rowResult.getAt(colName)
+                        }.curry(name))
+                    }
+                })
+                // XXX <insert eye roll emoji here> Need to override the private field because it's set in the
+                // CSVWriter constructor based on a protected getter...
+                csvWriter.cachedValueSeperator = separator
+            }
+            csvWriter.write(result)
+            writer.flush()
         }
     }
 
-    def exportDatasetCSV(String datasetID, outputStream){
-        exportDatasetCSVToFile(datasetID).withInputStream { stream ->
-            outputStream << stream
-        }
-    }
-
-    File exportDatasetCSVToFile(String datasetID){
-        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
-        def exportFile = grailsApplication.config.imageservice.exportDir + "/images-export-${datasetID}.csv"
-        def exportFileCleaned = grailsApplication.config.imageservice.exportDir + "/images-export-${datasetID}-cleaned.csv"
-        new Sql(dataSource).call("""{ call export_dataset(?) }""", [datasetID])
-        new File(exportFile)
-    }
-
-    File exportMappingForDatasetCSVToFile(String datasetID){
-        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
-        def exportFile = grailsApplication.config.imageservice.exportDir + "/images-mapping-${datasetID}.csv"
-        new Sql(dataSource).call("""{ call export_dataset_mapping(?) }""", [datasetID])
-        new File(exportFile)
-    }
-
-    File exportMappingCSVToFile(){
-        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
-        def exportFile = grailsApplication.config.imageservice.exportDir + "/images-mapping.csv"
-        new Sql(dataSource).call("""{ call export_mapping() }""")
-        new File(exportFile)
-    }
 
     /**
-     * Export CSV. This uses a stored procedure that needs to be installed as part of the
-     * service installation.
+     * Export database entries to a file for elastic search to index.
      *
-     * @param outputStream
      * @return
      */
     File exportIndexToFile(){
         FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
         def exportFile = grailsApplication.config.imageservice.exportDir + "/images-index.csv"
-        new Sql(dataSource).call("""{ call export_index() }""")
-        new File(exportFile)
+        def file = new File(exportFile)
+        file.withWriter("UTF-8") { writer ->
+            eachRowToCSV(writer, """SELECT * FROM export_index;""", [], '$')
+        }
+        file
     }
 
     @Transactional
