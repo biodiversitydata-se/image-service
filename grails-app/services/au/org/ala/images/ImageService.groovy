@@ -75,7 +75,7 @@ class ImageService {
             // Store the image
             def originalFilename = imageFile.originalFilename
             def bytes = imageFile?.bytes
-            def result = storeImageBytes(bytes, originalFilename, imageFile.size, imageFile.contentType, uploader, metadata)
+            def result = storeImageBytes(bytes, originalFilename, imageFile.size, imageFile.contentType, uploader, false, metadata)
             auditService.log(result.image,"Image stored from multipart file ${originalFilename}", uploader ?: "<unknown>")
             return result
         }
@@ -131,7 +131,7 @@ class ImageService {
                     contentType = detectMimeTypeFromBytes(bytes, imageUrl)
                 }
 
-                def result = storeImageBytes(bytes, imageUrl, bytes.length, contentType, uploader, metadata)
+                def result = storeImageBytes(bytes, imageUrl, bytes.length, contentType, uploader, true, metadata)
                 auditService.log(result.image, "Image downloaded from ${imageUrl}", uploader ?: "<unknown>")
                 return result
             } catch (Exception ex) {
@@ -209,7 +209,7 @@ class ImageService {
                                 def bytes = url.bytes
                                 def contentType = detectMimeTypeFromBytes(bytes, imageUrl)
                                 ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length,
-                                        contentType, uploader, imageSource)
+                                        contentType, uploader, true, imageSource)
                                 result.imageId = storeResult.image.imageIdentifier
                                 result.image = storeResult.image
                                 result.success = true
@@ -320,7 +320,7 @@ class ImageService {
                 }
                 try {
                     def contentType = detectMimeTypeFromBytes(bytes, imageUrl)
-                    ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length, contentType, uploader, imageSource)
+                    ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length, contentType, uploader, true, imageSource)
                     result.imageId = storeResult.image.imageIdentifier
                     result.image = storeResult.image
                     result.success = true
@@ -414,8 +414,20 @@ class ImageService {
 
     private final ReentrantLock lock = new ReentrantLock();
 
+    /**
+     * Store the bytes for an image.
+     *
+     * @param bytes
+     * @param originalFilename
+     * @param filesize
+     * @param contentType
+     * @param uploaderId
+     * @param createDuplicates
+     * @param metadata
+     * @return
+     */
     ImageStoreResult storeImageBytes(byte[] bytes, String originalFilename, long filesize, String contentType,
-                          String uploaderId, Map metadata = [:]) {
+                          String uploaderId, boolean createDuplicates, Map metadata = [:]) {
 
         try {
             lock.lock()
@@ -466,10 +478,10 @@ class ImageService {
                 image.originalFilename = originalFilename
                 image.dateTaken = getImageTakenDate(bytes) ?: image.dateUploaded
             } else if (image.dateDeleted) {
-                log.warn("Image moved at source from ${image.originalFilename} to ${originalFilename}. Will rename.")
                 image.dateDeleted = null //reset date deleted if image resubmitted...
                 preExisting = true
-            } else {
+            } else if (createDuplicates) {
+                log.warn("Existing image found at different URL ${image.originalFilename} to ${originalFilename}. Will add duplicate.")
                 // we have seen this image before, but the URL has changed at source
                 // so lets update it so that subsequent loads dont need
                 // to re-download this image
@@ -902,7 +914,7 @@ class ImageService {
             // Create the image domain object
             def bytes = file.getBytes()
             def mimeType = detectMimeTypeFromBytes(bytes, file.name)
-            image = storeImageBytes(bytes, file.name, file.length(),mimeType, userId).image
+            image = storeImageBytes(bytes, file.name, file.length(),mimeType, userId, false).image
 
             auditService.log(image, "Imported from ${file.absolutePath}", userId)
 
@@ -1068,7 +1080,7 @@ class ImageService {
         if (results.bytes) {
             int subimageIndex = Subimage.countByParentImage(parentImage) + 1
             def filename = "${parentImage.originalFilename}_subimage_${subimageIndex}"
-            def subimage = storeImageBytes(results.bytes,filename, results.bytes.length, results.contentType, userId, metadata).image
+            def subimage = storeImageBytes(results.bytes,filename, results.bytes.length, results.contentType, userId, false, metadata).image
 
             def subimageRect = new Subimage(parentImage: parentImage, subimage: subimage, x: x, y: y, height: height, width: width)
             subimage.parent = parentImage

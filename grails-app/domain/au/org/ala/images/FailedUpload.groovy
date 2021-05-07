@@ -6,9 +6,11 @@ class FailedUpload {
     Date dateCreated
 
     static constraints = {
+        url nullable: false
     }
 
     static mapping = {
-        url index: 'failed_upload_url_idx'
+        version false
+        id name: 'url', generator: 'assigned'
     }
 }
