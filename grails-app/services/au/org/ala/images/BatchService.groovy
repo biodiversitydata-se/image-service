@@ -129,6 +129,9 @@ class BatchService {
             new ZipFile(uploadedFile).extractAll(uploadedFile.parentFile.absolutePath)
 
             File newDir = new File(grailsApplication.config.imageservice.batchUpload + "/" + upload.getId() + "/")
+            if (!newDir.deleteDir()) {
+                log.warn("Couldn't delete existing directory {} for batch upload {}", newDir)
+            }
             uploadedFile.getParentFile().renameTo(newDir)
             upload.filePath = newDir.getAbsolutePath() + "/" +  uploadedFile.getName();
             upload.status = UNZIPPED
@@ -332,6 +335,7 @@ class BatchService {
 
         if (completed) {
             log.info("Completed loading of batch file ${batchFile.id}: ${batchFile.filePath}")
+            // TODO Delete .avro / .zip files?
         } else {
             log.info("Exiting the loading of batch file ${batchFile.id}:  ${batchFile.filePath}, complete: ${completed}")
         }
