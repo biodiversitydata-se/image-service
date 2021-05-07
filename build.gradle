@@ -142,7 +142,7 @@ dependencies {
     testCompile 'org.grails.plugins:embedded-postgres:1.1.2'
     testCompile 'cloud.localstack:localstack-utils:0.2.5'
     testCompile "com.amazonaws:aws-java-sdk:$amazonAwsSdkVersion" // full AWS SDK included in test scope for localstack config
-    testCompile 'com.palantir.docker.compose:docker-compose-rule-junit4:1.4.2'
+    testCompile 'com.palantir.docker.compose:docker-compose-rule-junit4:1.5.0'
 }
 
 bootRun {
