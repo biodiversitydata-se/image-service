@@ -231,7 +231,7 @@ class BatchUploadSpec extends Specification {
         originalImage.isDuplicateOf == null
         originalImage.mimeType == 'image/png'
         originalImage.dateDeleted == null
-        originalImage.audience == 'audience3' // Should have been updated by the first then second duplicate.
+        originalImage.audience == 'audience'
         originalImage.zoomLevels > 0 // Indicates that the tiler ran
 
         firstDuplicate != null
