@@ -124,6 +124,16 @@
                                         <td class="property-value">${imageInstance.storageLocation}</td>
                                     </tr>
                                     </auth:ifAnyGranted>
+                                    <g:if test="${imageInstance.isDuplicateOf}">
+                                        <tr>
+                                            <td class="property-name">Duplicate of</td>
+                                            <td class="property-value">
+                                                <g:link controller="image" action="details" id="${imageInstance.isDuplicateOf.imageIdentifier}">
+                                                    ${imageInstance.isDuplicateOf.imageIdentifier}
+                                                </g:link>
+                                            </td>
+                                        </tr>
+                                    </g:if>
                                 </table>
 
                                 <div class="metadataSource-container"></div>
@@ -194,14 +204,17 @@
 
 
             <g:if test="${imageInstance.mimeType.startsWith('image')}">
-            imgvwr.viewImage($("#viewerContainerId"), '${imageInstance.imageIdentifier}', "", "", options);
+              <g:if test="${imageInstance.isDuplicateOf}">
+                imgvwr.viewImage($("#viewerContainerId"), '${imageInstance.isDuplicateOf.imageIdentifier}', "", "", options);
+              </g:if>
+              <g:else>
+                imgvwr.viewImage($("#viewerContainerId"), '${imageInstance.imageIdentifier}', "", "", options);
+              </g:else>
             </g:if>
             <g:elseif test="${imageInstance.mimeType.startsWith('audio')}">
             $('#viewerContainerId .document-icon').css('background-image', 'url("<img:imageThumbUrl imageId='${imageInstance.imageIdentifier}'/>")');
             $('#viewerContainerId .document-icon').css('background-repeat', 'no-repeat');
             $('#viewerContainerId').css('background-position', 'center');
-
-
             audiojs.createAll({});
             </g:elseif>
             <g:else>

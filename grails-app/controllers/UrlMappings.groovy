@@ -59,7 +59,6 @@ class UrlMappings {
         "/image/$id/original"(controller: "image", action: "getOriginalFile")
 
         // take over old apache paths
-        "/store/staging/$path**"(controller: "staging", action: "serve")
         "/store/$a/$b/$c/$d/$id/thumbnail"(controller: "image", action: "proxyImageThumbnail")
         "/store/$a/$b/$c/$d/$id/thumbnail_$thumbnailType"(controller: "image", action: "proxyImageThumbnailType")
         "/store/$a/$b/$c/$d/$id/tms/$z/$x/${y}.png"(controller: "image", action: "proxyImageTile")

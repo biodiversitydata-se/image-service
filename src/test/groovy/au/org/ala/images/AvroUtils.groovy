@@ -13,50 +13,121 @@ import java.util.zip.ZipOutputStream
 
 class AvroUtils {
 
-    static File generateTestArchive(){
-        Schema multimediaSchema = SchemaBuilder
-                .builder()
-                .record("multimedia")
-                .fields()
-                .requiredString("identifier")
-                .endRecord();
+    static final String IDENTIFIER = 'identifier'
+    static final String AUDIENCE = 'audience'
+    static final String CONTRIBUTOR = "contributor"
+    static final String CREATED = 'created'
+    static final String CREATOR = "creator"
+    static final String DESCRIPTION = 'description'
+    static final String LICENSE = 'license'
+    static final String PUBLISHER = 'publisher'
+    static final String REFERENCES = 'references'
+    static final String RIGHTS = 'rights'
+    static final String RIGHTS_HOLDER = 'rightsHolder'
+    static final String SOURCE = 'source'
+    static final String TITLE = 'title'
+    static final String TYPE = 'type'
 
-        // generate a test archive
-        Schema multimediaRecordSchema = SchemaBuilder
-                .builder()
-                .record("multimediaRecord")
-                .fields()
-                .requiredString("id")
-                .name("multimediaItems").type().nullable().array().items(multimediaSchema)
-                .noDefault().endRecord()
-
-        org.apache.avro.generic.GenericRecord multimedia = new GenericRecordBuilder(multimediaSchema)
-                .set("identifier", "https://www.ala.org.au/app/uploads/2019/05/palm-cockatoo-by-Alan-Pettigrew-1920-1200-CCBY-28072018-640x480.jpg")
-                .build();
-
-        org.apache.avro.generic.GenericRecord record = new GenericRecordBuilder(multimediaRecordSchema)
-                .set("id", "1")
-                .set("multimediaItems", [multimedia])
-                .build();
+    static final List<String> OPTIONAL_KEYS = [
+            AUDIENCE,
+            CONTRIBUTOR,
+            CREATED,
+            CREATOR,
+            DESCRIPTION,
+            LICENSE,
+            PUBLISHER,
+            REFERENCES,
+            RIGHTS,
+            RIGHTS_HOLDER,
+            SOURCE,
+            TITLE,
+            TYPE
+    ]
 
 
-        File newArchiveDir = new File("/tmp/image-service-avro-test")
-        newArchiveDir.mkdir()
-        File newArchive = new File(newArchiveDir, "data.avro.zip");
-        FileOutputStream fos = new FileOutputStream(newArchive);
-        ZipOutputStream zipOut = new ZipOutputStream(fos);
-        ZipEntry zipEntry = new ZipEntry("data.avro");
-        zipOut.putNextEntry(zipEntry);
+    static File generateTestArchive() {
+        generateTestArchive([['https://www.ala.org.au/app/uploads/2019/05/palm-cockatoo-by-Alan-Pettigrew-1920-1200-CCBY-28072018-640x480.jpg']])
+    }
 
-        DatumWriter<GenericRecord> writer = new GenericDatumWriter<GenericRecord>(multimediaRecordSchema);
-        DataFileWriter<GenericRecord> dataFileWriter = new DataFileWriter<GenericRecord>(writer);
-        dataFileWriter.create(multimediaRecordSchema, zipOut);
-        dataFileWriter.append(record);
-        dataFileWriter.close();
+    static File generateTestArchive(List<List<String>> urls) {
+        generateTestArchiveWithMetadata(urls.collect { it.collect { url -> ['identifier': url ]}}, false)
+    }
 
-        zipOut.close();
-        fos.close();
+    static File generateTestArchiveWithMetadata(List<List<Map<String,String>>> records, boolean useSingleRecordIfAble) {
+        try {
+            File newArchiveDir = new File("/tmp/image-service-avro-test")
+            newArchiveDir.mkdir()
+            File newArchive = new File(newArchiveDir, "data.avro.zip");
+            FileOutputStream fos = new FileOutputStream(newArchive);
+            ZipOutputStream zipOut = new ZipOutputStream(fos);
 
-        newArchive
+            for (int i = 0; i < records.size(); ++i) {
+
+                Schema multimediaSchema = SchemaBuilder
+                        .builder()
+                        .record("multimedia")
+                        .fields()
+                        .requiredString("identifier")
+                        .with {assembler ->
+                            AvroUtils.OPTIONAL_KEYS.each { key ->
+                                assembler.optionalString(key)
+                            }
+                            assembler
+                        }
+                        .endRecord();
+
+                Schema multimediaRecordSchema = SchemaBuilder
+                        .builder()
+                        .record("multimediaRecord")
+                        .fields()
+                        .requiredString("id")
+                        .name("multimediaItems").type().nullable().array().items(multimediaSchema)
+                        .noDefault().endRecord()
+
+                // generate a test archive
+                List<GenericRecord> multimedias = records[i].collect { record ->
+                    new GenericRecordBuilder(multimediaSchema)
+                            .set("identifier", record.identifier)
+                            .with {builder ->
+                                AvroUtils.OPTIONAL_KEYS.each { key ->
+                                    if (record.containsKey(key)) {
+                                        builder.set(key, record[key])
+                                    }
+                                }
+                                builder
+                            }
+                            .build()
+                }
+
+                Schema recordSchema
+                GenericRecord record
+                if (useSingleRecordIfAble && multimedias.size() == 1) {
+                    record = multimedias.first()
+                    recordSchema = multimediaSchema
+                } else {
+                    record = new GenericRecordBuilder(multimediaRecordSchema)
+                            .set("id", "1")
+                            .set("multimediaItems", multimedias)
+                            .build();
+                    recordSchema = multimediaRecordSchema
+                }
+
+                ZipEntry zipEntry = new ZipEntry(records.size() == 1 ? "data.avro" : "data${i}.avro");
+                zipOut.putNextEntry(zipEntry);
+
+                DatumWriter<GenericRecord> writer = new GenericDatumWriter<GenericRecord>(recordSchema);
+                DataFileWriter<GenericRecord> dataFileWriter = new DataFileWriter<GenericRecord>(writer);
+                dataFileWriter.create(recordSchema, zipOut);
+                dataFileWriter.append(record);
+                dataFileWriter.flush();
+            }
+
+            zipOut.close();
+            fos.close();
+
+            newArchive
+        } catch (e) {
+            throw e
+        }
     }
 }

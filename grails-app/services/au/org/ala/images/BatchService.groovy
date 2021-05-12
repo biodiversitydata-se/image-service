@@ -23,6 +23,7 @@ class BatchService {
     public static final String CORRUPT__AVRO__FILES = "CORRUPT_AVRO_FILES"
     public static final String INVALID = "INVALID"
     public static final String UNZIPPED = "UNZIPPED"
+    public static final String MULTIMEDIA_ITEMS = "multimediaItems"
 
     def imageService
     def settingService
@@ -128,6 +129,9 @@ class BatchService {
             new ZipFile(uploadedFile).extractAll(uploadedFile.parentFile.absolutePath)
 
             File newDir = new File(grailsApplication.config.imageservice.batchUpload + "/" + upload.getId() + "/")
+            if (!newDir.deleteDir()) {
+                log.warn("Couldn't delete existing directory {} for batch upload {}", newDir)
+            }
             uploadedFile.getParentFile().renameTo(newDir)
             upload.filePath = newDir.getAbsolutePath() + "/" +  uploadedFile.getName();
             upload.status = UNZIPPED
@@ -189,12 +193,19 @@ class BatchService {
         while (reader.hasNext() ) {
             GenericRecord currRecord = reader.next()
             // Here we can add in data manipulation like anonymization etc
-            def multimediaRecords = currRecord.get("multimediaItems");
-            multimediaRecords.each { GenericRecord record ->
-                def identifier = record.get("identifier")
-                if (identifier){
-                    recordCount ++;
+            def multimediaRecords = currRecord.get(MULTIMEDIA_ITEMS)
+            if (multimediaRecords) {
+                multimediaRecords.each { GenericRecord record ->
+                    def identifier = record.get("identifier")
+                    if (identifier) {
+                        recordCount++;
+                    }
                 }
+            } else {
+                def identifier = currRecord.get("identifier")
+                if (identifier) {
+                    recordCount++;
+                }                
             }
         }
         [recordCount: recordCount]
@@ -208,7 +219,7 @@ class BatchService {
 
     private boolean loadBatchFile(BatchFile batchFile) {
 
-        log.info("Loading batch file: " + batchFile.filePath)
+        log.info("Loading batch file ${batchFile.id}: ${batchFile.filePath}")
         def start = Instant.now()
 
         def inStream = new FileInputStream(new File(batchFile.filePath))
@@ -216,8 +227,9 @@ class BatchService {
 
         def dataResourceUid = batchFile.batchFileUpload.dataResourceUid
 
-        int count = 0
+        int processedCount = 0
         long newImageCount = 0
+        long errorCount = 0
         long metadataUpdateCount = 0
 
         final int batchThreads = settingService.getBatchServiceThreads().intValue()
@@ -230,27 +242,57 @@ class BatchService {
 
             int batchSize = 0
             def batch = []
+            def identifiers = []
 
             // read a batch of records
             while (reader.hasNext() && batchSize < batchReadSize) {
                 GenericRecord currRecord = reader.next()
-                // Here we can add in data manipulation like anonymization etc
-                def multimediaRecords = currRecord.get("multimediaItems");
-                multimediaRecords.each { GenericRecord record ->
-                    // check URL
-                    if (record.get("identifier")) {
-                        def recordMap =  [
-                                dataResourceUid : dataResourceUid,
-                                identifier      : record.get("identifier")
+
+                def multimediaRecords = currRecord.get(MULTIMEDIA_ITEMS);
+                if (multimediaRecords) {
+                    // Here we can add in data manipulation like anonymization etc
+                    multimediaRecords.each { GenericRecord record ->
+                        // check URL
+                        if (record.get("identifier")) {
+
+                            if (!identifiers.contains(record.get("identifier"))) {
+
+                                def recordMap = [
+                                        dataResourceUid: dataResourceUid,
+                                        identifier     : record.get("identifier")
+                                ]
+
+                                ImageService.SUPPORTED_UPDATE_FIELDS.each { updateField ->
+                                    recordMap[updateField] = record.get(updateField)
+                                }
+
+                                batch << recordMap
+                                identifiers << record.get("identifier")
+
+                                processedCount++;
+                            }
+                        }
+                    }
+                } else {
+
+                    def identifier = currRecord.get("identifier")
+
+                    if (identifier && !identifiers.contains(identifier)) {
+
+                        def recordMap = [
+                                dataResourceUid: dataResourceUid,
+                                identifier     : identifier
                         ]
 
                         ImageService.SUPPORTED_UPDATE_FIELDS.each { updateField ->
-                            recordMap[updateField] = record.get(updateField)
+                            recordMap[updateField] = currRecord.get(updateField)
                         }
 
                         batch << recordMap
-                        count++;
-                    }
+                        identifiers << identifier
+
+                        processedCount++;
+                    }                    
                 }
                 batchSize ++
             }
@@ -268,18 +310,23 @@ class BatchService {
             //get counts
             results.each { result ->
                 if (result) {
-                    if (!result.alreadyStored) {
-                        newImageCount ++
-                    }
-                    if (result.metadataUpdated) {
-                        metadataUpdateCount ++
+                    if (!result.success) {
+                        errorCount ++
+                    } else {
+                        if (!result.alreadyStored) {
+                            newImageCount++
+                        }
+                        if (result.metadataUpdated) {
+                            metadataUpdateCount++
+                        }
                     }
                 }
             }
 
             batchFile.metadataUpdates = metadataUpdateCount
             batchFile.newImages = newImageCount
-            batchFile.processedCount = count
+            batchFile.errorCount = errorCount
+            batchFile.processedCount = processedCount
             batchFile.timeTakenToLoad = Duration.between(start, Instant.now()).toMillis() / 1000
             batchFile.save(flush:true)
 
@@ -287,35 +334,43 @@ class BatchService {
         }
 
         if (completed) {
-            log.info("Completed loading of batch file: " + batchFile.filePath)
+            log.info("Completed loading of batch file ${batchFile.id}: ${batchFile.filePath}")
+            // TODO Delete .avro / .zip files?
         } else {
-            log.info("Exiting the loading of batch file: " + batchFile.filePath + ", complete: " + completed)
+            log.info("Exiting the loading of batch file ${batchFile.id}:  ${batchFile.filePath}, complete: ${completed}")
         }
         completed
     }
 
-    Map execute(_imageSource,  String _userId) {
+    Map execute(Map imageSource,  String _userId) {
 
-        def results = imageService.batchUpdate([_imageSource], _userId)
-        def imageUpdateResult = results[imageService.getImageUrl(_imageSource)]
-        if (imageUpdateResult && imageUpdateResult.success && imageUpdateResult.image) {
-            if (imageUpdateResult.metadataUpdated) {
-                imageService.scheduleImageIndex(imageUpdateResult.image.id)
-            }
+        try {
+            def imageUpdateResult = imageService.uploadImage(imageSource, _userId)
+            if (imageUpdateResult && imageUpdateResult.success && imageUpdateResult.image && !imageUpdateResult.isDuplicate) {
+                if (imageUpdateResult.metadataUpdated) {
+                    imageService.scheduleImageIndex(imageUpdateResult.image.id)
+                }
 
-            if (!imageUpdateResult.alreadyStored){
-                imageService.scheduleArtifactGeneration(imageUpdateResult.image.id, _userId)
-                imageService.scheduleImageIndex(imageUpdateResult.image.id)
-                //Only run for new images......
-                imageService.scheduleImageMetadataPersist(
-                        imageUpdateResult.image.id,
-                        imageUpdateResult.image.imageIdentifier,
-                        imageUpdateResult.image.originalFilename,
-                        MetaDataSourceType.SystemDefined,
-                        _userId)
+                if (!imageUpdateResult.alreadyStored) {
+                    imageService.scheduleArtifactGeneration(imageUpdateResult.image.id, _userId)
+                    imageService.scheduleImageIndex(imageUpdateResult.image.id)
+                    //Only run for new images......
+                    imageService.scheduleImageMetadataPersist(
+                            imageUpdateResult.image.id,
+                            imageUpdateResult.image.imageIdentifier,
+                            imageUpdateResult.image.originalFilename,
+                            MetaDataSourceType.SystemDefined,
+                            _userId)
+                }
             }
+            imageUpdateResult
+        } catch (Exception e){
+            log.error("Problem saving image: " + imageSource + " - Problem:" + e.getMessage())
+            if (log.isDebugEnabled()){
+                log.debug("Problem saving image: " + imageSource + " - Problem:" + e.getMessage(), e)
+            }
+            [success: false]
         }
-        imageUpdateResult
     }
 
     def initialize(){
@@ -422,25 +477,45 @@ class BatchService {
     }
 
     def getUploads(){
-        BatchFileUpload.findAll([sort:'id', order: 'desc'])
+        BatchFileUpload.findAll([sort:'id', order: 'asc'])
     }
 
     def getNonCompleteFiles(){
-        BatchFile.findAllByStatusNotEqual(COMPLETE, [sort:'id', order: 'desc'])
+        def list = BatchFile.findAllByStatus(COMPLETE, [sort:'id', order: 'asc'])
+        list.sort(new Comparator<BatchFile>() {
+            @Override
+            int compare(BatchFile o1, BatchFile o2) {
+                if(o1.status == LOADING && o2.status != LOADING) {
+                    return 1
+                } else if (o1.status != LOADING && o2.status == LOADING){
+                    return -1
+                } else {
+                    return 0
+                }
+            }
+        })
+        list
     }
 
+    def getQueuedFiles(){
+        BatchFile.findAllByStatusInList([QUEUED, STOPPED], [sort:'dateCreated', order: 'asc'])
+    }
+
+    def getActiveFiles(){
+        BatchFile.findAllByStatus(LOADING, [sort:'dateCreated', order: 'asc'])
+    }
 
     def getFilesForUpload(uploadId){
         BatchFileUpload upload = BatchFileUpload.findById(uploadId)
         if (upload) {
-            BatchFile.findAllByBatchFileUpload(upload, [sort: 'id', order: 'desc'])
+            BatchFile.findAllByBatchFileUpload(upload, [sort: 'id', order: 'asc'])
         } else {
             []
         }
     }
 
     def getFiles(){
-        BatchFile.findAll([sort:'id', order: 'desc'])
+        BatchFile.findAll([sort:'id', order: 'asc'])
     }
 
     def purgeCompletedJobs(){
@@ -457,6 +532,13 @@ class BatchService {
         //remove batch file uploads
         BatchFileUpload.findAllByStatus(COMPLETE).each {
             if (it.dateCompleted.toInstant().isBefore(threeDaysAgo.toInstant())) {
+                it.delete(flush: true)
+            }
+        }
+
+        //remove batch file uploads with zero files
+        BatchFileUpload.findAll().each {
+            if (!it.batchFiles ) {
                 it.delete(flush: true)
             }
         }

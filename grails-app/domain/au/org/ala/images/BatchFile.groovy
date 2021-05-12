@@ -9,6 +9,7 @@ class BatchFile {
     Long recordCount
     Long newImages
     Long metadataUpdates
+    Long errorCount
     Long processedCount
     Date dateCompleted
     Long timeTakenToLoad
@@ -20,6 +21,7 @@ class BatchFile {
     static constraints = {
         newImages nullable: true
         metadataUpdates nullable: true
+        errorCount nullable: true
         processedCount nullable: true
         dateCompleted nullable: true
         timeTakenToLoad nullable: true

@@ -1,4 +1,4 @@
---  Function used for full DB exports
+    --  Function used for full DB exports
 CREATE OR REPLACE FUNCTION export_images() RETURNS void AS $$
 BEGIN
     COPY
@@ -55,7 +55,7 @@ BEGIN
             data_resource_uid AS "dataResourceUid",
             regexp_replace(regexp_replace(creator, '[|''"&]+',''), E'[\\n\\r]+', ' ', 'g' ) AS creator,
             regexp_replace(regexp_replace(title, '[|''"&]+',''), E'[\\n\\r]+', ' ', 'g' ) AS title,
-            regexp_replace(regexp_replace(description, '[|''"&]+',''), E'[\\n\\r]+', ' ', 'g' )  AS title,
+    regexp_replace(regexp_replace(description, '[|''"&]+',''), E'[\\n\\r]+', ' ', 'g' )  AS description,
             regexp_replace(regexp_replace(rights, '[|''"&]+',''), E'[\\n\\r]+', ' ', 'g' )  AS rights,
             regexp_replace(regexp_replace(rights_holder, '[|''"&]+',''), E'[\\n\\r]+', ' ', 'g' )  AS "rightsHolder",
             regexp_replace(regexp_replace(license, '[|''"&]+',''), E'[\\n\\r]+', ' ', 'g' )  AS license,
@@ -64,10 +64,16 @@ BEGIN
             harvestable,
             l.acronym  as "recognisedLicence",
             occurrence_id AS "occurrenceID",
+            audience AS "audience",
+            source AS "source",
+            contributor AS "contributor",
+            type AS "type",
+            created AS "created",
+            dc_references AS "references",
             TO_CHAR(date_uploaded :: DATE, 'yyyy-mm') AS "dateUploadedYearMonth"
         from image i
                  left outer join license l ON l.id = i.recognised_license_id
-        where date_deleted is NULL
+where date_deleted is NULL and is_duplicate_of_id is NULL
         )
         TO '${exportRoot}/images-index.csv' WITH CSV DELIMITER '$' HEADER;
 END;
@@ -82,25 +88,26 @@ BEGIN
     COPY
         (
         select
-            image_identifier as "imageID",
-            original_filename as "identifier",
-            audience,
-            contributor,
-            created,
-            creator,
-            description,
-            mime_type as "format",
-            license,
-            publisher,
-            dc_references as "references",
-            rights_holder  as "rightsHolder",
-            source,
-            title,
-            type
+            i.image_identifier as "imageID",
+            NULLIF(regexp_replace(i.original_filename, ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "identifier",
+            NULLIF(regexp_replace(i.audience,          ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "audience",
+            NULLIF(regexp_replace(i.contributor,       ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "contributor",
+            NULLIF(regexp_replace(i.created,           ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "created",
+            NULLIF(regexp_replace(i.creator,           ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "creator",
+            NULLIF(regexp_replace(i.description,       ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "description",
+            NULLIF(regexp_replace(i.mime_type,         ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "format",
+            NULLIF(regexp_replace(i.license,           ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "license",
+            NULLIF(regexp_replace(i.publisher,         ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "publisher",
+            NULLIF(regexp_replace(i.dc_references,     ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "references",
+            NULLIF(regexp_replace(i.rights_holder,     ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "rightsHolder",
+            NULLIF(regexp_replace(i.source,            ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "source",
+            NULLIF(regexp_replace(i.title,             ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "title",
+            NULLIF(regexp_replace(i.type,              ''\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}'',  '''', ''g''), '''')  AS  "type",
+            i.is_duplicate_of_id
             from image i
-            where data_resource_uid = %L
+            where i.data_resource_uid = %L
         )
-    TO %L (FORMAT CSV)'
+    TO %L (FORMAT CSV, ESCAPE ''\'', ENCODING ''UTF8'')'
         , uid, output_file);
 END;
 $$ LANGUAGE plpgsql;

@@ -71,6 +71,7 @@ class Image {
     Date dateDeleted
     Double mmPerPixel
     Integer squareThumbSize
+    Image isDuplicateOf
 
     static belongsTo = [ storageLocation: StorageLocation ]
     static hasMany = [keywords:ImageKeyword, metadata: ImageMetaDataItem, tags: ImageTag, outSourcedJobs: OutsourcedJob]
@@ -116,6 +117,7 @@ class Image {
 
         dateDeleted  nullable: true
         occurrenceId nullable: true
+        isDuplicateOf nullable:true
     }
 
     static mapping = {

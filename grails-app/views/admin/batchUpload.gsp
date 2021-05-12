@@ -83,7 +83,15 @@ Individual file details for the upload ${batchFileUpload.id} received on upload 
     </div>
 </div>
 
-<h3>Files</h3>
+<h3>Files in this batch
+<span class="pull-right">
+    total: ${files.size()},
+    completed: ${files.findAll({it.status == 'COMPLETE'}).size()},
+    loading: ${files.findAll({it.status == 'LOADING'}).size()},
+    queued: ${files.findAll({it.status == 'QUEUED'}).size()},
+    stopped: ${files.findAll({it.status == 'STOPPED'}).size()}
+</span>
+</h3>
 <g:if test="${files}">
     <table class="table table-condensed table-bordered ">
     <thead class="thead-dark">
@@ -92,6 +100,7 @@ Individual file details for the upload ${batchFileUpload.id} received on upload 
     <th>processedCount</th>
     <th>newImages</th>
     <th>metadataUpdates</th>
+    <th>errors</th>
     <th>created</th>
     <th>lastUpdated</th>
     <th>timeTaken</th>
@@ -102,11 +111,16 @@ Individual file details for the upload ${batchFileUpload.id} received on upload 
     <tbody>
     <g:each in="${files}" var="batchFile">
         <tr class="${batchFile.status == 'LOADING' ? 'active' : ''} ${batchFile.status == 'COMPLETE' ? 'success' : ''} ${batchFile.status == 'QUEUED' ? 'warning' : ''} ${batchFile.status == 'STOPPED' ? 'danger' : ''}">
-            <td>${batchFile.id}</td>
+            <td>
+                <a href="#" title="${batchFile.filePath}">
+                    ${batchFile.id}
+                </a>
+            </td>
             <td>${batchFile.recordCount}</td>
             <td>${batchFile.processedCount}</td>
             <td>${batchFile.newImages}</td>
             <td>${batchFile.metadataUpdates}</td>
+            <td>${batchFile.errorCount}</td>
             <td><prettytime:display date="${batchFile.dateCreated}" /></td>
             <td><prettytime:display date="${batchFile.lastUpdated}" /></td>
             <td>
@@ -118,8 +132,11 @@ Individual file details for the upload ${batchFileUpload.id} received on upload 
                     <g:if test="${minutes}">${minutes} min</g:if>
                     <g:if test="${seconds}">${seconds} secs</g:if>
                 </g:if>
-                <g:else>
+                <g:elseif test="${!batchFile.dateCompleted}">
                     <g:message code="batch.processing.not.loaded" />
+                </g:elseif>
+                <g:else>
+                    0 secs
                 </g:else>
             <td><prettytime:display date="${batchFile.dateCompleted}" /></td>
             <td>${batchFile.status}</td>
