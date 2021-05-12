@@ -435,7 +435,7 @@ class ImageService {
             def md5Hash = MD5CodecExtensionMethods.encodeAsMD5(bytes)
 
             //check for existing image using MD5 hash
-            def image = Image.findByContentMD5Hash(md5Hash)
+            def image = Image.findByContentMD5HashAndIsDuplicateOfIsNull(md5Hash)
             def preExisting = false
             def isDuplicate = false
             if (!image) {
@@ -480,7 +480,7 @@ class ImageService {
             } else if (image.dateDeleted) {
                 image.dateDeleted = null //reset date deleted if image resubmitted...
                 preExisting = true
-            } else if (createDuplicates) {
+            } else if (createDuplicates && image.originalFilename != originalFilename) {
                 log.warn("Existing image found at different URL ${image.originalFilename} to ${originalFilename}. Will add duplicate.")
                 // we have seen this image before, but the URL has changed at source
                 // so lets update it so that subsequent loads dont need
@@ -504,6 +504,9 @@ class ImageService {
                 duplicate.originalFilename = originalFilename
                 duplicate.save()
                 isDuplicate = true
+                preExisting = true
+            } else {
+                log.warn("Got a pre-existing image to store {} but it already exists at {}", originalFilename, image.imageIdentifier)
                 preExisting = true
             }
 
