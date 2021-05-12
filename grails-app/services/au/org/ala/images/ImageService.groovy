@@ -478,6 +478,7 @@ class ImageService {
                 image.originalFilename = originalFilename
                 image.dateTaken = getImageTakenDate(bytes) ?: image.dateUploaded
             } else if (image.dateDeleted) {
+                log.warn("Deleted Image has been re-uploaded.  Will undelete.")
                 image.dateDeleted = null //reset date deleted if image resubmitted...
                 preExisting = true
             } else if (createDuplicates && image.originalFilename != originalFilename) {
