@@ -256,12 +256,6 @@ class ImageController {
             return
         }
 
-        // if the image is a duplicate, redirect to original because we
-        // dont store a duplicate copy
-        if (imageInstance.isDuplicateOf){
-            imageInstance = imageInstance.isDuplicateOf;
-        }
-
         boolean contentDisposition = params.boolean("contentDisposition", false)
         boolean cacheHeaders = grailsApplication.config.getProperty('images.cache.headers', Boolean, true)
 

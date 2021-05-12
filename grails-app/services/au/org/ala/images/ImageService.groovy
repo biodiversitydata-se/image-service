@@ -94,10 +94,10 @@ class ImageService {
     ImageStoreResult storeImageFromUrl(String imageUrl, String uploader, Map metadata = [:]) {
         if (imageUrl) {
             try {
-                def image = Image.findByOriginalFilename(imageUrl)
+                def image = Image.byOriginalFileOrAlternateFilename(imageUrl) // findByOriginalFilename(imageUrl)
                 if (image && image.stored()) {
                     scheduleMetadataUpdate(image.imageIdentifier, metadata)
-                    return new ImageStoreResult(image, true, image.isDuplicateOf != null)
+                    return new ImageStoreResult(image, true, image.alternateFilename.contains(imageUrl))
                 }
                 def url = new URL(imageUrl)
                 def bytes = url.bytes
@@ -196,7 +196,7 @@ class ImageService {
                         // For filenames (non URLs), use the filename and dataResourceUid to unique identify
                         if (!image){
                             if (imageUrl.startsWith("http")){
-                                image = Image.findByOriginalFilename(imageUrl)
+                                image = Image.byOriginalFileOrAlternateFilename(imageUrl) // findByOriginalFilename(imageUrl)
                             } else {
                                 image = Image.findByOriginalFilenameAndDataResourceUid(imageUrl, imageSource.dataResourceUid)
                             }
@@ -294,7 +294,7 @@ class ImageService {
             // For filenames (non URLs), use the filename and dataResourceUid to unique identify
             if (!image){
                 if (imageUrl.startsWith("http")){
-                    image = Image.findByOriginalFilename(imageUrl)
+                    image = Image.byOriginalFileOrAlternateFilename(imageUrl) // findByOriginalFilename(imageUrl)
                 } else {
                     image = Image.findByOriginalFilenameAndDataResourceUid(imageUrl, imageSource.dataResourceUid)
                 }
@@ -355,7 +355,7 @@ class ImageService {
                      image: image,
                      alreadyStored: true,
                      metadataUpdated: metadataUpdated,
-                     isDuplicate: image.isDuplicateOf != null
+                     isDuplicate: image.alternateFilename.contains(imageUrl)
                 ]
             }
         }  else {
@@ -435,7 +435,7 @@ class ImageService {
             def md5Hash = MD5CodecExtensionMethods.encodeAsMD5(bytes)
 
             //check for existing image using MD5 hash
-            def image = Image.findByContentMD5HashAndIsDuplicateOfIsNull(md5Hash)
+            def image = Image.findByContentMD5Hash(md5Hash)
             def preExisting = false
             def isDuplicate = false
             if (!image) {
@@ -456,7 +456,7 @@ class ImageService {
                         storageLocation: sl
                 )
 
-                if (metadata.extension){
+                if (metadata.extension) {
                     image.extension = metadata.extension
                 } else {
                     // this is known to be problematic
@@ -483,35 +483,25 @@ class ImageService {
                 preExisting = true
             } else if (createDuplicates && image.originalFilename != originalFilename) {
                 log.warn("Existing image found at different URL ${image.originalFilename} to ${originalFilename}. Will add duplicate.")
+                log.warn("Deleted Image has been re-uploaded.  Will undelete.")
+
+                image.dateDeleted = null //reset date deleted if image resubmitted...
+                log.warn("Image moved at source from ${image.originalFilename} to ${originalFilename}. Will add alternate identifier.")
+
                 // we have seen this image before, but the URL has changed at source
                 // so lets update it so that subsequent loads dont need
                 // to re-download this image
-                Image duplicate = new Image()
-                setMetadataOnImage(metadata, duplicate)
-                duplicate.contentMD5Hash = image.contentMD5Hash
-                duplicate.imageIdentifier = UUID.randomUUID().toString() //share ID or new one
-                duplicate.contentSHA1Hash = image.contentSHA1Hash
-                duplicate.uploader = uploaderId
-                duplicate.storageLocation = image.storageLocation
-                duplicate.extension = image.extension
-                duplicate.height = image.height
-                duplicate.width = image.width
-                duplicate.fileSize = image.fileSize
-                duplicate.mimeType = image.mimeType
-                duplicate.dateUploaded = new Date()
-                duplicate.originalFilename = originalFilename
-                duplicate.dateTaken = image.dateTaken
-                duplicate.isDuplicateOf = image
-                duplicate.originalFilename = originalFilename
-                duplicate.save()
-                isDuplicate = true
+                if (!image.alternateFilename.contains(originalFilename)) {
+                    image.alternateFilename += originalFilename
+                }
                 preExisting = true
+                isDuplicate = true
             } else {
                 log.warn("Got a pre-existing image to store {} but it already exists at {}", originalFilename, image.imageIdentifier)
                 preExisting = true
             }
 
-            if (!preExisting){
+            if (!preExisting) {
                 //update metadata stored in the `image` table
                 setMetadataOnImage(metadata, image)
                 //try to match licence
@@ -1304,9 +1294,6 @@ class ImageService {
         }
         results.dataResourceUid = image.dataResourceUid ?: ''
         results.occurrenceID = image.occurrenceId ?: ''
-        if (image.isDuplicateOf){
-            results.isDuplicateOf = image.isDuplicateOf.imageIdentifier
-        }
 
         if (collectoryService) {
             collectoryService.addMetadataForResource(results)

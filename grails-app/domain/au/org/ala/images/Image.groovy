@@ -1,5 +1,7 @@
 package au.org.ala.images
 
+import net.kaleidos.hibernate.usertype.ArrayType
+
 class Image {
 
     Image parent
@@ -71,7 +73,8 @@ class Image {
     Date dateDeleted
     Double mmPerPixel
     Integer squareThumbSize
-    Image isDuplicateOf
+    @SearchableProperty(description="alternate filenames / URLs that this image has been found under")
+    String[] alternateFilename = []
 
     static belongsTo = [ storageLocation: StorageLocation ]
     static hasMany = [keywords:ImageKeyword, metadata: ImageMetaDataItem, tags: ImageTag, outSourcedJobs: OutsourcedJob]
@@ -117,7 +120,7 @@ class Image {
 
         dateDeleted  nullable: true
         occurrenceId nullable: true
-        isDuplicateOf nullable:true
+        alternateFilename nullable: true
     }
 
     static mapping = {
@@ -127,6 +130,7 @@ class Image {
         dateUploaded index: 'image_dateuploaded'
         dataResourceUid index: 'image_dataResourceUid_Idx'
         originalFilename index: 'image_originalfilename_idx'
+        alternateFilename type: ArrayType, params: [type: String], index: 'image_alternatefilename_idx'
 
         description length: 8096
         references column: "dc_references",  length: 1024
@@ -195,4 +199,12 @@ class Image {
         storageLocation.migrateTo(this.imageIdentifier, this.mimeType, destination)
     }
 
+    static Image byOriginalFileOrAlternateFilename(String filename) {
+        Image.withCriteria(uniqueResult: true) {
+            or {
+                eq 'originalFilename', filename
+                pgArrayContains 'alternateFilename', filename
+            }
+        }
+    }
 }
