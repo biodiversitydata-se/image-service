@@ -42,7 +42,7 @@ SELECT
     original_filename AS originalFilename,
     extension as extension,
     TO_CHAR(date_uploaded :: DATE, 'yyyy-mm-dd') AS "dateUploaded",
-    TO_CHAR(date_taken :: DATE, 'yyyy-mm-dd') AS created,
+    TO_CHAR(date_taken :: DATE, 'yyyy-mm-dd') AS "dateTaken",
     file_size as "fileSize",
     height as height,
     width as width,

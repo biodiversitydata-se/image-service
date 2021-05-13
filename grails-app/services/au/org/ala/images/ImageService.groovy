@@ -1387,7 +1387,7 @@ class ImageService {
      * @return
      */
     def exportDatasetMappingCSV(String datasetID, OutputStream outputStream) {
-        eachRowToCSV(outputStream.newWriter('UTF-8'), """{ call export_dataset_mapping(?) }""", [datasetID])
+        eachRowToCSV(outputStream.newWriter('UTF-8'), """{ call export_dataset_mapping(?) }""", [datasetID], ',', '\\')
     }
 
     def exportDatasetCSV(String datasetID, OutputStream outputStream) {
@@ -1400,9 +1400,10 @@ class ImageService {
      * @param sql The SQL to execute - must not contain embedded variables or this could lead to SQLi
      * @param params The SQL params to be passed to the query
      * @param separator The value separator for the CSV output
+     * @param escape The character that should appear before a data character that matches the QUOTE value. The default is the same as the QUOTE value (so that the quoting character is doubled if it appears in the data).
      * @return The CSV results will have been written to a writer
      */
-    private def eachRowToCSV(Writer writer, String sql, List<Object> params = [], String separator = ",") {
+    private def eachRowToCSV(Writer writer, String sql, List<Object> params = [], String separator = ",", String escape = '"') {
         CSVWriter csvWriter = null
         new Sql(dataSource).eachRow(sql, params) { result ->
             if (csvWriter == null) {
@@ -1422,13 +1423,15 @@ class ImageService {
                         // This is a generic version that maps each column name from the Result Set into a
                         // CSV column definition
                         "$name"({ String colName, Object rowResult ->
-                            rowResult.getAt(colName)
+                            rowResult.getAt(colName) ?: ''
                         }.curry(name))
                     }
                 })
                 // XXX <insert eye roll emoji here> Need to override the private field because it's set in the
                 // CSVWriter constructor based on a protected getter...
                 csvWriter.cachedValueSeperator = separator
+                csvWriter.cachedQuoteEscape = escape
+                csvWriter.cachedQuoteReplace = "$escape${csvWriter.cachedQuote}"
             }
             csvWriter.write(result)
             writer.flush()

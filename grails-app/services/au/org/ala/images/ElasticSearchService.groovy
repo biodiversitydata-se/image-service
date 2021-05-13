@@ -248,6 +248,7 @@ class ElasticSearchService {
         if (data.format){
             if (data.format.startsWith('image')){
                 data.fileType = 'image'
+                calculateImageSize(data)
             } else if (data.format.startsWith('audio')){
                 data.fileType = 'sound'
             } else if (data.format.startsWith('video')){
@@ -260,7 +261,11 @@ class ElasticSearchService {
         data.recognisedLicence  = data.recognisedLicence ?: UNRECOGNISED_LICENCE
         data.creator = data.creator ? data.creator.replaceAll("[\"|'&]", "") : NOT_SUPPLIED
         data.dataResourceUid = data.dataResourceUid ?:  CollectoryService.NO_DATARESOURCE
-        def imageSize = data.height.toInteger() * data.width.toInteger()
+        data
+    }
+
+    def calculateImageSize(data) {
+        def imageSize = (data.height?.toInteger() ?: 1) * (data.width?.toInteger() ?: 1)
         if (imageSize < 100){
             data.imageSize = "less than 100"
         } else if (imageSize < 1000){
@@ -274,7 +279,6 @@ class ElasticSearchService {
         } else {
             data.imageSize = (imageSize / 1000000).intValue() + "m"
         }
-        data
     }
 
     def deleteImage(Image image) {
