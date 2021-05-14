@@ -3,10 +3,10 @@ package au.org.ala.images
 import au.org.ala.images.metadata.MetadataExtractor
 import au.org.ala.images.thumb.ThumbnailingResult
 import au.org.ala.images.tiling.TileFormat
+import com.opencsv.CSVParserBuilder
+import com.opencsv.CSVWriterBuilder
+import com.opencsv.RFC4180ParserBuilder
 import grails.gorm.transactions.Transactional
-import grails.plugins.csv.CSVWriter
-import grails.web.mapping.LinkGenerator
-import groovy.sql.Sql
 import groovy.transform.Synchronized
 import okhttp3.HttpUrl
 import org.apache.commons.codec.binary.Base64
@@ -26,7 +26,10 @@ import org.grails.plugins.codecs.SHA1CodecExtensionMethods
 import org.hibernate.FlushMode
 import org.springframework.web.multipart.MultipartFile
 
-import java.sql.ResultSetMetaData
+import java.sql.Connection
+import java.sql.PreparedStatement
+import java.sql.ResultSet
+import java.sql.SQLException
 import java.text.SimpleDateFormat
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
@@ -1387,11 +1390,11 @@ class ImageService {
      * @return
      */
     def exportDatasetMappingCSV(String datasetID, OutputStream outputStream) {
-        eachRowToCSV(outputStream.newWriter('UTF-8'), """{ call export_dataset_mapping(?) }""", [datasetID], ',', '\\')
+        eachRowToCSV(outputStream.newWriter('UTF-8'), """select * from export_dataset_mapping(?)""", [datasetID], ',', '\\')
     }
 
     def exportDatasetCSV(String datasetID, OutputStream outputStream) {
-        eachRowToCSV(outputStream.newWriter('UTF-8'), """{ call export_dataset(?); }""", [datasetID])
+        eachRowToCSV(outputStream.newWriter('UTF-8'), """select * from export_dataset(?)""", [datasetID])
     }
 
     /**
@@ -1403,39 +1406,69 @@ class ImageService {
      * @param escape The character that should appear before a data character that matches the QUOTE value. The default is the same as the QUOTE value (so that the quoting character is doubled if it appears in the data).
      * @return The CSV results will have been written to a writer
      */
-    private def eachRowToCSV(Writer writer, String sql, List<Object> params = [], String separator = ",", String escape = '"') {
-        CSVWriter csvWriter = null
-        new Sql(dataSource).eachRow(sql, params) { result ->
-            if (csvWriter == null) {
-                log.debug("Creating new CSV Writer around {}", writer)
-                ResultSetMetaData rsmd = result.getMetaData()
-                int columnCount = rsmd.getColumnCount()
+    private def eachRowToCSV(Writer writer, String sql, List<Object> params = [], String separator = ",", String escape = '"', String quote = '"') {
+        def csvWriter = new CSVWriterBuilder(writer)
+                .withParser(
+                        // Use a RFC 4180 compliant CSV formatter unless the caller requires a separate escape character
+                        escape == quote ?
+                                new RFC4180ParserBuilder()
+                                    .withQuoteChar(quote as char)
+                                    .withSeparator(separator as char)
+                                .build()
+                        :
+                            new CSVParserBuilder()
+                                .withSeparator(separator as char)
+                                .withEscapeChar(escape as char)
+                                .withQuoteChar(quote as char)
+                            .build())
+                .build()
 
-                csvWriter = new CSVWriter(writer, {
-                    // The column count starts from 1
-                    for (int i = 1; i <= columnCount; i++) {
-                        String name = rsmd.getColumnName(i)
-                        // CSVWriter takes a closure for
-                        // CSVWriterColumnsBuilder, which essentially involves
-                        // calling a function for each column like "column name"(Closure) where the
-                        // closure extracts the value for the given column from the row object (in this case
-                        // a GroovyResultSet).
-                        // This is a generic version that maps each column name from the Result Set into a
-                        // CSV column definition
-                        "$name"({ String colName, Object rowResult ->
-                            rowResult.getAt(colName) ?: ''
-                        }.curry(name))
-                    }
-                })
-                // XXX <insert eye roll emoji here> Need to override the private field because it's set in the
-                // CSVWriter constructor based on a protected getter...
-                csvWriter.cachedValueSeperator = separator
-                csvWriter.cachedQuoteEscape = escape
-                csvWriter.cachedQuoteReplace = "$escape${csvWriter.cachedQuote}"
+        Connection conn = null
+        PreparedStatement st = null
+        ResultSet rs = null
+        boolean savedAutoCommit = true
+        try {
+            conn = dataSource.getConnection()
+            // Autocommit must be off for PG driver to use cursor
+            savedAutoCommit = conn.autoCommit
+
+            conn.autoCommit = false
+            st = conn.prepareStatement(sql)
+            // Fetch size must be non-0 for PG driver to use cursor
+            st.fetchSize = 10000
+            params.eachWithIndex { param, i ->
+                st.setObject(i + 1, param)
             }
-            csvWriter.write(result)
-            writer.flush()
+            rs = st.executeQuery()
+
+            csvWriter.writeAll(rs, true)
+        } catch (SQLException e) {
+            log.warn("Failed to execute: $sql because: ${e.message}")
+            throw e
+        } finally {
+            try {
+                conn?.autoCommit = savedAutoCommit
+            }
+            catch (SQLException e) {
+                log.debug("Caught exception resetting auto commit: ${e.message} - continuing");
+            }
+            try {
+                rs?.close()
+            } catch (SQLException e) {
+                log.debug("Caught exception closing resultSet: ${e.message} - continuing");
+            }
+            try {
+                st?.close()
+            } catch (SQLException e) {
+                log.debug("Caught exception closing statement: ${e.message} - continuing");
+            }
+            try {
+                conn?.close()
+            } catch (SQLException e) {
+                log.debug("Caught exception closing connection: ${e.message} - continuing");
+            }
         }
+        writer.flush()
     }
 
 
@@ -1449,7 +1482,7 @@ class ImageService {
         def exportFile = grailsApplication.config.imageservice.exportDir + "/images-index.csv"
         def file = new File(exportFile)
         file.withWriter("UTF-8") { writer ->
-            eachRowToCSV(writer, """SELECT * FROM export_index;""", [], '$')
+            eachRowToCSV(writer, """SELECT * FROM export_index;""", [])
         }
         file
     }

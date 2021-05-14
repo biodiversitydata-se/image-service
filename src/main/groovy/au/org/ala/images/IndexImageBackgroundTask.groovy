@@ -1,6 +1,7 @@
 package au.org.ala.images
 
-import com.opencsv.CSVReader
+import com.opencsv.CSVReaderBuilder
+import com.opencsv.RFC4180ParserBuilder
 import grails.gorm.transactions.Transactional
 import org.apache.log4j.Logger
 
@@ -50,7 +51,10 @@ class ScheduleReindexAllImagesTask extends BackgroundTask {
         log.info("CSV export complete. Deleting existing index")
         _imageService.deleteIndex()
         log.info("Deleting existing index. Done.")
-        def csvReader = new CSVReader(new InputStreamReader(new FileInputStream(file)), '$'.toCharArray()[0])
+
+        def csvReader = new CSVReaderBuilder(new InputStreamReader(new FileInputStream(file)))
+                .withCSVParser(new RFC4180ParserBuilder().build())
+                .build()
         def headers = csvReader.readNext()
         def line = csvReader.readNext()
         def i = 1
@@ -58,7 +62,7 @@ class ScheduleReindexAllImagesTask extends BackgroundTask {
         def startOfProcess = start
         def batch = []
         log.info("Starting file read: ${file.getAbsolutePath()}")
-        while (line){
+        while (line) {
             try {
                 def record = [:]
                 if (line.length == headers.length) {
@@ -78,7 +82,7 @@ class ScheduleReindexAllImagesTask extends BackgroundTask {
                 } else {
                     log.error("Problem with line: ${i}, incorrect number of fields, expected ${headers.length}, actual ${line.length}")
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 log.error("Problem indexing batch at count: ${i}, - " + e.getMessage(), e)
                 log.error("Retrying batch....")
                 try {
@@ -100,7 +104,7 @@ class ScheduleReindexAllImagesTask extends BackgroundTask {
             line = csvReader.readNext()
         }
 
-        def lastBatch  = System.currentTimeMillis() - startOfProcess
+        def lastBatch = System.currentTimeMillis() - startOfProcess
         _elasticSearchService.bulkIndexImageInES(batch)
         batch.clear()
         log.info("Indexing images complete. Total indexed: " + i + " total time: " + lastBatch)
