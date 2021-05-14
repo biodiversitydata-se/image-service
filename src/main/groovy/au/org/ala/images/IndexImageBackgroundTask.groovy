@@ -46,67 +46,77 @@ class ScheduleReindexAllImagesTask extends BackgroundTask {
     @Override
     void execute() {
 
-        log.info("Starting CSV export for full index generation")
-        def file = _imageService.exportIndexToFile()
-        log.info("CSV export complete. Deleting existing index")
-        _imageService.deleteIndex()
-        log.info("Deleting existing index. Done.")
+        try {
+            log.info("Starting CSV export for full index generation")
+            def file = _imageService.exportIndexToFile()
+            log.info("CSV export complete. Deleting existing index")
+            // where we interrupted during CSV export?
+            if (Thread.currentThread().isInterrupted(true)) {
+                log.info("Interrupted during index CSV export, not continuing")
+                return
+            }
+            _imageService.deleteIndex()
+            log.info("Deleting existing index. Done.")
 
-        def csvReader = new CSVReaderBuilder(new InputStreamReader(new FileInputStream(file)))
-                .withCSVParser(new RFC4180ParserBuilder().build())
-                .build()
-        def headers = csvReader.readNext()
-        def line = csvReader.readNext()
-        def i = 1
-        def start = System.currentTimeMillis()
-        def startOfProcess = start
-        def batch = []
-        log.info("Starting file read: ${file.getAbsolutePath()}")
-        while (line) {
-            try {
-                def record = [:]
-                if (line.length == headers.length) {
-                    line.eachWithIndex { field, idx ->
-                        if (field) {
-                            record[headers[idx]] = field
+            def csvReader = new CSVReaderBuilder(new InputStreamReader(new FileInputStream(file)))
+                    .withCSVParser(new RFC4180ParserBuilder().build())
+                    .build()
+            def headers = csvReader.readNext()
+            def line = csvReader.readNext()
+            def i = 1
+            def start = System.currentTimeMillis()
+            def startOfProcess = start
+            def batch = []
+            log.info("Starting file read: ${file.getAbsolutePath()}")
+            while (line) {
+                try {
+                    def record = [:]
+                    if (line.length == headers.length) {
+                        line.eachWithIndex { field, idx ->
+                            if (field) {
+                                record[headers[idx]] = field
+                            }
                         }
+                        batch << record
+                        if (i % _batchIndexSize == 0) {
+                            def lastBatch = System.currentTimeMillis() - start
+                            _elasticSearchService.bulkIndexImageInES(batch)
+                            batch.clear()
+                            log.info("Indexing images:  ${i}. Last ${_batchIndexSize} in time: ${lastBatch} ms")
+                            start = System.currentTimeMillis()
+                        }
+                    } else {
+                        log.error("Problem with line: ${i}, incorrect number of fields, expected ${headers.length}, actual ${line.length}")
                     }
-                    batch << record
-                    if (i % _batchIndexSize == 0) {
-                        def lastBatch = System.currentTimeMillis() - start
+                } catch (Exception e) {
+                    log.error("Problem indexing batch at count: ${i}, - " + e.getMessage(), e)
+                    log.error("Retrying batch....")
+                    try {
                         _elasticSearchService.bulkIndexImageInES(batch)
                         batch.clear()
-                        log.info("Indexing images:  ${i}. Last ${_batchIndexSize} in time: ${lastBatch} ms")
-                        start = System.currentTimeMillis()
+                        log.error("Retry successful....")
+                    } catch (Exception e2) {
+                        log.error("Retry failed. Dumping batch to log file")
+                        log.error("####################### Problem batch start #############################")
+                        def batchDebug = ""
+                        batch.each {
+                            batchDebug = batchDebug + it + "\n"
+                        }
+                        log.error(batchDebug)
+                        log.error("####################### Problem batch end #############################")
                     }
-                } else {
-                    log.error("Problem with line: ${i}, incorrect number of fields, expected ${headers.length}, actual ${line.length}")
                 }
-            } catch (Exception e) {
-                log.error("Problem indexing batch at count: ${i}, - " + e.getMessage(), e)
-                log.error("Retrying batch....")
-                try {
-                    _elasticSearchService.bulkIndexImageInES(batch)
-                    batch.clear()
-                    log.error("Retry successful....")
-                } catch (Exception e2) {
-                    log.error("Retry failed. Dumping batch to log file")
-                    log.error("####################### Problem batch start #############################")
-                    def batchDebug = ""
-                    batch.each {
-                        batchDebug = batchDebug + it + "\n"
-                    }
-                    log.error(batchDebug)
-                    log.error("####################### Problem batch end #############################")
-                }
+                i += 1
+                line = csvReader.readNext()
             }
-            i += 1
-            line = csvReader.readNext()
-        }
 
-        def lastBatch = System.currentTimeMillis() - startOfProcess
-        _elasticSearchService.bulkIndexImageInES(batch)
-        batch.clear()
-        log.info("Indexing images complete. Total indexed: " + i + " total time: " + lastBatch)
+            def lastBatch = System.currentTimeMillis() - startOfProcess
+            _elasticSearchService.bulkIndexImageInES(batch)
+            batch.clear()
+            log.info("Indexing images complete. Total indexed: " + i + " total time: " + lastBatch)
+
+        } catch (e) {
+            log.error("Exception rebuilding search index", e)
+        }
     }
 }

@@ -8,6 +8,7 @@ import com.opencsv.CSVWriterBuilder
 import com.opencsv.RFC4180ParserBuilder
 import grails.gorm.transactions.Transactional
 import groovy.transform.Synchronized
+import groovyx.gpars.GParsPool
 import okhttp3.HttpUrl
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.imaging.Imaging
@@ -24,6 +25,7 @@ import org.apache.tika.mime.MimeTypes
 import org.grails.plugins.codecs.MD5CodecExtensionMethods
 import org.grails.plugins.codecs.SHA1CodecExtensionMethods
 import org.hibernate.FlushMode
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.multipart.MultipartFile
 
 import java.sql.Connection
@@ -72,6 +74,12 @@ class ImageService {
 
     private static int BACKGROUND_TASKS_BATCH_SIZE = 100
 
+    @Value('${http.default.readTimeoutMs:120000}')
+    int readTimeoutMs = 120000 // 2 minutes
+
+    @Value('${http.default.connectTimeoutMs:120000}')
+    int connectTimeoutMs = 120000 // 2 minutes
+
     Map imagePropertyMap = null
 
     ImageStoreResult storeImage(MultipartFile imageFile, String uploader, Map metadata = [:]) {
@@ -105,7 +113,7 @@ class ImageService {
                     return new ImageStoreResult(image, true, image.isDuplicateOf != null)
                 }
                 def url = new URL(imageUrl)
-                def bytes = url.bytes
+                def bytes = url.getBytes(connectTimeout: connectTimeoutMs, readTimeout: readTimeoutMs)
 
                 def contentType = null
 
@@ -211,7 +219,7 @@ class ImageService {
                             def result = [success: false, alreadyStored: false]
                             try {
                                 def url = new URL(imageUrl)
-                                def bytes = url.bytes
+                                def bytes = url.getBytes(connectTimeout: connectTimeoutMs, readTimeout: readTimeoutMs)
                                 def contentType = detectMimeTypeFromBytes(bytes, imageUrl)
                                 ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length,
                                         contentType, uploader, true, imageSource)
@@ -317,7 +325,7 @@ class ImageService {
                 def bytes
                 try {
                     def url = new URL(imageUrl)
-                    bytes = url.bytes
+                    bytes = url.getBytes(connectTimeout: connectTimeoutMs, readTimeout: readTimeoutMs)
                 } catch (Exception e){
                     log.error("Unable to load image from URL: {}. Logging as failed URL", imageUrl)
                     logBadUrl(imageUrl)
@@ -739,36 +747,30 @@ class ImageService {
 
         Integer batchThreads = settingService.getBackgroundTasksThreads()
 
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(batchThreads);
+        def theseTasks = new ArrayList<Closure<?>>(BACKGROUND_TASKS_BATCH_SIZE)
 
         while (taskCount < BACKGROUND_TASKS_BATCH_SIZE && (task = _backgroundQueue.poll()) != null) {
             if (task) {
-                try {
-                    final BackgroundTask taskToRun = task
-                    executor.execute(new Runnable() {
-                        @Override
-                        void run() {
-                            taskToRun.execute()
-                        }
-                    });
-                } catch (Exception e){
-                    log.error("Error executing task: " + task)
-                    log.error("Error executing task: " + e.getMessage(), e)
-                }
+                theseTasks.add(task.&execute)
                 taskCount++
             }
         }
-        executor.shutdown();
+
         try {
-            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-                executor.shutdownNow();
+            GParsPool.withPool(batchThreads, uncaughtExceptionHandler) {
+                GParsPool.executeAsyncAndWait(theseTasks)
             }
-        } catch (InterruptedException ex) {
-            log.error(ex.getMessage(), ex)
-            executor.shutdownNow();
-            Thread.currentThread().interrupt();
+        } catch (e) {
+            log.error("Exception executing background tasks in batch", e)
         }
     }
+
+    private static Thread.UncaughtExceptionHandler uncaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
+        void uncaughtException(Thread t, Throwable e) {
+            ImageService.log.error("Error processing background thread ${t.name}:", e)
+        }
+    }
+
 
     void processTileBackgroundTasks() {
         int taskCount = 0
