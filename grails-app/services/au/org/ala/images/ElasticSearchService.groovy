@@ -111,11 +111,6 @@ class ElasticSearchService {
             return
         }
 
-        if (image.isDuplicateOf){
-            log.debug("Supplied image is duplicate. Will not index")
-            return
-        }
-
         def ct = new CodeTimer("Index Image ${image.id}")
         // only add the fields that are searchable. They are marked with an annotation
         def fields = Image.class.declaredFields

@@ -8,6 +8,12 @@ grails:
     codegen:
         defaultPackage: au.org.ala.images
     gorm:
+        default:
+            mapping:
+                id:
+                    generator: 'org.hibernate.id.enhanced.SequenceStyleGenerator'
+                    params:
+                    - prefer_sequence_per_entity: false
         reactor:
             # Whether to translate GORM events into Reactor events
             # Disabled by default for performance reasons
@@ -94,7 +100,7 @@ flyway:
     outOfOrder: false
 ---
 hibernate:
-    dialect: org.hibernate.dialect.PostgreSQLDialect
+    dialect: net.kaleidos.hibernate.PostgresqlExtensionsDialect
     cache:
         queries: true
         use_second_level_cache: false
@@ -180,7 +186,7 @@ environments:
 #            exportDir: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-exports'
     production:
         hibernate:
-            dialect: org.hibernate.dialect.PostgreSQLDialect
+            dialect: net.kaleidos.hibernate.PostgresqlExtensionsDialect
         dataSource:
             dbCreate: validate
             driverClassName: org.postgresql.Driver

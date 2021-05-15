@@ -14,6 +14,7 @@ import static au.org.ala.images.AvroUtils.AUDIENCE
 import static au.org.ala.images.AvroUtils.CREATED
 import static au.org.ala.images.AvroUtils.CREATOR
 import static au.org.ala.images.AvroUtils.IDENTIFIER
+import static au.org.ala.images.AvroUtils.IDENTIFIER
 
 @Integration(applicationClass = Application.class)
 @Rollback
@@ -217,9 +218,6 @@ class BatchUploadSpec extends Specification {
         def upload = findBatchFileUpload(response.batchID, start)
 
         def originalImage = findImage(imageUrls[0][0][(IDENTIFIER)], true, start)
-        def firstDuplicate = findImage(imageUrls[1][0][(IDENTIFIER)], false, start)
-        def secondDuplicate = findImage(imageUrls[2][0][(IDENTIFIER)], false, start)
-        originalImage.refresh()
 
         then:
         checkCommonResponse(uploadResponse, response, imageUrls, TEST_DR_UID)
@@ -228,27 +226,45 @@ class BatchUploadSpec extends Specification {
 
         // One duplicate created per additional image
         originalImage != null
-        originalImage.isDuplicateOf == null
         originalImage.mimeType == 'image/png'
         originalImage.dateDeleted == null
         originalImage.audience == 'audience'
         originalImage.zoomLevels > 0 // Indicates that the tiler ran
+        originalImage.alternateFilename != null
+        originalImage.alternateFilename.size() == 2
+        originalImage.alternateFilename as Set == [imageUrls[1][0][(IDENTIFIER)], imageUrls[2][0][(IDENTIFIER)]] as Set
 
-        firstDuplicate != null
-        firstDuplicate.isDuplicateOf == originalImage
-        firstDuplicate.contentMD5Hash == originalImage.contentMD5Hash
-        firstDuplicate.mimeType == 'image/png'
-        firstDuplicate.dateDeleted == null
-        firstDuplicate.audience == 'audience2'
-        firstDuplicate.zoomLevels == 0 // Duplicate image, so no tiler should have run
+        when: "uploading a duplicate image again, the duplicate is detected before it is downloaded again"
 
-        secondDuplicate != null
-        secondDuplicate.isDuplicateOf == originalImage
-        secondDuplicate.contentMD5Hash == originalImage.contentMD5Hash
-        secondDuplicate.mimeType == 'image/png'
-        secondDuplicate.dateDeleted == null
-        secondDuplicate.audience == 'audience3'
-        secondDuplicate.zoomLevels == 0 // Duplicate image, so no tiler should have run
+        uploadResponse = rest.post("${baseUrl}/batch/upload") {
+            contentType "multipart/form-data"
+            setProperty "dataResourceUid", TEST_DR_UID
+            setProperty "archive", avro
+        }
+
+        response = new JsonSlurper().parseText(uploadResponse.body)
+
+        // wait for batch files and images to be created
+        start = System.currentTimeSeconds()
+        // Poll until the image tiler has run on the last image in the batch upload
+        upload = findBatchFileUpload(response.batchID, start)
+
+        originalImage = findImage(imageUrls[0][0][(IDENTIFIER)], true, start)
+
+        then:
+        checkCommonResponse(uploadResponse, response, imageUrls, TEST_DR_UID)
+
+        checkBatchFileUpload(upload, TEST_DR_UID, 3)
+
+        // One duplicate created per additional image
+        originalImage != null
+        originalImage.mimeType == 'image/png'
+        originalImage.dateDeleted == null
+        originalImage.audience == 'audience'
+        originalImage.zoomLevels > 0 // Indicates that the tiler ran
+        originalImage.alternateFilename != null
+        originalImage.alternateFilename.size() == 2 // Check the number of alternate filenames has not increased.
+        originalImage.alternateFilename as Set == [imageUrls[1][0][(IDENTIFIER)], imageUrls[2][0][(IDENTIFIER)]] as Set
 
     }
 

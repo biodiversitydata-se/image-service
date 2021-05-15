@@ -15,6 +15,7 @@ buildscript {
 
 plugins {
     id "com.gorylenko.gradle-git-properties" version "1.4.17"
+    id "org.flywaydb.flyway" version "4.2.0"
 }
 
 
@@ -73,6 +74,7 @@ dependencies {
     compile group: 'au.org.ala.plugins.grails', name:'images-client-plugin', version: '1.1', changing: true
 
     // Added dependencies
+    compile 'org.grails.plugins:postgresql-extensions:5.3.0'
     compile 'org.grails.plugins:cache-headers:2.0.2'
     compile 'org.grails.plugins:external-config:1.2.2'
     compile 'org.grails.plugins:quartz:2.0.13'
@@ -157,6 +159,15 @@ tasks.withType(Test) {
     systemProperty "webdriver.gecko.driver", System.getProperty('webdriver.gecko.driver')
 }
 
+// You can use this plugin to run flyway commands (ie repair) via gradle.
+// To run migrate you will need to define the placeholders
+// Set the url/user/password via gradle properties file, env variables or CLI arguments, eg:
+// ./gradlew -Pflyway.user=myUsr -Pflyway.schemas=schema1,schema2 -Pflyway.placeholders.keyABC=valXYZ
+flyway {
+    url = project.ext.has('flyway.url') ? project.ext['flyway.url'] : 'jdbc:postgresql:images'
+    user = project.ext.has('flyway.user') ? project.ext['flyway.user'] : 'images'
+    password = project.ext.has('flyway.password') ? project.ext['flyway.password'] : 'images'
+}
 
 springBoot {
     buildInfo()
