@@ -304,15 +304,15 @@ analytics:
 
 elasticsearch:
   indexName: "images"
-  host: "127.0.0.1"
-  scheme: "http"
-  port1: 9200
-  port2: 9201
   maxFacetSize: 10000
   maxOffset: 10000
   maxPageSize: 200
   defaultPageSize: 10
   batchIndexSize: 1000
+  hosts:
+      - host: "127.0.0.1"
+        scheme: "http"
+        port: 9200
 
 # Number of days to wait before purging completed batch jobs
 purgeCompletedAgeInDays: 3
@@ -327,3 +327,7 @@ collectory:
 biocache:
     baseURL: "https://biocache.ala.org.au"
 
+http:
+    default:
+        connectTimeoutMs: 120000
+        readTimeoutMs: 120000

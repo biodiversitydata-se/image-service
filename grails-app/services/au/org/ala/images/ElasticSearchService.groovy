@@ -2,7 +2,7 @@ package au.org.ala.images
 
 import com.opencsv.CSVWriter
 import grails.converters.JSON
-import org.elasticsearch.action.admin.indices.mapping.get.GetFieldMappingsResponse
+import grails.core.GrailsApplication
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest
@@ -10,8 +10,6 @@ import org.elasticsearch.action.bulk.BulkRequest
 import org.elasticsearch.action.bulk.BulkResponse
 import org.elasticsearch.action.delete.DeleteRequest
 import org.elasticsearch.action.search.SearchScrollRequest
-import org.elasticsearch.client.indices.GetFieldMappingsRequest
-import org.elasticsearch.cluster.metadata.MappingMetaData
 import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.common.xcontent.XContentType
 import groovy.json.JsonOutput
@@ -51,7 +49,7 @@ import java.util.zip.ZipOutputStream
 class ElasticSearchService {
 
     def logService
-    def grailsApplication
+    GrailsApplication grailsApplication
     def imageStoreService
 
     static String UNRECOGNISED_LICENCE =  "unrecognised_licence"
@@ -61,10 +59,12 @@ class ElasticSearchService {
 
     @PostConstruct
     def initialize() {
+        def hosts = grailsApplication.config.getProperty('elasticsearch.hosts', List, []).collect { host ->
+            new HttpHost(host.host, host.port as Integer, host.scheme)
+        }
         client = new RestHighLevelClient(
                 RestClient.builder(
-                        new HttpHost("${grailsApplication.config.elasticsearch.host}", grailsApplication.config.elasticsearch.port1 as Integer, "${grailsApplication.config.elasticsearch.scheme}"),
-                        new HttpHost("${grailsApplication.config.elasticsearch.host}", grailsApplication.config.elasticsearch.port2 as Integer, "${grailsApplication.config.elasticsearch.scheme}")
+                        *hosts
                 )
         )
         initialiseIndex()
@@ -260,7 +260,12 @@ class ElasticSearchService {
         data.recognisedLicence  = data.recognisedLicence ?: UNRECOGNISED_LICENCE
         data.creator = data.creator ? data.creator.replaceAll("[\"|'&]", "") : NOT_SUPPLIED
         data.dataResourceUid = data.dataResourceUid ?:  CollectoryService.NO_DATARESOURCE
-        def imageSize = data.height.toInteger() * data.width.toInteger()
+        calculateImageSize(data)
+        data
+    }
+
+    private def calculateImageSize(data) {
+        def imageSize = (data.height?.toInteger() ?: 0) * (data.width?.toInteger() ?: 0)
         if (imageSize < 100){
             data.imageSize = "less than 100"
         } else if (imageSize < 1000){
@@ -274,7 +279,6 @@ class ElasticSearchService {
         } else {
             data.imageSize = (imageSize / 1000000).intValue() + "m"
         }
-        data
     }
 
     def deleteImage(Image image) {

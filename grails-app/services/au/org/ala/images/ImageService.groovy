@@ -3,9 +3,12 @@ package au.org.ala.images
 import au.org.ala.images.metadata.MetadataExtractor
 import au.org.ala.images.thumb.ThumbnailingResult
 import au.org.ala.images.tiling.TileFormat
+import com.opencsv.CSVParserBuilder
+import com.opencsv.CSVWriterBuilder
+import com.opencsv.RFC4180ParserBuilder
 import grails.gorm.transactions.Transactional
-import groovy.sql.Sql
 import groovy.transform.Synchronized
+import groovyx.gpars.GParsPool
 import okhttp3.HttpUrl
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.imaging.Imaging
@@ -22,9 +25,13 @@ import org.apache.tika.mime.MimeTypes
 import org.grails.plugins.codecs.MD5CodecExtensionMethods
 import org.grails.plugins.codecs.SHA1CodecExtensionMethods
 import org.hibernate.FlushMode
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.multipart.MultipartFile
-import org.springframework.web.util.UriComponents
 
+import java.sql.Connection
+import java.sql.PreparedStatement
+import java.sql.ResultSet
+import java.sql.SQLException
 import java.text.SimpleDateFormat
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
@@ -67,6 +74,12 @@ class ImageService {
 
     private static int BACKGROUND_TASKS_BATCH_SIZE = 100
 
+    @Value('${http.default.readTimeoutMs:120000}')
+    int readTimeoutMs = 120000 // 2 minutes
+
+    @Value('${http.default.connectTimeoutMs:120000}')
+    int connectTimeoutMs = 120000 // 2 minutes
+
     Map imagePropertyMap = null
 
     ImageStoreResult storeImage(MultipartFile imageFile, String uploader, Map metadata = [:]) {
@@ -100,7 +113,7 @@ class ImageService {
                     return new ImageStoreResult(image, true, image.isDuplicateOf != null)
                 }
                 def url = new URL(imageUrl)
-                def bytes = url.bytes
+                def bytes = url.getBytes(connectTimeout: connectTimeoutMs, readTimeout: readTimeoutMs)
 
                 def contentType = null
 
@@ -206,7 +219,7 @@ class ImageService {
                             def result = [success: false, alreadyStored: false]
                             try {
                                 def url = new URL(imageUrl)
-                                def bytes = url.bytes
+                                def bytes = url.getBytes(connectTimeout: connectTimeoutMs, readTimeout: readTimeoutMs)
                                 def contentType = detectMimeTypeFromBytes(bytes, imageUrl)
                                 ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length,
                                         contentType, uploader, true, imageSource)
@@ -312,7 +325,7 @@ class ImageService {
                 def bytes
                 try {
                     def url = new URL(imageUrl)
-                    bytes = url.bytes
+                    bytes = url.getBytes(connectTimeout: connectTimeoutMs, readTimeout: readTimeoutMs)
                 } catch (Exception e){
                     log.error("Unable to load image from URL: {}. Logging as failed URL", imageUrl)
                     logBadUrl(imageUrl)
@@ -735,36 +748,30 @@ class ImageService {
 
         Integer batchThreads = settingService.getBackgroundTasksThreads()
 
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(batchThreads);
+        def theseTasks = new ArrayList<Closure<?>>(BACKGROUND_TASKS_BATCH_SIZE)
 
         while (taskCount < BACKGROUND_TASKS_BATCH_SIZE && (task = _backgroundQueue.poll()) != null) {
             if (task) {
-                try {
-                    final BackgroundTask taskToRun = task
-                    executor.execute(new Runnable() {
-                        @Override
-                        void run() {
-                            taskToRun.execute()
-                        }
-                    });
-                } catch (Exception e){
-                    log.error("Error executing task: " + task)
-                    log.error("Error executing task: " + e.getMessage(), e)
-                }
+                theseTasks.add(task.&execute)
                 taskCount++
             }
         }
-        executor.shutdown();
+
         try {
-            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-                executor.shutdownNow();
+            GParsPool.withPool(batchThreads, uncaughtExceptionHandler) {
+                GParsPool.executeAsyncAndWait(theseTasks)
             }
-        } catch (InterruptedException ex) {
-            log.error(ex.getMessage(), ex)
-            executor.shutdownNow();
-            Thread.currentThread().interrupt();
+        } catch (e) {
+            log.error("Exception executing background tasks in batch", e)
         }
     }
+
+    private static Thread.UncaughtExceptionHandler uncaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
+        void uncaughtException(Thread t, Throwable e) {
+            ImageService.log.error("Error processing background thread ${t.name}:", e)
+        }
+    }
+
 
     void processTileBackgroundTasks() {
         int taskCount = 0
@@ -1360,98 +1367,127 @@ class ImageService {
     }
 
     /**
-     * Export CSV. This uses a stored procedure that needs to be installed as part of the
-     * service installation.
+     * Export CSV.
      *
      * @param outputStream
      * @return
      */
-    def exportCSV(outputStream){
-        exportCSVToFile().withInputStream { stream ->
-            outputStream << stream
-        }
+    def exportCSV(OutputStream outputStream) {
+        eachRowToCSV(outputStream.newWriter('UTF-8'), """SELECT * FROM export_images;""")
     }
 
     /**
-     * Export CSV. This uses a stored procedure that needs to be installed as part of the
-     * service installation.
+     * Export Mapping CSV.
      *
      * @param outputStream
      * @return
      */
-    File exportCSVToFile(){
-        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
-        def exportFile = grailsApplication.config.imageservice.exportDir + "/images.csv"
-        new Sql(dataSource).call("""{ call export_images() }""")
-        new File(exportFile)
+    def exportMappingCSV(OutputStream outputStream) {
+        eachRowToCSV(outputStream.newWriter('UTF-8'), """SELECT * FROM export_mapping;""")
     }
 
     /**
-     * Export CSV. This uses a stored procedure that needs to be installed as part of the
-     * service installation.
+     * Export Dataset Mapping CSV.
      *
      * @param outputStream
      * @return
      */
-    def exportMappingCSV(outputStream){
-        exportMappingCSVToFile().withInputStream { stream ->
-            outputStream << stream
-        }
+    def exportDatasetMappingCSV(String datasetID, OutputStream outputStream) {
+        eachRowToCSV(outputStream.newWriter('UTF-8'), """select * from export_dataset_mapping(?)""", [datasetID], ',', '\\')
+    }
+
+    def exportDatasetCSV(String datasetID, OutputStream outputStream) {
+        eachRowToCSV(outputStream.newWriter('UTF-8'), """select * from export_dataset(?)""", [datasetID])
     }
 
     /**
-     * Export CSV. This uses a stored procedure that needs to be installed as part of the
-     * service installation.
-     *
-     * @param outputStream
-     * @return
+     * Stream the results from an SQL query to a CSV
+     * @param writer The ultimate location of the CSV
+     * @param sql The SQL to execute - must not contain embedded variables or this could lead to SQLi
+     * @param params The SQL params to be passed to the query
+     * @param separator The value separator for the CSV output
+     * @param escape The character that should appear before a data character that matches the QUOTE value. The default is the same as the QUOTE value (so that the quoting character is doubled if it appears in the data).
+     * @return The CSV results will have been written to a writer
      */
-    def exportDatasetMappingCSV(String datasetID, outputStream){
-        exportMappingForDatasetCSVToFile(datasetID).withInputStream { stream ->
-            outputStream << stream
+    private def eachRowToCSV(Writer writer, String sql, List<Object> params = [], String separator = ",", String escape = '"', String quote = '"') {
+        def csvWriter = new CSVWriterBuilder(writer)
+                .withParser(
+                        // Use a RFC 4180 compliant CSV formatter unless the caller requires a separate escape character
+                        escape == quote ?
+                                new RFC4180ParserBuilder()
+                                    .withQuoteChar(quote as char)
+                                    .withSeparator(separator as char)
+                                .build()
+                        :
+                            new CSVParserBuilder()
+                                .withSeparator(separator as char)
+                                .withEscapeChar(escape as char)
+                                .withQuoteChar(quote as char)
+                            .build())
+                .build()
+
+        Connection conn = null
+        PreparedStatement st = null
+        ResultSet rs = null
+        boolean savedAutoCommit = true
+        try {
+            conn = dataSource.getConnection()
+            // Autocommit must be off for PG driver to use cursor
+            savedAutoCommit = conn.autoCommit
+
+            conn.autoCommit = false
+            st = conn.prepareStatement(sql)
+            // Fetch size must be non-0 for PG driver to use cursor
+            st.fetchSize = 10000
+            params.eachWithIndex { param, i ->
+                st.setObject(i + 1, param)
+            }
+            rs = st.executeQuery()
+
+            csvWriter.writeAll(rs, true)
+        } catch (SQLException e) {
+            log.warn("Failed to execute: $sql because: ${e.message}")
+            throw e
+        } finally {
+            try {
+                conn?.autoCommit = savedAutoCommit
+            }
+            catch (SQLException e) {
+                log.debug("Caught exception resetting auto commit: ${e.message} - continuing");
+            }
+            try {
+                rs?.close()
+            } catch (SQLException e) {
+                log.debug("Caught exception closing resultSet: ${e.message} - continuing");
+            }
+            try {
+                st?.close()
+            } catch (SQLException e) {
+                log.debug("Caught exception closing statement: ${e.message} - continuing");
+            }
+            try {
+                conn?.close()
+            } catch (SQLException e) {
+                log.debug("Caught exception closing connection: ${e.message} - continuing");
+            }
         }
+        writer.flush()
     }
 
-    def exportDatasetCSV(String datasetID, outputStream){
-        exportDatasetCSVToFile(datasetID).withInputStream { stream ->
-            outputStream << stream
-        }
-    }
-
-    File exportDatasetCSVToFile(String datasetID){
-        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
-        def exportFile = grailsApplication.config.imageservice.exportDir + "/images-export-${datasetID}.csv"
-        def exportFileCleaned = grailsApplication.config.imageservice.exportDir + "/images-export-${datasetID}-cleaned.csv"
-        new Sql(dataSource).call("""{ call export_dataset(?) }""", [datasetID])
-        new File(exportFile)
-    }
-
-    File exportMappingForDatasetCSVToFile(String datasetID){
-        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
-        def exportFile = grailsApplication.config.imageservice.exportDir + "/images-mapping-${datasetID}.csv"
-        new Sql(dataSource).call("""{ call export_dataset_mapping(?) }""", [datasetID])
-        new File(exportFile)
-    }
-
-    File exportMappingCSVToFile(){
-        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
-        def exportFile = grailsApplication.config.imageservice.exportDir + "/images-mapping.csv"
-        new Sql(dataSource).call("""{ call export_mapping() }""")
-        new File(exportFile)
-    }
 
     /**
-     * Export CSV. This uses a stored procedure that needs to be installed as part of the
-     * service installation.
+     * Export database entries to a file for elastic search to index.
      *
-     * @param outputStream
      * @return
      */
     File exportIndexToFile(){
         FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
         def exportFile = grailsApplication.config.imageservice.exportDir + "/images-index.csv"
-        new Sql(dataSource).call("""{ call export_index() }""")
-        new File(exportFile)
+        def file = new File(exportFile)
+        file.withWriter("UTF-8") { writer ->
+            eachRowToCSV(writer, """SELECT * FROM export_index;""", [])
+        }
+        file
     }
 
     @Transactional
