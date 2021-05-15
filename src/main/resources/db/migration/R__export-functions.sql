@@ -68,7 +68,7 @@ SELECT
     TO_CHAR(date_uploaded :: DATE, 'yyyy-mm') AS "dateUploadedYearMonth"
 FROM image i
      LEFT OUTER JOIN license l ON l.id = i.recognised_license_id
-WHERE date_deleted is NULL AND is_duplicate_of_id IS NULL;
+WHERE date_deleted is NULL;
 
 --  Function used for exporting metadata for images associated with a dataset
 DROP FUNCTION IF EXISTS export_dataset;
@@ -88,8 +88,7 @@ RETURNS TABLE(
     "rightsHolder" text,
     source text,
     title text,
-    type text,
-    is_duplicate_of_id bigint
+    type text
 ) AS $$
 select
     i.image_identifier as "imageID",
@@ -106,8 +105,7 @@ select
     NULLIF(regexp_replace(i.rights_holder,     '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "rightsHolder",
     NULLIF(regexp_replace(i.source,            '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "source",
     NULLIF(regexp_replace(i.title,             '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "title",
-    NULLIF(regexp_replace(i.type,              '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "type",
-    i.is_duplicate_of_id
+    NULLIF(regexp_replace(i.type,              '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "type"
     from image i
     where data_resource_uid = $1
 
