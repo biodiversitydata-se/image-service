@@ -4,7 +4,6 @@ buildscript {
         mavenLocal()
         maven { url "https://nexus.ala.org.au/content/groups/public/" }
         maven { url "https://repo.grails.org/grails/core" }
-        maven { url "https://dl.bintray.com/ajay-kumar/plugins" }
     }
     dependencies {
         classpath "org.grails:grails-gradle-plugin:$grailsVersion"
@@ -44,10 +43,8 @@ repositories {
     mavenLocal()
     maven { url "https://nexus.ala.org.au/content/groups/public/" }
     maven { url "https://repo.grails.org/grails/core" }
-    maven { url "https://dl.bintray.com/relaximus/plugins" }
-    maven { url "https://dl.bintray.com/sachinverma/plugins" }
-    maven { url 'https://dl.bintray.com/agorapulse/libs' }
-    maven { url 'https://dl.bintray.com/palantir/releases' } // docker-compose-rule is published on bintray
+    maven { url "https://repo.grails.org/grails/plugins" }
+    mavenCentral()
 }
 
 dependencies {
