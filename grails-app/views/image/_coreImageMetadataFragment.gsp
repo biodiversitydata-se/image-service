@@ -199,7 +199,7 @@
     });
 
     function findOccurrencesForImage() {
-        $.get("${u.createLink(baseProperty: 'biocache.service.baseURL', pathsProperty: 'biocache.service.searchPath')}", {'fl': 'id', ${images_param_name}: "\"${imageInstance.imageIdentifier}\""})
+        $.get("${u.createLink(baseProperty: 'biocache.service.baseURL', pathsProperty: 'biocache.service.searchPath')}", {'fl': 'id', 'q': "${images_param_name}:\"${imageInstance.imageIdentifier}\""})
         .done(function (data) {
             var ul = $('<ul></ul>');
             var occurrences = data.occurrences;
