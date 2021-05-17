@@ -45,6 +45,7 @@ class Image {
     @SearchableProperty(description="A legal document giving official permission to do something with the resource.")
     String license
     @SearchableProperty(description="Associated occurrence ID.")
+    @Deprecated // search biocache for this image's uuid instead
     String occurrenceId
     @SearchableProperty(description="Calibrated by user.")
     String calibratedByUser

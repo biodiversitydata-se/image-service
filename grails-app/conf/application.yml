@@ -332,6 +332,10 @@ collectory:
     baseURL: "https://collections.ala.org.au"
 biocache:
     baseURL: "https://biocache.ala.org.au"
+    service:
+        baseURL: ${biocache.baseURL}/ws
+        searchPath: /occurrences/search
+    imagesFieldName: all_image_url
 
 http:
     default:
