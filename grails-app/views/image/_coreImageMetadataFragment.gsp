@@ -16,16 +16,12 @@
         <td class="property-name"><g:message code="core.image.metadata.image.identifier" /></td>
         <td class="property-value">${imageInstance.imageIdentifier}</td>
     </tr>
-    <g:if test="${imageInstance.occurrenceId}">
-        <tr>
-            <td class="property-name"><g:message code="core.image.metadata.occurrence.id" /></td>
-            <td class="property-value">
-                <a href="${grailsApplication.config.biocache.baseURL}/occurrences/${imageInstance.occurrenceId}">
-                    ${imageInstance.occurrenceId}
-                </a>
-            </td>
-        </tr>
-    </g:if>
+    <tr>
+        <td class="property-name"><g:message code="core.image.metadata.occurrence.id" /></td>
+        <td id="occurrences_container" class="property-value">
+            <i id="occurrences_spinner" class="fa fa-gear fa-spin"></i>
+        </td>
+    </tr>
     <tr>
         <td class="property-name"><g:message code="core.image.metadata.title" /></td>
         <td class="property-value">${imageInstance.title}</td>
@@ -183,6 +179,7 @@
         </td>
     </tr>
 </table>
+<g:set var="images_param_name" value="${grailsApplication.config.getProperty('biocache.imagesFieldName', 'all_image_url')}" />
 <script>
     $(document).ready(function() {
         $("#btnResetLinearScale").on('click', function (e) {
@@ -198,6 +195,29 @@
                 }
             });
         });
+        findOccurrencesForImage();
     });
+
+    function findOccurrencesForImage() {
+        $.get("${u.createLink(baseProperty: 'biocache.service.baseURL', pathsProperty: 'biocache.service.searchPath')}", {'fl': 'id', ${images_param_name}: "\"${imageInstance.imageIdentifier}\""})
+        .done(function (data) {
+            var ul = $('<ul></ul>');
+            var occurrences = data.occurrences;
+            var pageSize = data.pageSize;
+            var startIndex = data.startIndex;
+            var totalRecords = data.totalRecords;
+
+            for (var i = 0; i < occurrences.length; ++i) {
+                var occurrenceId = occurrences[i].uuid
+                ul.append($('<li></li>').append($('<a></a>').attr('href', '${grailsApplication.config.biocache.baseURL}/occurrences/' + encodeURIComponent(occurrenceId)).text(occurrenceId)));
+            }
+            if (startIndex + pageSize < totalRecords) {
+                ul.append($('<li></li>').append($('<a href="${grailsApplication.config.biocache.baseURL}/occurrences/search?q=${images_param_name}:${imageInstance.imageIdentifier}"><g:message code="core.image.metadata.find.all.records"/>...</a>')));
+            }
+            $('#occurrences_container').append(ul);
+        }).always(function() {
+            $('#occurrences_spinner').hide();
+        });
+    }
 
 </script>
