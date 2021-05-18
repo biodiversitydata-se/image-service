@@ -298,7 +298,6 @@ class AdminController {
                 render(results as XML)
             }
         }
-        response.addHeader("Access-Control-Allow-Origin", "")
         response.status = responseCode
     }
 

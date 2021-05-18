@@ -563,7 +563,6 @@ class ImageController {
                 getOriginalFile()
             }
             json {
-                response.addHeader("Access-Control-Allow-Origin", "")
                 def imageInstance = imageService.getImageFromParams(params)
                 if (imageInstance) {
                     def payload = [:]
@@ -573,6 +572,7 @@ class ImageController {
                         response.setContentType("text/javascript")
                         render("${params.callback}(${jsonStr})")
                     } else {
+                        response.addHeader("Access-Control-Allow-Origin", "*")
                         response.setContentType("application/json")
                         render(jsonStr)
                     }
@@ -582,7 +582,7 @@ class ImageController {
                 }
             }
             xml {
-                response.addHeader("Access-Control-Allow-Origin", "")
+                response.addHeader("Access-Control-Allow-Origin", "*")
                 def imageInstance = imageService.getImageFromParams(params)
                 if(imageInstance) {
                     render(imageInstance as XML)
@@ -723,7 +723,6 @@ class ImageController {
                 render(results as XML)
             }
         }
-        response.addHeader("Access-Control-Allow-Origin", "")
         response.status = responseCode
     }
 

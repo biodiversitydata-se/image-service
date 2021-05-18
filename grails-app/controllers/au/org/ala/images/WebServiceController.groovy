@@ -497,7 +497,7 @@ class WebServiceController {
             keyword: params.keyword,
             totalImageCount: results.totalCount,
             images: results.list,
-        ])
+        ], 200, true)
     }
 
     @ApiOperation(
@@ -524,7 +524,7 @@ class WebServiceController {
                 tagID: params.tagID,
                 totalImageCount: results.totalCount,
                 images: results.list,
-        ])
+        ], 200, true)
     }
 
     @RequireApiKey
@@ -585,10 +585,10 @@ class WebServiceController {
         if (image) {
             results.success = true
             imageService.addImageInfoToMap(image, results, params.boolean("includeTags"), params.boolean("includeMetadata"))
-            renderResults(results)
+            renderResults(results, 200, true)
         } else {
             results["message"] = "image id not found"
-            renderResults(results, HttpStatus.SC_NOT_FOUND)
+            renderResults(results, HttpStatus.SC_NOT_FOUND, true)
         }
     }
 
@@ -619,15 +619,14 @@ class WebServiceController {
             results.link = createLink(controller: "image", action:'details', id: image.id)
             results.linkText = "Image details..."
             results.title = "Image properties"
-            renderResults(results)
+            renderResults(results, 200, true)
         } else {
             results["message"] = "image id not found"
-            renderResults(results, HttpStatus.SC_NOT_FOUND)
+            renderResults(results, HttpStatus.SC_NOT_FOUND, true)
         }
     }
 
-    private renderResults(Object results, int responseCode = 200) {
-        response.addHeader("Access-Control-Allow-Origin", "")
+    private renderResults(Object results, int responseCode = 200, boolean sendAccessControlAllowOriginHeader = false) {
         response.status = responseCode
         withFormat {
             json {
@@ -636,11 +635,17 @@ class WebServiceController {
                     response.setContentType("text/javascript")
                     render("${params.callback}(${jsonStr})")
                 } else {
+                    if (sendAccessControlAllowOriginHeader) {
+                        response.addHeader("Access-Control-Allow-Origin", "*")
+                    }
                     response.setContentType("application/json")
                     render(jsonStr)
                 }
             }
             xml {
+                if (sendAccessControlAllowOriginHeader) {
+                    response.addHeader("Access-Control-Allow-Origin", "*")
+                }
                 render(results as XML)
             }
         }
@@ -666,7 +671,7 @@ class WebServiceController {
         results.deletedImageCount = Image.countByDateDeletedIsNotNull()
         results.licenceCount = License.count()
         results.licenceMappingCount = LicenseMapping.count()
-        renderResults(results)
+        renderResults(results, 200, true)
     }
 
     @ApiOperation(
@@ -685,7 +690,7 @@ class WebServiceController {
     )
     def getRepositorySizeOnDisk() {
         def results = [ repoSizeOnDisk : ImageUtils.formatFileSize(imageStoreService.getRepositorySizeOnDisk()) ]
-        renderResults(results)
+        renderResults(results, 200, true)
     }
 
     @ApiOperation(
@@ -706,7 +711,7 @@ class WebServiceController {
         results.queueLength = imageService.getImageTaskQueueLength()
         results.tilingQueueLength = imageService.getTilingTaskQueueLength()
         results.batchUploads = batchService.getActiveBatchUploadCount()
-        renderResults(results)
+        renderResults(results, 200, true)
     }
 
     def createSubimage() {
@@ -814,7 +819,7 @@ class WebServiceController {
             def sub = subImageRect.subimage
             results.subimages << [imageId: sub.imageIdentifier, x: subImageRect.x, y: subImageRect.y, height: subImageRect.height, width: subImageRect.width]
         }
-        renderResults(results)
+        renderResults(results, 200, true)
     }
 
     def addUserMetadataToImage() {
@@ -882,7 +887,7 @@ class WebServiceController {
           searchCriteria: searchService.getSearchCriteriaList(),
           facets: results.aggregations,
           images: results.list,
-        ])
+        ], 200, true)
     }
 
     @ApiOperation(
@@ -915,7 +920,7 @@ class WebServiceController {
         params.sort = params.sort ?: 'dateUploaded'
         params.order = params.order ?: 'desc'
         def results = searchService.facet(params)
-        renderResults(results.aggregations)
+        renderResults(results.aggregations, 200, true)
     }
 
     private getUserIdForRequest(HttpServletRequest request) {
@@ -1001,7 +1006,7 @@ class WebServiceController {
             }
         }
 
-        renderResults(results?.sort { it?.toLowerCase() })
+        renderResults(results?.sort { it?.toLowerCase() }, 200, true)
     }
 
     @ApiOperation(
@@ -1048,7 +1053,7 @@ class WebServiceController {
             results.images << info
         }
 
-        renderResults(results)
+        renderResults(results, 200, true)
     }
 
     @ApiOperation(
@@ -1074,7 +1079,7 @@ class WebServiceController {
             List<String> imageIds = (query.imageIds as List)?.collect { it as String }
 
             if (!imageIds) {
-                renderResults([success:false, message:'You must supply a list of image IDs (imageIds) to search for!'], HttpStatus.SC_BAD_REQUEST)
+                renderResults([success:false, message:'You must supply a list of image IDs (imageIds) to search for!'], HttpStatus.SC_BAD_REQUEST, true)
                 return
             }
 
@@ -1093,10 +1098,10 @@ class WebServiceController {
                 }
             }
 
-            renderResults([success: true, results: results, invalidImageIds: errors])
+            renderResults([success: true, results: results, invalidImageIds: errors], 200, true)
             return
         }
-        renderResults([success:false, message:'POST with content type "application/JSON" required.'], HttpStatus.SC_BAD_REQUEST)
+        renderResults([success:false, message:'POST with content type "application/JSON" required.'], HttpStatus.SC_BAD_REQUEST, true)
     }
 
     @ApiOperation(
@@ -1114,7 +1119,7 @@ class WebServiceController {
     )
     def licence(){
         def licenses = License.findAll()
-        renderResults (licenses)
+        renderResults (licenses, 200, true)
     }
 
     @ApiOperation(
@@ -1132,7 +1137,7 @@ class WebServiceController {
     )
     def licenceMapping(){
         def licenses = LicenseMapping.findAll()
-        renderResults (licenses)
+        renderResults (licenses, 200, true)
     }
 
     @ApiOperation(
@@ -1678,7 +1683,7 @@ class WebServiceController {
                 terms.add([name: it.name(), label: it.label])
             }
         }
-        renderResults(terms)
+        renderResults(terms, 200, true)
     }
 
     def harvest() {
