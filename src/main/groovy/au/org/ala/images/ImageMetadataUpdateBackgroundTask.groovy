@@ -5,6 +5,7 @@ class ImageMetadataUpdateBackgroundTask extends BackgroundTask {
     private String _imageIdentifier
     private Map _metadata
     private ImageService _imageService
+    boolean requiresSession = true
 
     ImageMetadataUpdateBackgroundTask(String imageIdentifier, Map metadata, ImageService imageService) {
         _imageIdentifier = imageIdentifier

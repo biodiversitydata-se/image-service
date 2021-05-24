@@ -4,6 +4,21 @@ abstract class BackgroundTask {
 
     public List<BackgroundTaskObserver> _observers;
 
+    /** Override this to return true have the background task wrapped in a GORM Session */
+    boolean isRequiresSession() {
+        false
+    }
+
+    void doExecute() {
+        if (requiresSession) {
+            Image.withNewSession { session ->
+                execute()
+            }
+        } else {
+            execute()
+        }
+    }
+
     abstract void execute();
 
     protected void yieldResult(Object result) {

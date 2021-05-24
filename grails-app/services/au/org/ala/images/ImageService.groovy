@@ -706,10 +706,6 @@ class ImageService {
         scheduleBackgroundTask(new ImageBackgroundTask(imageId, this, ImageTaskType.Delete, userId))
     }
 
-    def scheduleLicenseUpdate(long imageId) {
-        scheduleBackgroundTask(new LicenseMatchingBackgroundTask(imageId, imageService, elasticSearchService))
-    }
-
     def scheduleMetadataUpdate(String imageIdentifier, Map metadata) {
         scheduleBackgroundTask(new ImageMetadataUpdateBackgroundTask(imageIdentifier, metadata, imageService))
     }
@@ -742,7 +738,7 @@ class ImageService {
 
         while (taskCount < BACKGROUND_TASKS_BATCH_SIZE && (task = _backgroundQueue.poll()) != null) {
             if (task) {
-                theseTasks.add(task.&execute)
+                theseTasks.add(task.&doExecute)
                 taskCount++
             }
         }
@@ -768,7 +764,7 @@ class ImageService {
         BackgroundTask task = null
         while (taskCount < BACKGROUND_TASKS_BATCH_SIZE && (task = _tilingQueue.poll()) != null) {
             if (task) {
-                task.execute()
+                task.doExecute()
                 taskCount++
             }
         }
@@ -882,7 +878,9 @@ class ImageService {
     def deleteImagePurge(Image image) {
         if (image && image.dateDeleted) {
             deleteRelatedArtefacts(image)
-            image.deleteStored()
+            if (!image.deleteStored()) {
+                log.warn("Unable to delete stored data for ${image.imageIdentifier}")
+            }
             //hard delete
             image.delete(flush:true)
             return true
@@ -908,9 +906,9 @@ class ImageService {
 
         Image image = null
 
-        def fieldDefinitions = ImportFieldDefinition.list()
-
         Image.withNewTransaction {
+
+            def fieldDefinitions = ImportFieldDefinition.list()
 
             // Create the image domain object
             def bytes = file.getBytes()
