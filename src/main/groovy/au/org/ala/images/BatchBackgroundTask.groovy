@@ -30,7 +30,7 @@ class BatchBackgroundTask extends BackgroundTask implements BackgroundTaskObserv
             state = BatchBackgroundTaskState.Running
             try {
                 _task.addObserver(this)
-                _task.execute()
+                _task.doExecute()
                 state = BatchBackgroundTaskState.Success
             } catch (Exception ex) {
                 state = BatchBackgroundTaskState.Error

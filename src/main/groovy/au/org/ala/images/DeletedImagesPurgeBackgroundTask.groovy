@@ -1,5 +1,7 @@
 package au.org.ala.images
 
+import grails.gorm.transactions.Transactional
+
 class DeletedImagesPurgeBackgroundTask extends BackgroundTask {
 
     ImageService imageService
@@ -9,6 +11,7 @@ class DeletedImagesPurgeBackgroundTask extends BackgroundTask {
     }
 
     @Override
+    @Transactional
     void execute() {
         def images = Image.findAllByDateDeletedIsNotNull()
         images.each {

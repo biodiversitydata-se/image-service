@@ -14,6 +14,7 @@ class ScheduleMissingImagesBackgroundTask extends BackgroundTask {
     private ImageStoreService _imageStoreService
     String _exportDirectory
     private Logger log = Logger.getLogger(ScheduleMissingImagesBackgroundTask.class)
+    boolean requiresSession = true
 
     ScheduleMissingImagesBackgroundTask(ImageStoreService imageStoreService, String exportDirectory) {
         _imageStoreService = imageStoreService
