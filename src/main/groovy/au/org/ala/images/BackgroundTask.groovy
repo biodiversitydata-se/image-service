@@ -9,6 +9,9 @@ abstract class BackgroundTask {
         false
     }
 
+    /**
+     * Execute this BackgroundTask
+     */
     void doExecute() {
         if (requiresSession) {
             Image.withNewSession { session ->
@@ -19,7 +22,10 @@ abstract class BackgroundTask {
         }
     }
 
-    abstract void execute();
+    /**
+     * BackgroundTasks should override this method with their implementation.
+     */
+    protected abstract void execute();
 
     protected void yieldResult(Object result) {
         if (_observers != null) {
