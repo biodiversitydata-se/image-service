@@ -835,6 +835,13 @@ class ImageService {
 
     private def deleteRelatedArtefacts(Image image){
 
+        // delete metadata
+        def metadata = ImageMetaDataItem.findAllByImage(image)
+        ImageMetaDataItem.deleteAll(metadata)
+
+        def outSourcedJobs = OutsourcedJob.findAllByImage(image)
+        OutsourcedJob.deleteAll(outSourcedJobs)
+
         // need to delete it from user selections
         def selected = SelectedImage.findAllByImage(image)
         selected.each { selectedImage ->
@@ -865,7 +872,15 @@ class ImageService {
             // need to detach this image from the child images, but we do not actually delete the sub images. They
             // will live on as root images in their own right
             subimage.subimage.parent = null
+            subimage.subimage.save()
             subimage.delete()
+        }
+
+        // check for images that have this image as the parent and detach it
+        def children = Image.findAllByParent(image)
+        children.each { Image child ->
+            child.parent = null
+            child.save()
         }
 
         // thumbnail records...
@@ -875,14 +890,28 @@ class ImageService {
         }
     }
 
+    @Transactional
+    def purgeAllDeletedImages() {
+        try {
+            def images = Image.findAllByDateDeletedIsNotNull()
+            images.each {
+                deleteImagePurge(it)
+            }
+        } catch (e) {
+            log.error("Exception while purging images", e)
+        }
+    }
+
     def deleteImagePurge(Image image) {
         if (image && image.dateDeleted) {
             deleteRelatedArtefacts(image)
             if (!image.deleteStored()) {
                 log.warn("Unable to delete stored data for ${image.imageIdentifier}")
             }
+            // Remove from storage location
+            image.storageLocation.removeFromImages(image)
             //hard delete
-            image.delete(flush:true)
+            image.delete()
             return true
         }
         return false
