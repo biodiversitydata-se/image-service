@@ -188,6 +188,8 @@
                 imageClientBaseUrl : "${createLink(absolute: true, uri: '/')}",
                 zoomFudgeFactor: 0.65
             };
+            imgvwr.setImageClientBaseUrl(options.imageClientBaseUrl);
+            imgvwr.setImageServiceBaseUrl(options.imageServiceBaseUrl);
 
             var screenHeight = $(window).height();
             $('#viewerContainerId').css('height', (screenHeight - 172) + 'px');
