@@ -706,10 +706,6 @@ class ImageService {
         scheduleBackgroundTask(new ImageBackgroundTask(imageId, this, ImageTaskType.Delete, userId))
     }
 
-    def scheduleLicenseUpdate(long imageId) {
-        scheduleBackgroundTask(new LicenseMatchingBackgroundTask(imageId, imageService, elasticSearchService))
-    }
-
     def scheduleMetadataUpdate(String imageIdentifier, Map metadata) {
         scheduleBackgroundTask(new ImageMetadataUpdateBackgroundTask(imageIdentifier, metadata, imageService))
     }
@@ -742,7 +738,7 @@ class ImageService {
 
         while (taskCount < BACKGROUND_TASKS_BATCH_SIZE && (task = _backgroundQueue.poll()) != null) {
             if (task) {
-                theseTasks.add(task.&execute)
+                theseTasks.add(task.&doExecute)
                 taskCount++
             }
         }
@@ -768,7 +764,7 @@ class ImageService {
         BackgroundTask task = null
         while (taskCount < BACKGROUND_TASKS_BATCH_SIZE && (task = _tilingQueue.poll()) != null) {
             if (task) {
-                task.execute()
+                task.doExecute()
                 taskCount++
             }
         }
@@ -839,6 +835,13 @@ class ImageService {
 
     private def deleteRelatedArtefacts(Image image){
 
+        // delete metadata
+        def metadata = ImageMetaDataItem.findAllByImage(image)
+        ImageMetaDataItem.deleteAll(metadata)
+
+        def outSourcedJobs = OutsourcedJob.findAllByImage(image)
+        OutsourcedJob.deleteAll(outSourcedJobs)
+
         // need to delete it from user selections
         def selected = SelectedImage.findAllByImage(image)
         selected.each { selectedImage ->
@@ -869,7 +872,15 @@ class ImageService {
             // need to detach this image from the child images, but we do not actually delete the sub images. They
             // will live on as root images in their own right
             subimage.subimage.parent = null
+            subimage.subimage.save()
             subimage.delete()
+        }
+
+        // check for images that have this image as the parent and detach it
+        def children = Image.findAllByParent(image)
+        children.each { Image child ->
+            child.parent = null
+            child.save()
         }
 
         // thumbnail records...
@@ -879,12 +890,28 @@ class ImageService {
         }
     }
 
+    @Transactional
+    def purgeAllDeletedImages() {
+        try {
+            def images = Image.findAllByDateDeletedIsNotNull()
+            images.each {
+                deleteImagePurge(it)
+            }
+        } catch (e) {
+            log.error("Exception while purging images", e)
+        }
+    }
+
     def deleteImagePurge(Image image) {
         if (image && image.dateDeleted) {
             deleteRelatedArtefacts(image)
-            image.deleteStored()
+            if (!image.deleteStored()) {
+                log.warn("Unable to delete stored data for ${image.imageIdentifier}")
+            }
+            // Remove from storage location
+            image.storageLocation.removeFromImages(image)
             //hard delete
-            image.delete(flush:true)
+            image.delete()
             return true
         }
         return false
@@ -908,9 +935,9 @@ class ImageService {
 
         Image image = null
 
-        def fieldDefinitions = ImportFieldDefinition.list()
-
         Image.withNewTransaction {
+
+            def fieldDefinitions = ImportFieldDefinition.list()
 
             // Create the image domain object
             def bytes = file.getBytes()

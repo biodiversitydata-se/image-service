@@ -6,6 +6,7 @@ class ImageBackgroundTask extends BackgroundTask {
     ImageTaskType operation
     ImageService imageService
     String userId
+    boolean requiresSession = true
 
     ImageBackgroundTask(long imageId, ImageService imageService, ImageTaskType operation, String userId) {
         this.imageId = imageId

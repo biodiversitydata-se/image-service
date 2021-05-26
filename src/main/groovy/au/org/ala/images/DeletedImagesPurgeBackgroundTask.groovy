@@ -1,8 +1,12 @@
 package au.org.ala.images
 
+import groovy.util.logging.Slf4j
+
+@Slf4j
 class DeletedImagesPurgeBackgroundTask extends BackgroundTask {
 
     ImageService imageService
+    boolean requiresSession = true
 
     DeletedImagesPurgeBackgroundTask(ImageService imageService) {
         this.imageService = imageService
@@ -10,9 +14,6 @@ class DeletedImagesPurgeBackgroundTask extends BackgroundTask {
 
     @Override
     void execute() {
-        def images = Image.findAllByDateDeletedIsNotNull()
-        images.each {
-            imageService.deleteImagePurge(it)
-        }
+        imageService.purgeAllDeletedImages()
     }
 }
