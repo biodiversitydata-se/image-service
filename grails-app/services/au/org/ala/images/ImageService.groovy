@@ -504,6 +504,9 @@ class ImageService {
                 // we have seen this image before, but the URL has changed at source
                 // so lets update it so that subsequent loads dont need
                 // to re-download this image
+                if (image.alternateFilename == null) {
+                    image.alternateFilename = []
+                }
                 if (!image.alternateFilename.contains(originalFilename)) {
                     image.alternateFilename += originalFilename
                 }
