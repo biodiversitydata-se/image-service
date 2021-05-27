@@ -110,7 +110,7 @@ class ImageService {
                 def image = Image.byOriginalFileOrAlternateFilename(imageUrl) // findByOriginalFilename(imageUrl)
                 if (image && image.stored()) {
                     scheduleMetadataUpdate(image.imageIdentifier, metadata)
-                    return new ImageStoreResult(image, true, image.alternateFilename.contains(imageUrl))
+                    return new ImageStoreResult(image, true, image.alternateFilename?.contains(imageUrl) ?: false)
                 }
                 def url = new URL(imageUrl)
                 def bytes = url.getBytes(connectTimeout: connectTimeoutMs, readTimeout: readTimeoutMs)
@@ -368,7 +368,7 @@ class ImageService {
                      image: image,
                      alreadyStored: true,
                      metadataUpdated: metadataUpdated,
-                     isDuplicate: image.alternateFilename.contains(imageUrl)
+                     isDuplicate: image.alternateFilename?.contains(imageUrl) ?: false
                 ]
             }
         }  else {
