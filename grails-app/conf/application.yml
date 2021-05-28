@@ -18,10 +18,6 @@ grails:
             # Whether to translate GORM events into Reactor events
             # Disabled by default for performance reasons
             events: false
-    spring:
-        bean:
-            packages:
-                - au.org.ala.images
     assets:
         bundle: false
     config:
