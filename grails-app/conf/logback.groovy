@@ -118,21 +118,21 @@ final warn = [
         'grails.plugins.mail',
         'org.hibernate',
         'org.quartz',
-        'org.flywaydb',
         'asset.pipeline'
 ]
 final info = [
+        'org.flywaydb',
         'au.org.ala.images'
 ]
 
 final debug = []
 final trace = []
 
-for (def name : error) logger(name, ERROR, ['STDOUT'])
-for (def name : warn) logger(name, WARN, ['STDOUT'])
-for (def name: info) logger(name, INFO, ['STDOUT'])
-for (def name: debug) logger(name, DEBUG, ['STDOUT'])
-for (def name: trace) logger(name, TRACE, ['STDOUT'])
+for (def name : error) logger(name, ERROR)
+for (def name : warn) logger(name, WARN)
+for (def name: info) logger(name, INFO)
+for (def name: debug) logger(name, DEBUG)
+for (def name: trace) logger(name, TRACE)
 
 logger('au.org.ala.images.CodeTimer', INFO, ['TIMING_LOG'], false)
 logger('au.org.ala.images.ScheduleReindexAllImagesTask', INFO, ['INDEXING_LOG'], false)
