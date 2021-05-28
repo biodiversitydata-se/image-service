@@ -1,4 +1,4 @@
-package image.service
+package au.org.ala.images
 
 class BootStrap {
 
