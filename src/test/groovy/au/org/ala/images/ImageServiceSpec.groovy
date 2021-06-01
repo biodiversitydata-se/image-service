@@ -71,6 +71,7 @@ class ImageServiceSpec extends Specification implements ServiceUnitTest<ImageSer
         where:
         imageUrl                                                                                || result
         'https://images.ala.org.au/store/4/3/2/1/1234-1234-1234-1234/original'                  || '1234-1234-1234-1234'
+        'https://images.ala.org.au/store/4/3/2/1/1234-1234-1234-1234/original?param=value'      || '1234-1234-1234-1234'
         'https://images.ala.org.au/store/4/3/2/1/1234-1234-1234-1234/thumbnail'                 || '1234-1234-1234-1234'
         'https://images.ala.org.au/store/4/3/2/1/1234-1234-1234-1234/thumbnail_square'          || '1234-1234-1234-1234'
         'https://images.ala.org.au/store/4/3/2/1/1234-1234-1234-1234/thumbnail_square_black'    || '1234-1234-1234-1234'
@@ -89,13 +90,14 @@ class ImageServiceSpec extends Specification implements ServiceUnitTest<ImageSer
         'https://images.ala.org.au/image/proxyImageThumbnail?imageId=1234-1234-1234-1234'       || '1234-1234-1234-1234'
         'https://images.ala.org.au/image/proxyImage?id=1234-1234-1234-1234'                     || '1234-1234-1234-1234'
         'https://images.ala.org.au/image/proxyImage?imageId=1234-1234-1234-1234'                || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/proxyImage?imageId=1234-1234-1234-1234&param=value'    || '1234-1234-1234-1234'
         'https://images.ala.org.au/image/viewer/1234-1234-1234-1234'                            || '1234-1234-1234-1234'
         'https://images.ala.org.au/'                                                            || ''
         'https://example.org/image/proxyImage?imageId=1234-1234-1234-1234'                      || ''
         'https://example.org/store/4/3/2/1/1234-1234-1234-1234/original'                        || ''
         'https://example.org/image/1234-1234-1234-1234'                                         || ''
         'https://example.org/image/1234-1234-1234-1234/thumbnail'                               || ''
-
+        'https://example.org/some/garbage/original?id=test&target=other#fragment'               || ''
 
     }
 }
