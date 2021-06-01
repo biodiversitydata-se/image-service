@@ -160,6 +160,50 @@ class ImageService {
         imageSource.identifier
     }
 
+    /**
+     * Find an image by discovering an image id from a URL
+     * @param url The URL
+     * @return The existing image or null if none exists
+     */
+    Image findImageInImageServiceUrl(String url) {
+        def imageId = findImageIdInImageServiceUrl(url)
+        return imageId ? Image.findByImageIdentifier(imageId) : null
+    }
+
+    String findImageIdInImageServiceUrl(String imageUrl) {
+        // is it as image service URL?
+        // if so, no need to load the image, use the identifier.....
+        def imageID
+
+        if (isImageServiceUrl(imageUrl)){
+
+            def imageHttpUrl = HttpUrl.parse(imageUrl)
+            if (imageHttpUrl?.queryParameterNames()?.contains('id')) {
+                imageID = imageHttpUrl.queryParameter('id')
+            } else if (imageHttpUrl?.queryParameterNames()?.contains('imageId')) {
+                imageID = imageHttpUrl.queryParameter('imageId')
+            } else if (!imageHttpUrl?.pathSegments()?.empty) {
+                imageID = imageHttpUrl.pathSegments().last()
+            }
+            final suffixes = [
+                    'original',
+                    'thumbnail',
+                    'thumbnail_large',
+                    'thumbnail_square',
+                    'thumbnail_square_black',
+                    'thumbnail_square_white',
+                    'thumbnail_square_darkGrey',
+                    'thumbnail_square_darkGray'
+            ]
+            if (suffixes.contains(imageID) && (imageHttpUrl?.pathSegments()?.size() ?: 0) >= 2) {
+                imageID = imageHttpUrl.pathSegments()[-2]
+            }
+        } else {
+            imageID = ''
+        }
+        return imageID
+    }
+
     boolean isImageServiceUrl(String url){
         boolean isRecognised = false
         grailsApplication.config.imageServiceUrls.each { imageServiceUrl ->
@@ -188,21 +232,7 @@ class ImageService {
                     if (imageUrl) {
                         Image image = null
 
-                        // is it as image service URL?
-                        // if so, no need to load the image, use the identifier.....
-                        if (isImageServiceUrl(imageUrl)){
-
-                            def imageHttpUrl = HttpUrl.parse(imageUrl)
-                            def imageID
-                            if (imageHttpUrl?.queryParameterNames()?.contains('id')) {
-                                imageID = imageHttpUrl.queryParameter('id')
-                            } else if (!imageHttpUrl?.pathSegments()?.empty) {
-                                imageID = imageHttpUrl.pathSegments().last()
-                            }
-                            if (imageID) {
-                                image = Image.findByImageIdentifier(imageID)
-                            }
-                        }
+                        image = findImageInImageServiceUrl(imageUrl)
 
                         // Its not an image service URL, check DB
                         // For full URLs, we can treat these as unique identifiers
@@ -286,21 +316,7 @@ class ImageService {
 
             Image image = null
 
-            // is it as image service URL?
-            // if so, no need to load the image, use the identifier.....
-            if (isImageServiceUrl(imageUrl)){
-
-                def imageHttpUrl = HttpUrl.parse(imageUrl)
-                def imageID
-                if (imageHttpUrl?.queryParameterNames()?.contains('id')) {
-                    imageID = imageHttpUrl.queryParameter('id')
-                } else if (!imageHttpUrl?.pathSegments()?.empty) {
-                    imageID = imageHttpUrl.pathSegments().last()
-                }
-                if (imageID) {
-                    image = Image.findByImageIdentifier(imageID)
-                }
-            }
+            image = findImageInImageServiceUrl(imageUrl)
 
             // Its not an image service URL, check DB
             // For full URLs, we can treat these as unique identifiers
