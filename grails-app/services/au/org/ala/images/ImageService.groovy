@@ -34,9 +34,6 @@ import java.sql.ResultSet
 import java.sql.SQLException
 import java.text.SimpleDateFormat
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 
 class ImageService {
@@ -170,10 +167,21 @@ class ImageService {
         return imageId ? Image.findByImageIdentifier(imageId) : null
     }
 
+    private final IMAGE_SERVICE_URL_SUFFIXES = [
+            'original',
+            'thumbnail',
+            'thumbnail_large',
+            'thumbnail_square',
+            'thumbnail_square_black',
+            'thumbnail_square_white',
+            'thumbnail_square_darkGrey',
+            'thumbnail_square_darkGray'
+    ] as Set
+
     String findImageIdInImageServiceUrl(String imageUrl) {
         // is it as image service URL?
         // if so, no need to load the image, use the identifier.....
-        def imageID
+        def imageID = ''
 
         if (isImageServiceUrl(imageUrl)){
 
@@ -185,21 +193,9 @@ class ImageService {
             } else if (!imageHttpUrl?.pathSegments()?.empty) {
                 imageID = imageHttpUrl.pathSegments().last()
             }
-            final suffixes = [
-                    'original',
-                    'thumbnail',
-                    'thumbnail_large',
-                    'thumbnail_square',
-                    'thumbnail_square_black',
-                    'thumbnail_square_white',
-                    'thumbnail_square_darkGrey',
-                    'thumbnail_square_darkGray'
-            ]
-            if (suffixes.contains(imageID) && (imageHttpUrl?.pathSegments()?.size() ?: 0) >= 2) {
+            if (IMAGE_SERVICE_URL_SUFFIXES.contains(imageID) && (imageHttpUrl?.pathSegments()?.size() ?: 0) >= 2) {
                 imageID = imageHttpUrl.pathSegments()[-2]
             }
-        } else {
-            imageID = ''
         }
         return imageID
     }
