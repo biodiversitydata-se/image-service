@@ -3,6 +3,7 @@ package au.org.ala.images
 import grails.testing.gorm.DataTest
 import grails.testing.services.ServiceUnitTest
 import spock.lang.Specification
+import spock.lang.Unroll
 
 class ImageServiceSpec extends Specification implements ServiceUnitTest<ImageService>, DataTest {
 
@@ -60,5 +61,41 @@ class ImageServiceSpec extends Specification implements ServiceUnitTest<ImageSer
         thrown IOException
         0 * service.auditService.log(image.imageIdentifier, "Migrated to $dest", '1234')
         image.storageLocation == src
+    }
+
+    @Unroll
+    def "test findImageIdInImageServiceUrl(#imageUrl) == #result"() {
+        expect:
+        result == service.findImageIdInImageServiceUrl(imageUrl)
+
+        where:
+        imageUrl                                                                                || result
+        'https://images.ala.org.au/store/4/3/2/1/1234-1234-1234-1234/original'                  || '1234-1234-1234-1234'
+        'https://images.ala.org.au/store/4/3/2/1/1234-1234-1234-1234/thumbnail'                 || '1234-1234-1234-1234'
+        'https://images.ala.org.au/store/4/3/2/1/1234-1234-1234-1234/thumbnail_square'          || '1234-1234-1234-1234'
+        'https://images.ala.org.au/store/4/3/2/1/1234-1234-1234-1234/thumbnail_square_black'    || '1234-1234-1234-1234'
+        'https://images.ala.org.au/store/4/3/2/1/1234-1234-1234-1234/thumbnail_square_white'    || '1234-1234-1234-1234'
+        'https://images.ala.org.au/store/4/3/2/1/1234-1234-1234-1234/thumbnail_square_darkGrey' || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/1234-1234-1234-1234'                                   || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/1234-1234-1234-1234/original'                          || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/1234-1234-1234-1234/thumbnail'                         || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/1234-1234-1234-1234/thumbnail_square'                  || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/1234-1234-1234-1234/thumbnail_square_black'            || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/1234-1234-1234-1234/thumbnail_square_white'            || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/1234-1234-1234-1234/thumbnail_square_darkGrey'         || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/proxyImageThumbnailLarge?id=1234-1234-1234-1234'       || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/proxyImageThumbnailLarge?imageId=1234-1234-1234-1234'  || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/proxyImageThumbnail?id=1234-1234-1234-1234'            || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/proxyImageThumbnail?imageId=1234-1234-1234-1234'       || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/proxyImage?id=1234-1234-1234-1234'                     || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/proxyImage?imageId=1234-1234-1234-1234'                || '1234-1234-1234-1234'
+        'https://images.ala.org.au/image/viewer/1234-1234-1234-1234'                            || '1234-1234-1234-1234'
+        'https://images.ala.org.au/'                                                            || ''
+        'https://example.org/image/proxyImage?imageId=1234-1234-1234-1234'                      || ''
+        'https://example.org/store/4/3/2/1/1234-1234-1234-1234/original'                        || ''
+        'https://example.org/image/1234-1234-1234-1234'                                         || ''
+        'https://example.org/image/1234-1234-1234-1234/thumbnail'                               || ''
+
+
     }
 }
