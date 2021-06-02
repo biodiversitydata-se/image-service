@@ -25,6 +25,7 @@ import org.apache.tika.mime.MimeTypes
 import org.grails.plugins.codecs.MD5CodecExtensionMethods
 import org.grails.plugins.codecs.SHA1CodecExtensionMethods
 import org.hibernate.FlushMode
+import org.hibernate.ScrollableResults
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.multipart.MultipartFile
 
@@ -903,11 +904,25 @@ class ImageService {
 
     @Transactional
     def purgeAllDeletedImages() {
+        /* Can't unit test this because:
+        - A regular GORM unit test doesn't work with criteria.scroll
+        - A HibernateSpec unit test can't confirm that the records are deleted due to the way
+          it wraps a test in a transaction
+         */
         try {
-            def images = Image.findAllByDateDeletedIsNotNull()
-            images.each {
-                deleteImagePurge(it)
+            log.info("Purge All Deleted Images starting")
+            def c = Image.createCriteria()
+            ScrollableResults results = c.scroll {
+                isNotNull('dateDeleted')
             }
+
+            int count
+            while(results.next()) {
+                Image image = ((Image)results.get()[0])
+                deleteImagePurge(image)
+                count++
+            }
+            log.info("Purge All Deleted Images deleted ${count} images")
         } catch (e) {
             log.error("Exception while purging images", e)
         }
