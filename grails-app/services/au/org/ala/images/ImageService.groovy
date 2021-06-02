@@ -7,6 +7,7 @@ import com.opencsv.CSVParserBuilder
 import com.opencsv.CSVWriterBuilder
 import com.opencsv.RFC4180ParserBuilder
 import grails.gorm.transactions.Transactional
+import grails.orm.HibernateCriteriaBuilder
 import groovy.transform.Synchronized
 import groovyx.gpars.GParsPool
 import okhttp3.HttpUrl
@@ -25,7 +26,7 @@ import org.apache.tika.mime.MimeTypes
 import org.grails.plugins.codecs.MD5CodecExtensionMethods
 import org.grails.plugins.codecs.SHA1CodecExtensionMethods
 import org.hibernate.FlushMode
-import org.hibernate.ScrollableResults
+import org.hibernate.ScrollMode
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.multipart.MultipartFile
 
@@ -77,6 +78,9 @@ class ImageService {
 
     @Value('${http.default.connectTimeoutMs:120000}')
     int connectTimeoutMs = 120000 // 2 minutes
+
+    @Value('${batch.purge.fetch.size:100}')
+    int purgeFetchSize = 100
 
     Map imagePropertyMap = null
 
@@ -845,41 +849,45 @@ class ImageService {
         return false
     }
 
-    private def deleteRelatedArtefacts(Image image){
+    private def deleteRelatedArtefacts(Image i){
 
         // delete metadata
-        def metadata = ImageMetaDataItem.findAllByImage(image)
-        ImageMetaDataItem.deleteAll(metadata)
+        def metadata = ImageMetaDataItem.where {
+            image == i
+        }.deleteAll()
+        log.debug("Deleted $metadata ImageMetaDataItems for $i")
 
-        def outSourcedJobs = OutsourcedJob.findAllByImage(image)
-        OutsourcedJob.deleteAll(outSourcedJobs)
+        def outSourcedJobs = OutsourcedJob.where {
+            image == i
+        }.deleteAll()
+        log.debug("Deleted $outSourcedJobs OutsourcedJobs for $i")
 
         // need to delete it from user selections
-        def selected = SelectedImage.findAllByImage(image)
-        selected.each { selectedImage ->
-            selectedImage.delete()
-        }
+        def selected = SelectedImage.where {
+            image == i
+        }.deleteAll()
+        log.debug("Deleted $selected SelectedImages for $i")
 
         // Need to delete tags
-        def tags = ImageTag.findAllByImage(image)
-        tags.each { tag ->
-            tag.delete()
-        }
+        def tags = ImageTag.where {
+            image == i
+        }.deleteAll()
+        log.debug("Deleted $tags ImageTags for $i")
 
         // Delete keywords
-        def keywords = ImageKeyword.findAllByImage(image)
-        keywords.each { keyword ->
-            keyword.delete()
-        }
+        def keywords = ImageKeyword.where {
+            image == i
+        }.deleteAll()
+        log.debug("Deleted $keywords ImageKeywords for $i")
 
         // If this image is a subimage, also need to delete any subimage rectangle records
-        def subimagesRef = Subimage.findAllBySubimage(image)
-        subimagesRef.each { subimage ->
-            subimage.delete()
-        }
+        def subimagesRef = Subimage.where {
+            subimage == i
+        }.deleteAll()
+        log.debug("Deleted $subimagesRef Subimages for $i")
 
         // This image may also be a parent image
-        def subimages = Subimage.findAllByParentImage(image)
+        def subimages = Subimage.findAllByParentImage(i)
         subimages.each { subimage ->
             // need to detach this image from the child images, but we do not actually delete the sub images. They
             // will live on as root images in their own right
@@ -889,17 +897,17 @@ class ImageService {
         }
 
         // check for images that have this image as the parent and detach it
-        def children = Image.findAllByParent(image)
+        def children = Image.findAllByParent(i)
         children.each { Image child ->
             child.parent = null
             child.save()
         }
 
         // thumbnail records...
-        def thumbs = ImageThumbnail.findAllByImage(image)
-        thumbs.each { thumb ->
-            thumb.delete()
-        }
+        def thumbs = ImageThumbnail.where {
+            image == i
+        }.deleteAll()
+        log.debug("Deleted $thumbs ImageThumbnails for $i")
     }
 
     @Transactional
@@ -910,19 +918,35 @@ class ImageService {
           it wraps a test in a transaction
          */
         try {
-            log.info("Purge All Deleted Images starting")
-            def c = Image.createCriteria()
-            ScrollableResults results = c.scroll {
-                isNotNull('dateDeleted')
-            }
+            Image.withSession { session ->
+                log.info("Purge All Deleted Images starting")
+                HibernateCriteriaBuilder c = Image.createCriteria()
 
-            int count
-            while(results.next()) {
-                Image image = ((Image)results.get()[0])
-                deleteImagePurge(image)
-                count++
+                // https://github.com/grails/grails-data-mapping/issues/714
+                // Manually run the criteria for GORM so that it actually causes Postgres to scroll
+                def criteria = c.buildCriteria {
+                    isNotNull('dateDeleted')
+                }
+                criteria.flushMode = FlushMode.MANUAL
+                criteria.cacheable = false
+                criteria.fetchSize = purgeFetchSize
+                def results = criteria.scroll(ScrollMode.FORWARD_ONLY)
+
+                def count = 0
+                while(results.next()) {
+                    Image image = ((Image)results.get()[0])
+                    deleteImagePurge(image)
+                    count++
+                    if (count % purgeFetchSize == 0) {
+                        log.info("Purge All Deleted Images deleted ${count} images")
+                        session.flush()
+                        session.clear() // The session will accrete a number of AuditMessages which we don't want to hang on to a reference to for a large delete
+                        log.debug("Purge All Deleted Images flushed session")
+                    }
+                }
+                session.flush()
+                log.info("Purge All Deleted Images completed deleting ${count} images")
             }
-            log.info("Purge All Deleted Images deleted ${count} images")
         } catch (e) {
             log.error("Exception while purging images", e)
         }
@@ -935,7 +959,7 @@ class ImageService {
                 log.warn("Unable to delete stored data for ${image.imageIdentifier}")
             }
             // Remove from storage location
-            image.storageLocation.removeFromImages(image)
+//            image.storageLocation.removeFromImages(image)
             //hard delete
             image.delete()
             return true
