@@ -755,7 +755,8 @@ class ElasticSearchService {
             ct.stop(true)
 
             ct = new CodeTimer("Object retrieval (${searchResponse.hits.hits.length} of ${searchResponse.hits.totalHits} hits)")
-            final imageList = searchResponse.hits ? Image.findAllByImageIdentifierInList(searchResponse.hits*.id)?.collect { image ->
+            final hitsIdList = searchResponse.hits ? searchResponse.hits*.id : []
+            final imageList = hitsIdList ? Image.findAllByImageIdentifierInList(hitsIdList)?.collect { image ->
                 image.metadata = null
                 image.tags = null
                 asMap(image)
