@@ -22,23 +22,23 @@
         </g:if>
 
         <div class="well well-small">
-            <h4>Database statistics</h4>
-            <table class="table table-striped">
+            <h4>Database statistics <i id="update-repo-stats" style="cursor: pointer" class="fa fa-refresh" title="${g.message(code: 'admin.stats.refresh', default: 'Click here to loads database stats')}"></i></h4>
+            <table id="statTable" class="table table-striped hidden">
                 <tr>
                     <td class="col-md-6">Image count </td>
-                    <td class="col-md-6"><span id="statImageCount"><asset:image src="spinner.gif" /></span></td>
+                    <td class="col-md-6"><span id="statImageCount"></span></td>
                 </tr>
                 <tr>
                     <td class="col-md-6">Deleted image count</td>
-                    <td class="col-md-6"><span id="statDeletedImageCount"><asset:image src="spinner.gif" /></span></td>
+                    <td class="col-md-6"><span id="statDeletedImageCount"></span></td>
                 </tr>
                 <tr>
                     <td class="col-md-6">Licences count</td>
-                    <td class="col-md-6"><span id="statLicenceCount"><asset:image src="spinner.gif" /></span></td>
+                    <td class="col-md-6"><span id="statLicenceCount"></span></td>
                 </tr>
                 <tr>
                     <td class="col-md-6">Licence mapping count</td>
-                    <td class="col-md-6"><span id="statLicenceMappingCount"><asset:image src="spinner.gif" /></span></td>
+                    <td class="col-md-6"><span id="statLicenceMappingCount"></span></td>
                 </tr>
             </table>
             <p>Note: these counts are taken from the database, not the search index.</p>
@@ -76,14 +76,19 @@
             $(document).ready(function() {
 
                 updateQueueLength();
-                updateRepoStatistics();
 
                 setInterval(updateQueueLength, 5000);
-                setInterval(updateRepoStatistics, 5000);
+                $('#update-repo-stats').on('click', function() {
+                    $('#update-repo-stats').removeClass('fa-refresh').addClass(['fa-cog','fa-spin']);
+                    updateRepoStatistics().always(function() {
+                        $('#update-repo-stats').removeClass(['fa-cog','fa-spin']).addClass('fa-refresh');
+                    })
+                });
             });
 
             function updateRepoStatistics() {
-                $.ajax("${createLink(controller:'webService', action:'getRepositoryStatistics')}").done(function(data) {
+                return $.ajax("${createLink(controller:'webService', action:'getRepositoryStatistics')}").done(function(data) {
+                    $('#statTable').removeClass('hidden')
                     $("#statImageCount").html(data.imageCount);
                     $("#statDeletedImageCount").html(data.deletedImageCount);
                     $("#statLicenceCount").html(data.licenceCount);

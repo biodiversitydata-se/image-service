@@ -36,13 +36,10 @@ class StorageLocationController {
 
     def listFragment() {
         def storageLocationList = StorageLocation.list([sort: 'id'])
-        def imageCounts = storageLocationList.collectEntries {
-            [(it.id): Image.countByStorageLocationAndDateDeletedIsNull(it) ]
-        }
         def verifieds = storageLocationList.collectEntries {
             [ (it.id): it.verifySettings() ]
         }
-        [storageLocationList:  storageLocationList, imageCounts: imageCounts, defaultId: settingService.getStorageLocationDefault(), verifieds: verifieds]
+        [storageLocationList:  storageLocationList, defaultId: settingService.getStorageLocationDefault(), verifieds: verifieds]
     }
 
     def editFragment() {
