@@ -508,10 +508,6 @@ class ImageService {
                 preExisting = true
             } else if (createDuplicates && image.originalFilename != originalFilename) {
                 log.warn("Existing image found at different URL ${image.originalFilename} to ${originalFilename}. Will add duplicate.")
-                log.warn("Deleted Image has been re-uploaded.  Will undelete.")
-
-                image.dateDeleted = null //reset date deleted if image resubmitted...
-                log.warn("Image moved at source from ${image.originalFilename} to ${originalFilename}. Will add alternate identifier.")
 
                 // we have seen this image before, but the URL has changed at source
                 // so lets update it so that subsequent loads dont need
