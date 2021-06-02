@@ -3,6 +3,7 @@ package au.org.ala.images
 import au.ala.org.ws.security.RequireApiKey
 import au.org.ala.cas.util.AuthenticationUtils
 import au.org.ala.ws.security.ApiKeyInterceptor
+import com.google.common.base.Suppliers
 import grails.converters.JSON
 import grails.converters.XML
 import io.swagger.annotations.Api
@@ -21,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile
 import swagger.SwaggerService
 
 import javax.servlet.http.HttpServletRequest
+import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPOutputStream
 
 @Api(value = "/ws", description = "Image Web Services")
@@ -666,12 +668,19 @@ class WebServiceController {
             @ApiResponse(code = 404, message = "Image Not Found")]
     )
     def getRepositoryStatistics() {
+        def results = statsCache.get()
+        renderResults(results, 200, true)
+    }
+
+    private def statsCache = Suppliers.memoizeWithExpiration(this.&getRepositoryStatisticsResultsInternal, 1, TimeUnit.MINUTES)
+
+    private Map<String, Integer> getRepositoryStatisticsResultsInternal() {
         def results = [:]
         results.imageCount = Image.count()
         results.deletedImageCount = Image.countByDateDeletedIsNotNull()
         results.licenceCount = License.count()
         results.licenceMappingCount = LicenseMapping.count()
-        renderResults(results, 200, true)
+        return results
     }
 
     @ApiOperation(

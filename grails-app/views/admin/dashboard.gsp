@@ -22,8 +22,8 @@
         </g:if>
 
         <div class="well well-small">
-            <h4>Database statistics <i id="update-repo-stats" style="cursor: pointer" class="fa fa-refresh" title="${g.message(code: 'admin.stats.refresh', default: 'Click here to loads database stats')}"></i></h4>
-            <table id="statTable" class="table table-striped hidden">
+            <h4>Database statistics <i id="update-repo-stats" style="cursor: pointer" class="fa fa-refresh" title="${g.message(code: 'admin.stats.refresh', default: 'Click here to refresh database stats')}"></i></h4>
+            <table id="statTable" class="table table-striped">
                 <tr>
                     <td class="col-md-6">Image count </td>
                     <td class="col-md-6"><span id="statImageCount"></span></td>
@@ -75,6 +75,7 @@
 
             $(document).ready(function() {
 
+                updateRepoStatistics();
                 updateQueueLength();
 
                 setInterval(updateQueueLength, 5000);
@@ -88,7 +89,6 @@
 
             function updateRepoStatistics() {
                 return $.ajax("${createLink(controller:'webService', action:'getRepositoryStatistics')}").done(function(data) {
-                    $('#statTable').removeClass('hidden')
                     $("#statImageCount").html(data.imageCount);
                     $("#statDeletedImageCount").html(data.deletedImageCount);
                     $("#statLicenceCount").html(data.licenceCount);
