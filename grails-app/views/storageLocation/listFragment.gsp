@@ -6,7 +6,6 @@
             <th>Type</th>
             <th>Detail</th>
             <th>Default</th>
-            <th>Image count</th>
             <th>Available?</th>
             <th></th>
         </tr>
@@ -48,9 +47,6 @@
             </td>
             <td>
                 <g:radio class="radio-default" name="default" value="${sl.id}" checked="${sl.id == defaultId}"></g:radio>
-            </td>
-            <td>
-                ${imageCounts[sl.id]}
             </td>
             <td>
                 <g:if test="${verifieds[sl.id]}"><i class="fa fa-check"></i></g:if><g:else><i class="fa fa-times"</g:else>
