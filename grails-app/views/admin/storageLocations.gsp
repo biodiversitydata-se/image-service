@@ -20,7 +20,7 @@
         <div class="row" style="margin-top:10px;">
             <div class="col-md-12">
                 <div id="storage-location-container" class="well well-small">
-                    <img:spinner />
+                    <asset:image src="spinner.gif" />
                 </div>
             </div>
         </div>

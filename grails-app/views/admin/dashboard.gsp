@@ -26,19 +26,19 @@
             <table id="statTable" class="table table-striped">
                 <tr>
                     <td class="col-md-6">Image count </td>
-                    <td class="col-md-6"><span id="statImageCount"></span></td>
+                    <td class="col-md-6"><span id="statImageCount"><asset:image src="spinner.gif" /></span></td>
                 </tr>
                 <tr>
                     <td class="col-md-6">Deleted image count</td>
-                    <td class="col-md-6"><span id="statDeletedImageCount"></span></td>
+                    <td class="col-md-6"><span id="statDeletedImageCount"><asset:image src="spinner.gif" /></span></td>
                 </tr>
                 <tr>
                     <td class="col-md-6">Licences count</td>
-                    <td class="col-md-6"><span id="statLicenceCount"></span></td>
+                    <td class="col-md-6"><span id="statLicenceCount"><asset:image src="spinner.gif" /></span></td>
                 </tr>
                 <tr>
                     <td class="col-md-6">Licence mapping count</td>
-                    <td class="col-md-6"><span id="statLicenceMappingCount"></span></td>
+                    <td class="col-md-6"><span id="statLicenceMappingCount"><asset:image src="spinner.gif" /></span></td>
                 </tr>
             </table>
             <p>Note: these counts are taken from the database, not the search index.</p>
