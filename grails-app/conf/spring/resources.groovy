@@ -1,4 +1,5 @@
 import org.flywaydb.core.Flyway
+import org.postgresql.ds.PGSimpleDataSource
 import org.springframework.beans.factory.config.BeanDefinition
 
 // Place your Spring DSL code here
@@ -7,7 +8,12 @@ beans = {
 
         flyway(Flyway) { bean ->
             bean.initMethod = 'migrate'
-            dataSource = ref('dataSource')
+            dataSource = { PGSimpleDataSource pgds ->
+                url = application.config.flyway.jdbcUrl ?: application.config.dataSource.url
+                user = application.config.flyway.username ?: application.config.dataSource.username
+                password = application.config.flyway.password ?: application.config.dataSource.password
+            }
+
             baselineOnMigrate = application.config.getProperty('flyway.baselineOnMigrate', Boolean, true)
             def outOfOrderProp = application.config.getProperty('flyway.outOfOrder', Boolean, false)
             outOfOrder = outOfOrderProp
@@ -30,7 +36,6 @@ beans = {
         if (hibernateDatastoreBeanDef) {
             addDependency(hibernateDatastoreBeanDef, 'flyway')
         }
-
     }
     else {
         log.info "Grails Flyway plugin has been disabled"

@@ -6,14 +6,12 @@ import grails.plugins.rest.client.RestResponse
 import grails.testing.mixin.integration.Integration
 import grails.transaction.Rollback
 import groovy.json.JsonSlurper
-import image.service.Application
 import spock.lang.Shared
 import spock.lang.Specification
 
 import static au.org.ala.images.AvroUtils.AUDIENCE
 import static au.org.ala.images.AvroUtils.CREATED
 import static au.org.ala.images.AvroUtils.CREATOR
-import static au.org.ala.images.AvroUtils.IDENTIFIER
 import static au.org.ala.images.AvroUtils.IDENTIFIER
 
 @Integration(applicationClass = Application.class)

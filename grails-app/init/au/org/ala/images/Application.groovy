@@ -1,4 +1,4 @@
-package image.service
+package au.org.ala.images
 
 import grails.boot.GrailsApp
 import grails.boot.config.GrailsAutoConfiguration

@@ -7,6 +7,7 @@ import com.opencsv.CSVParserBuilder
 import com.opencsv.CSVWriterBuilder
 import com.opencsv.RFC4180ParserBuilder
 import grails.gorm.transactions.Transactional
+import grails.orm.HibernateCriteriaBuilder
 import groovy.transform.Synchronized
 import groovyx.gpars.GParsPool
 import okhttp3.HttpUrl
@@ -25,6 +26,7 @@ import org.apache.tika.mime.MimeTypes
 import org.grails.plugins.codecs.MD5CodecExtensionMethods
 import org.grails.plugins.codecs.SHA1CodecExtensionMethods
 import org.hibernate.FlushMode
+import org.hibernate.ScrollMode
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.multipart.MultipartFile
 
@@ -34,9 +36,6 @@ import java.sql.ResultSet
 import java.sql.SQLException
 import java.text.SimpleDateFormat
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 
 class ImageService {
@@ -79,6 +78,9 @@ class ImageService {
 
     @Value('${http.default.connectTimeoutMs:120000}')
     int connectTimeoutMs = 120000 // 2 minutes
+
+    @Value('${batch.purge.fetch.size:100}')
+    int purgeFetchSize = 100
 
     Map imagePropertyMap = null
 
@@ -160,6 +162,49 @@ class ImageService {
         imageSource.identifier
     }
 
+    /**
+     * Find an image by discovering an image id from a URL
+     * @param url The URL
+     * @return The existing image or null if none exists
+     */
+    Image findImageInImageServiceUrl(String url) {
+        def imageId = findImageIdInImageServiceUrl(url)
+        return imageId ? Image.findByImageIdentifier(imageId) : null
+    }
+
+    private final IMAGE_SERVICE_URL_SUFFIXES = [
+            'original',
+            'thumbnail',
+            'thumbnail_large',
+            'thumbnail_square',
+            'thumbnail_square_black',
+            'thumbnail_square_white',
+            'thumbnail_square_darkGrey',
+            'thumbnail_square_darkGray'
+    ] as Set
+
+    String findImageIdInImageServiceUrl(String imageUrl) {
+        // is it as image service URL?
+        // if so, no need to load the image, use the identifier.....
+        def imageID = ''
+
+        if (isImageServiceUrl(imageUrl)){
+
+            def imageHttpUrl = HttpUrl.parse(imageUrl)
+            if (imageHttpUrl?.queryParameterNames()?.contains('id')) {
+                imageID = imageHttpUrl.queryParameter('id')
+            } else if (imageHttpUrl?.queryParameterNames()?.contains('imageId')) {
+                imageID = imageHttpUrl.queryParameter('imageId')
+            } else if (!imageHttpUrl?.pathSegments()?.empty) {
+                imageID = imageHttpUrl.pathSegments().last()
+            }
+            if (IMAGE_SERVICE_URL_SUFFIXES.contains(imageID) && (imageHttpUrl?.pathSegments()?.size() ?: 0) >= 2) {
+                imageID = imageHttpUrl.pathSegments()[-2]
+            }
+        }
+        return imageID
+    }
+
     boolean isImageServiceUrl(String url){
         boolean isRecognised = false
         grailsApplication.config.imageServiceUrls.each { imageServiceUrl ->
@@ -188,21 +233,7 @@ class ImageService {
                     if (imageUrl) {
                         Image image = null
 
-                        // is it as image service URL?
-                        // if so, no need to load the image, use the identifier.....
-                        if (isImageServiceUrl(imageUrl)){
-
-                            def imageHttpUrl = HttpUrl.parse(imageUrl)
-                            def imageID
-                            if (imageHttpUrl?.queryParameterNames()?.contains('id')) {
-                                imageID = imageHttpUrl.queryParameter('id')
-                            } else if (!imageHttpUrl?.pathSegments()?.empty) {
-                                imageID = imageHttpUrl.pathSegments().last()
-                            }
-                            if (imageID) {
-                                image = Image.findByImageIdentifier(imageID)
-                            }
-                        }
+                        image = findImageInImageServiceUrl(imageUrl)
 
                         // Its not an image service URL, check DB
                         // For full URLs, we can treat these as unique identifiers
@@ -286,21 +317,7 @@ class ImageService {
 
             Image image = null
 
-            // is it as image service URL?
-            // if so, no need to load the image, use the identifier.....
-            if (isImageServiceUrl(imageUrl)){
-
-                def imageHttpUrl = HttpUrl.parse(imageUrl)
-                def imageID
-                if (imageHttpUrl?.queryParameterNames()?.contains('id')) {
-                    imageID = imageHttpUrl.queryParameter('id')
-                } else if (!imageHttpUrl?.pathSegments()?.empty) {
-                    imageID = imageHttpUrl.pathSegments().last()
-                }
-                if (imageID) {
-                    image = Image.findByImageIdentifier(imageID)
-                }
-            }
+            image = findImageInImageServiceUrl(imageUrl)
 
             // Its not an image service URL, check DB
             // For full URLs, we can treat these as unique identifiers
@@ -496,10 +513,6 @@ class ImageService {
                 preExisting = true
             } else if (createDuplicates && image.originalFilename != originalFilename) {
                 log.warn("Existing image found at different URL ${image.originalFilename} to ${originalFilename}. Will add duplicate.")
-                log.warn("Deleted Image has been re-uploaded.  Will undelete.")
-
-                image.dateDeleted = null //reset date deleted if image resubmitted...
-                log.warn("Image moved at source from ${image.originalFilename} to ${originalFilename}. Will add alternate identifier.")
 
                 // we have seen this image before, but the URL has changed at source
                 // so lets update it so that subsequent loads dont need
@@ -836,41 +849,45 @@ class ImageService {
         return false
     }
 
-    private def deleteRelatedArtefacts(Image image){
+    private def deleteRelatedArtefacts(Image i){
 
         // delete metadata
-        def metadata = ImageMetaDataItem.findAllByImage(image)
-        ImageMetaDataItem.deleteAll(metadata)
+        def metadata = ImageMetaDataItem.where {
+            image == i
+        }.deleteAll()
+        log.debug("Deleted $metadata ImageMetaDataItems for $i")
 
-        def outSourcedJobs = OutsourcedJob.findAllByImage(image)
-        OutsourcedJob.deleteAll(outSourcedJobs)
+        def outSourcedJobs = OutsourcedJob.where {
+            image == i
+        }.deleteAll()
+        log.debug("Deleted $outSourcedJobs OutsourcedJobs for $i")
 
         // need to delete it from user selections
-        def selected = SelectedImage.findAllByImage(image)
-        selected.each { selectedImage ->
-            selectedImage.delete()
-        }
+        def selected = SelectedImage.where {
+            image == i
+        }.deleteAll()
+        log.debug("Deleted $selected SelectedImages for $i")
 
         // Need to delete tags
-        def tags = ImageTag.findAllByImage(image)
-        tags.each { tag ->
-            tag.delete()
-        }
+        def tags = ImageTag.where {
+            image == i
+        }.deleteAll()
+        log.debug("Deleted $tags ImageTags for $i")
 
         // Delete keywords
-        def keywords = ImageKeyword.findAllByImage(image)
-        keywords.each { keyword ->
-            keyword.delete()
-        }
+        def keywords = ImageKeyword.where {
+            image == i
+        }.deleteAll()
+        log.debug("Deleted $keywords ImageKeywords for $i")
 
         // If this image is a subimage, also need to delete any subimage rectangle records
-        def subimagesRef = Subimage.findAllBySubimage(image)
-        subimagesRef.each { subimage ->
-            subimage.delete()
-        }
+        def subimagesRef = Subimage.where {
+            subimage == i
+        }.deleteAll()
+        log.debug("Deleted $subimagesRef Subimages for $i")
 
         // This image may also be a parent image
-        def subimages = Subimage.findAllByParentImage(image)
+        def subimages = Subimage.findAllByParentImage(i)
         subimages.each { subimage ->
             // need to detach this image from the child images, but we do not actually delete the sub images. They
             // will live on as root images in their own right
@@ -880,25 +897,55 @@ class ImageService {
         }
 
         // check for images that have this image as the parent and detach it
-        def children = Image.findAllByParent(image)
+        def children = Image.findAllByParent(i)
         children.each { Image child ->
             child.parent = null
             child.save()
         }
 
         // thumbnail records...
-        def thumbs = ImageThumbnail.findAllByImage(image)
-        thumbs.each { thumb ->
-            thumb.delete()
-        }
+        def thumbs = ImageThumbnail.where {
+            image == i
+        }.deleteAll()
+        log.debug("Deleted $thumbs ImageThumbnails for $i")
     }
 
     @Transactional
     def purgeAllDeletedImages() {
+        /* Can't unit test this because:
+        - A regular GORM unit test doesn't work with criteria.scroll
+        - A HibernateSpec unit test can't confirm that the records are deleted due to the way
+          it wraps a test in a transaction
+         */
         try {
-            def images = Image.findAllByDateDeletedIsNotNull()
-            images.each {
-                deleteImagePurge(it)
+            Image.withSession { session ->
+                log.info("Purge All Deleted Images starting")
+                HibernateCriteriaBuilder c = Image.createCriteria()
+
+                // https://github.com/grails/grails-data-mapping/issues/714
+                // Manually run the criteria for GORM so that it actually causes Postgres to scroll
+                def criteria = c.buildCriteria {
+                    isNotNull('dateDeleted')
+                }
+                criteria.flushMode = FlushMode.MANUAL
+                criteria.cacheable = false
+                criteria.fetchSize = purgeFetchSize
+                def results = criteria.scroll(ScrollMode.FORWARD_ONLY)
+
+                def count = 0
+                while(results.next()) {
+                    Image image = ((Image)results.get()[0])
+                    deleteImagePurge(image)
+                    count++
+                    if (count % purgeFetchSize == 0) {
+                        log.info("Purge All Deleted Images deleted ${count} images")
+                        session.flush()
+                        session.clear() // The session will accrete a number of AuditMessages which we don't want to hang on to a reference to for a large delete
+                        log.debug("Purge All Deleted Images flushed session")
+                    }
+                }
+                session.flush()
+                log.info("Purge All Deleted Images completed deleting ${count} images")
             }
         } catch (e) {
             log.error("Exception while purging images", e)
@@ -912,7 +959,7 @@ class ImageService {
                 log.warn("Unable to delete stored data for ${image.imageIdentifier}")
             }
             // Remove from storage location
-            image.storageLocation.removeFromImages(image)
+//            image.storageLocation.removeFromImages(image)
             //hard delete
             image.delete()
             return true

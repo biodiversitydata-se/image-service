@@ -6,7 +6,6 @@ import grails.plugins.rest.client.RestResponse
 import grails.testing.mixin.integration.Integration
 import grails.transaction.*
 import groovy.json.JsonSlurper
-import image.service.Application
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 import spock.lang.Ignore

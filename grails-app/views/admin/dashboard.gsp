@@ -22,8 +22,8 @@
         </g:if>
 
         <div class="well well-small">
-            <h4>Database statistics</h4>
-            <table class="table table-striped">
+            <h4>Database statistics <i id="update-repo-stats" style="cursor: pointer" class="fa fa-refresh" title="${g.message(code: 'admin.stats.refresh', default: 'Click here to refresh database stats')}"></i></h4>
+            <table id="statTable" class="table table-striped">
                 <tr>
                     <td class="col-md-6">Image count </td>
                     <td class="col-md-6"><span id="statImageCount"><asset:image src="spinner.gif" /></span></td>
@@ -75,15 +75,20 @@
 
             $(document).ready(function() {
 
-                updateQueueLength();
                 updateRepoStatistics();
+                updateQueueLength();
 
                 setInterval(updateQueueLength, 5000);
-                setInterval(updateRepoStatistics, 5000);
+                $('#update-repo-stats').on('click', function() {
+                    $('#update-repo-stats').removeClass('fa-refresh').addClass(['fa-cog','fa-spin']);
+                    updateRepoStatistics().always(function() {
+                        $('#update-repo-stats').removeClass(['fa-cog','fa-spin']).addClass('fa-refresh');
+                    })
+                });
             });
 
             function updateRepoStatistics() {
-                $.ajax("${createLink(controller:'webService', action:'getRepositoryStatistics')}").done(function(data) {
+                return $.ajax("${createLink(controller:'webService', action:'getRepositoryStatistics')}").done(function(data) {
                     $("#statImageCount").html(data.imageCount);
                     $("#statDeletedImageCount").html(data.deletedImageCount);
                     $("#statLicenceCount").html(data.licenceCount);
