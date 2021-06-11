@@ -119,7 +119,7 @@ class BatchController {
             nickname = "dataresource/{dataResourceUid}",
             produces = "application/json",
             httpMethod = "GET",
-            response = Map.class,
+            response = List.class,
             tags = ["BatchUpdate"]
     )
     @ApiResponses([
@@ -133,17 +133,12 @@ class BatchController {
     def statusForDataResource(){
 
         //write zip file to filesystem
-        def uploads = batchService.getBatchFileUploadsFor(params.dataResourceUid)
-        if (uploads){
-            //return an async response
-            def responses = []
-            uploads.each { upload ->
-                responses << createResponse(upload)
-            }
-            render (responses as JSON)
-        } else {
-            response.sendError(404)
+        def uploads = batchService.getBatchFileUploadsFor(params.dataResourceUid) ?: []
+        //return an async response
+        def responses = uploads.collect { upload ->
+            createResponse(upload)
         }
+        render (responses as JSON)
     }
 
     Map createResponse(BatchFileUpload upload){
