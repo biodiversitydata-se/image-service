@@ -7,7 +7,7 @@
             <g:each in="${filters}" var="filter">
                 <li>
                     <a href="${raw(facet.selectedFacetLink([filter:filter.value]))}"  title="${message(code:"imagethumb.click.to.remove.this.filter")}">
-                     <span class="fa fa-check-square-o">&nbsp;</span> ${filter.key}
+                     <span class="fa fa-check-square-o">&nbsp;</span> <img:sanitise value="${filter.key}"/>
                     </a>
                 </li>
             </g:each>
@@ -39,7 +39,7 @@
                             </span>
                         </g:if>
                         <g:else>
-                            <g:message code="${facetCount.key}" default="${facetCount.key}" />
+                            <g:message code="${facetCount.key}" default="${img.sanitiseString(value: facetCount.key)}" />
                             <span class="facetCount">
                             (<g:formatNumber number="${facetCount.value}" format="###,###,###" />)
                             </span>

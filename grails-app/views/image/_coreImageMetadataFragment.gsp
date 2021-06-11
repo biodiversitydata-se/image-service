@@ -24,35 +24,35 @@
     </tr>
     <tr>
         <td class="property-name"><g:message code="core.image.metadata.title" /></td>
-        <td class="property-value">${imageInstance.title}</td>
+        <td class="property-value"><img:sanitise value="${imageInstance.title}" image="${imageInstance.imageIdentifier}" key="title"/></td>
     </tr>
     <tr>
         <td class="property-name"><g:message code="core.image.metadata.creator" /></td>
-        <td class="property-value"><img:imageMetadata image="${imageInstance}" resource="${resourceLevel}" field="creator"/></td>
+        <td class="property-value"><img:imageMetadata image="${imageInstance.imageIdentifier}" resource="${resourceLevel}" field="creator"/></td>
     </tr>
     <tr>
         <td class="property-name"><g:message code="core.image.metadata.created" /></td>
-        <td class="property-value">${imageInstance.created}</td>
+        <td class="property-value"><img:sanitise value="${imageInstance.created}" image="${imageInstance.imageIdentifier}" key="created"/></td>
     </tr>
     <tr>
         <td class="property-name"><g:message code="core.image.metadata.description" /></td>
-        <td class="property-value">${imageInstance.description}</td>
+        <td class="property-value"><img:sanitise value="${imageInstance.description}" image="${imageInstance.imageIdentifier}" key="description"/></td>
     </tr>
     <tr>
         <td class="property-name"><g:message code="core.image.metadata.publisher" /></td>
-        <td class="property-value">${imageInstance.publisher}</td>
+        <td class="property-value"><img:sanitise value="${imageInstance.publisher}" image="${imageInstance.imageIdentifier}" key="publisher"/></td>
     </tr>
     <tr>
         <td class="property-name"><g:message code="core.image.metadata.references" /></td>
-        <td class="property-value">${imageInstance.references}</td>
+        <td class="property-value"><img:sanitise value="${imageInstance.references}" image="${imageInstance.imageIdentifier}" key="references"/></td>
     </tr>
     <tr>
         <td class="property-name"><g:message code="core.image.metadata.audience" /></td>
-        <td class="property-value">${imageInstance.audience}</td>
+        <td class="property-value"><img:sanitise value="${imageInstance.audience}" image="${imageInstance.imageIdentifier}" key="audience"/></td>
     </tr>
     <tr>
         <td class="property-name"><g:message code="core.image.metadata.source" /></td>
-        <td class="property-value">${imageInstance.source}</td>
+        <td class="property-value"><img:sanitise value="${imageInstance.source}" image="${imageInstance.imageIdentifier}" key="source"/></td>
     </tr>
 
     <g:if test="${isAdminView}">
