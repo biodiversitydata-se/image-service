@@ -28,7 +28,7 @@
     </tr>
     <tr>
         <td class="property-name"><g:message code="core.image.metadata.creator" /></td>
-        <td class="property-value"><img:imageMetadata image="${imageInstance.imageIdentifier}" resource="${resourceLevel}" field="creator"/></td>
+        <td class="property-value"><img:imageMetadata image="${imageInstance}" resource="${resourceLevel}" field="creator"/></td>
     </tr>
     <tr>
         <td class="property-name"><g:message code="core.image.metadata.created" /></td>
