@@ -295,7 +295,7 @@ class ImagesTagLib {
         def result
         if (image && key) {
             if (length) {
-                result = sanitiserService.truncateAndSanitise(value, length, image, key)
+                result = sanitiserService.truncateAndSanitise(value, image, key, length)
             } else {
                 result = sanitiserService.sanitise(value, image, key)
             }

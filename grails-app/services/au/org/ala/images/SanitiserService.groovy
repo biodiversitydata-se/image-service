@@ -44,7 +44,7 @@ class SanitiserService {
      * @return
      */
     String sanitise(String input, String imageId, String propertyName) {
-        internalSanitise(policy, imageId, propertyName)
+        internalSanitise(policy, input, imageId, propertyName)
     }
 
     String truncateAndSanitise(String input, String imageId, String propertyName, int length) {
