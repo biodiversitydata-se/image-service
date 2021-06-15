@@ -1,7 +1,7 @@
 <g:if test="${imageInstance}">
     <div>
         <g:if test="${imageInstance.description}">
-            <strong>${imageInstance.description}</strong>
+            <strong><img:sanitise value="${imageInstance.description}" image="${imageInstance.imageIdentifier}" key="description" /></strong>
             <div> ${imageInstance.originalFilename}</div>
         </g:if>
         <g:else>
@@ -14,17 +14,17 @@
             <div><g:message code="image.tooltip.frag.taken.on" /> <img:formatDate date="${imageInstance.dateTaken}" /></div>
         </g:if>
         <g:if test="${imageInstance.creator}">
-            <div>${imageInstance.creator}</div>
+            <div><img:sanitise value="${imageInstance.creator}" image="${imageInstance.imageIdentifier}" key="creator" /></div>
         </g:if>
         <g:if test="${imageInstance.title}">
-            <div>${imageInstance.title}</div>
+            <div><img:sanitise value="${imageInstance.title}" image="${imageInstance.imageIdentifier}" key="title" /></div>
         </g:if>
         <g:if test="${imageInstance.rights}">
-            <div>${imageInstance.rights}</div>
+            <div><img:sanitise value="${imageInstance.rights}" image="${imageInstance.imageIdentifier}" key="rights" /></div>
         </g:if>
         <g:if test="${imageInstance.rightsHolder}">
             <div>
-                ${imageInstance.rightsHolder}
+                <img:sanitise value="${imageInstance.rightsHolder}" image="${imageInstance.imageIdentifier}" key="rightsHolder" />
             </div>
         </g:if>
         <g:if test="${imageInstance.parent}">

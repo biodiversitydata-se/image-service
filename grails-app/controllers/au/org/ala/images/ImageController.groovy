@@ -358,6 +358,7 @@ class ImageController {
             render(text: "Image not found in storage", status: SC_NOT_FOUND, contentType: 'text/plain')
         } catch (ClientAbortException e) {
             // User hung up, just ignore this exception since we can't recover into a nice error response.
+            throw e
         } catch (Exception e) {
             log.error("Exception serving image", e)
             cache(false)

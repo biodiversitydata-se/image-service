@@ -7,11 +7,14 @@ class ImagesTagLib {
 
     static namespace = 'img'
 
+    static returnObjectForTags = ['sanitiseString']
+
     def imageService
     def groovyPageLocator
     def authService
     def searchCriteriaService
     def collectoryService
+    def sanitiserService
 
     /**
      * @attr title
@@ -108,6 +111,8 @@ class ImagesTagLib {
 
     def imageSearchResult = { attrs, body ->
 
+        def mb = new MarkupBuilder(out)
+
         if (attrs.image) {
             def creator = ''
             if (attrs.image.creator && attrs.image.creator != ElasticSearchService.NOT_SUPPLIED){
@@ -116,22 +121,25 @@ class ImagesTagLib {
 
             if(attrs.image.dataResourceUid){
                 def metadata = collectoryService.getResourceLevelMetadata(attrs.image.dataResourceUid)
-                out << """<div class="thumb-caption caption-detail ${attrs.css?:''}">"""
-                out <<  "<span class='resource-name'>${metadata.name?:''}</span>"
-                if (metadata.name && (attrs.image.title || creator)){
-                    out << ' - '
-                }
+                mb.div(class: ['thumb-caption', 'caption-detail', attrs.css ?: ''].findAll().join(' ')) {
+                    mb.span(class: 'resource-name') {
+                        mkp.yield(metadata.name ?: '')
+                    }
+                    if (metadata.name && (attrs.image.title || creator)) {
+                        mkp.yield(' - ')
+                    }
 
-                def text = "${attrs.image.title? attrs.image.title: ''} ${creator}"
-                text = StringUtils.abbreviate(text, 100)
-                out << "<span>${text}</span>"
-                out << '</div>'
+                    def text = "${attrs.image.title? attrs.image.title: ''} ${creator}"
+                    mb.span {
+                        mkp.yieldUnescaped(sanitiserService.truncateAndSanitise(text, attrs.image.imageIdentifier, 'title+creator', 100))
+                    }
+                }
             } else {
-                if (attrs.image.dataResourceUid || attrs.image.title || creator){
-                    out << """<div class="thumb-caption caption-detail ${attrs.css?:''}">"""
-                    def output = "${attrs.image.dataResourceUid ? attrs.image.dataResourceUid: ''} ${attrs.image.title ? attrs.image.title :''} ${creator}"
-                    out << StringUtils.abbreviate(output, 100)
-                    out << '</div>'
+                if (attrs.image.dataResourceUid || attrs.image.title || creator) {
+                    mb.div(class: ['thumb-caption', 'caption-detail', attrs.css ?: ''].findAll().join(' ')) {
+                        def output = "${attrs.image.dataResourceUid ? attrs.image.dataResourceUid: ''} ${attrs.image.title ? attrs.image.title :''} ${creator}"
+                        mkp.yieldUnescaped(sanitiserService.truncateAndSanitise(output, attrs.image.imageIdentifier, 'drUid+title+creator', 100))
+                    }
                 }
             }
         }
@@ -144,6 +152,10 @@ class ImagesTagLib {
             valueToRender = metadata.name
         } else {
             valueToRender = message(code: attrs.dataResourceUid, default: attrs.dataResourceUid)
+        }
+        def mb = new MarkupBuilder(out)
+        mb.span(class: 'resource-name') {
+            mkp.yield(valueToRender)
         }
         out <<  "<span class='resource-name'>${valueToRender}</span>"
     }
@@ -253,7 +265,7 @@ class ImagesTagLib {
         }
 
         def currentUserId = authService.getUserId()
-        out << (displayName ?: userId ?: '&lt;Unknown&gt;')
+        out << (sanitiserService.sanitise(displayName ?: userId ?: '&lt;Unknown&gt;'))
 
         if(currentUserId && currentUserId == userId){
             out << " (thats you!)"
@@ -267,11 +279,41 @@ class ImagesTagLib {
         }
     }
 
+    def sanitiseString = { attrs, body ->
+        return sanitiseInternal(attrs)
+    }
+
+    def sanitise = { attrs, body ->
+        out << sanitiseInternal(attrs)
+    }
+
+    private String sanitiseInternal(attrs) {
+        def value = attrs.value
+        def image = attrs.image
+        def key = attrs.key
+        def length = attrs.length
+        def result
+        if (image && key) {
+            if (length) {
+                result = sanitiserService.truncateAndSanitise(value, length, image, key)
+            } else {
+                result = sanitiserService.sanitise(value, image, key)
+            }
+        } else {
+            if (length) {
+                result = sanitiserService.truncateAndSanitise(value, length)
+            } else {
+                result = sanitiserService.sanitise(value)
+            }
+        }
+        return result
+    }
+
     def imageMetadata = { attrs, body ->
-        if (attrs.image[attrs.field]){
-            out << attrs.image[attrs.field]
-        } else if(attrs.resource && attrs.resource.imageMetadata && attrs.resource.imageMetadata[attrs.field]){
-            out << attrs.resource.imageMetadata[attrs.field] + "<small> (resource level metadata) </small>"
+        if (attrs.image[attrs.field]) {
+            out << sanitiserService.sanitise(attrs.image[attrs.field])
+        } else if (attrs.resource && attrs.resource.imageMetadata && attrs.resource.imageMetadata[attrs.field]) {
+            out << sanitiserService.sanitise(attrs.resource.imageMetadata[attrs.field]) + "<small> (resource level metadata) </small>"
         }
     }
 
@@ -317,7 +359,7 @@ class ImagesTagLib {
     def renderMetaDataValue = { attrs, body ->
         ImageMetaDataItem md = attrs.metaDataItem as ImageMetaDataItem
         if (md) {
-            out << new MetaDataValueFormatRules(grailsApplication).formatValue(md)
+            out << sanitiserService.sanitise(new MetaDataValueFormatRules(grailsApplication).formatValue(md))
         }
     }
 }

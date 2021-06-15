@@ -1,10 +1,13 @@
 package au.org.ala.images
 
 import au.org.ala.images.helper.LocalstackRule
+import cloud.localstack.Constants
 import cloud.localstack.Localstack
 import cloud.localstack.deprecated.TestUtils
 import cloud.localstack.docker.annotation.LocalstackDockerProperties
 import com.amazonaws.ClientConfiguration
+import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import grails.testing.gorm.DomainUnitTest
@@ -13,7 +16,7 @@ import spock.lang.Shared
 
 import static cloud.localstack.deprecated.TestUtils.DEFAULT_REGION
 
-@LocalstackDockerProperties(services = [ "s3" ])
+@LocalstackDockerProperties(services = [ "s3" ], imageTag = '0.12.11')
 class S3StorageLocationSpec extends StorageLocationSpec implements DomainUnitTest<S3StorageLocation> {
 
     @ClassRule @Shared LocalstackRule localstack = new LocalstackRule(S3StorageLocationSpec)
@@ -34,8 +37,8 @@ class S3StorageLocationSpec extends StorageLocationSpec implements DomainUnitTes
     def setupSpec() {
 
         AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard().
-                withEndpointConfiguration(cloud.localstack.awssdkv1.TestUtils.getEndpointConfigurationS3()).
-                withCredentials(cloud.localstack.awssdkv1.TestUtils.getCredentialsProvider()).
+                withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(Localstack.INSTANCE.endpointS3, Constants.DEFAULT_REGION)).
+                withCredentials(new AWSStaticCredentialsProvider(TestUtils.TEST_CREDENTIALS)).
                 withClientConfiguration(
                         new ClientConfiguration()
                                 .withValidateAfterInactivityMillis(200))
