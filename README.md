@@ -24,18 +24,7 @@ There are other related repositories to this one:
 
 ## Upgrading from 1.0
 
-Image Service 1.1 removes the reliance on the database user being a PostgreSQL superuser.  When upgrading using the `ala-install` ansible playbook, you may find that some database objects are owned by the `postgres` superuser role.  To ensure that all database objects belong to the correct user, run the following just prior to upgrading:
-
-```bash
-sudo -u postgres -s
-export IMAGES_USER=images
-psql -c "ALTER DATABASE images OWNER TO $IMAGES_USER"
-for tbl in `psql -qAt -c "select tablename from pg_tables where schemaname = 'public';" images` ; do psql -c "alter table \"$tbl\" owner to $IMAGES_USER" images ; done
-for tbl in `psql -qAt -c "select sequence_name from information_schema.sequences where sequence_schema = 'public';" images` ; do  psql -c "alter sequence \"$tbl\" owner to $IMAGES_USER" images ; done
-for tbl in `psql -qAt -c "select table_name from information_schema.views where table_schema = 'public';" images` ; do  psql -c "alter view \"$tbl\" owner to $IMAGES_USER" images ; done
-psql -c "alter function if exists "export_images" owner to $IMAGES_USER;" images
-psql -c "alter function if exists "export_index" owner to $IMAGES_USER;" images
-```
+Please see the [[Upgrading from 1.0 to 1.1]] before upgrading an image-service 1.0 or earlier installation to the latest version.
 
 ## Architecture
 
