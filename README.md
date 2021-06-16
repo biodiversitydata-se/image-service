@@ -24,7 +24,7 @@ There are other related repositories to this one:
 
 ## Upgrading from 1.0
 
-Please see the [[Upgrading from 1.0 to 1.1]] before upgrading an image-service 1.0 or earlier installation to the latest version.
+Please see the [Upgrading from 1.0 to 1.1](https://github.com/AtlasOfLivingAustralia/image-service/wiki/Upgrading-from-1.0-to-1.1) wiki page before upgrading an image-service 1.0 or earlier installation to the latest version.
 
 ## Architecture
 
