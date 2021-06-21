@@ -22,6 +22,10 @@ There are other related repositories to this one:
 * [image-tiling-agent](https://github.com/AtlasOfLivingAustralia/image-tiling-agent) - a utility to run tiling jobs for the image-service. This is intended to used on multiple machine as tiling is CPU intensive and best parallelised.
 * [image-loader](https://github.com/AtlasOfLivingAustralia/image-loader) - utility for bulk loading images into the image-service.
 
+## Upgrading from 1.0
+
+Please see the [Upgrading from 1.0 to 1.1](https://github.com/AtlasOfLivingAustralia/image-service/wiki/Upgrading-from-1.0-to-1.1) wiki page before upgrading an image-service 1.0 or earlier installation to the latest version.
+
 ## Architecture
 
 * Grails 3 web application ran as standalone executable jar
