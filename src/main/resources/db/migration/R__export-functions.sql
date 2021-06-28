@@ -70,60 +70,11 @@ FROM image i
      LEFT OUTER JOIN license l ON l.id = i.recognised_license_id
 WHERE date_deleted is NULL;
 
---  Function used for exporting metadata for images associated with a dataset
+--  Function was used for exporting metadata for images associated with a dataset
 DROP FUNCTION IF EXISTS export_dataset;
-CREATE OR REPLACE FUNCTION export_dataset(uid varchar)
-RETURNS TABLE(
-    imageID text,
-    identifier text,
-    audience text,
-    contributor text,
-    created text,
-    creator text,
-    description text,
-    format text,
-    license text,
-    publisher text,
-    "references" text,
-    "rightsHolder" text,
-    source text,
-    title text,
-    type text
-) AS $$
-select
-    i.image_identifier as "imageID",
-    NULLIF(regexp_replace(i.original_filename, '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "identifier",
-    NULLIF(regexp_replace(i.audience,          '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "audience",
-    NULLIF(regexp_replace(i.contributor,       '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "contributor",
-    NULLIF(regexp_replace(i.created,           '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "created",
-    NULLIF(regexp_replace(i.creator,           '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "creator",
-    NULLIF(regexp_replace(i.description,       '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "description",
-    NULLIF(regexp_replace(i.mime_type,         '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "format",
-    NULLIF(regexp_replace(i.license,           '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "license",
-    NULLIF(regexp_replace(i.publisher,         '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "publisher",
-    NULLIF(regexp_replace(i.dc_references,     '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "references",
-    NULLIF(regexp_replace(i.rights_holder,     '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "rightsHolder",
-    NULLIF(regexp_replace(i.source,            '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "source",
-    NULLIF(regexp_replace(i.title,             '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "title",
-    NULLIF(regexp_replace(i.type,              '\\P{Cc}\\P{Cn}\\P{Cs}\\P{Cf}',  '', 'g'), '')  AS  "type"
-    from image i
-    where data_resource_uid = $1
 
-$$ LANGUAGE SQL;
-
---  Function used for exporting mapping of URL -> imageID for a dataset
+--  Function was used for exporting mapping of URL -> imageID for a dataset
 DROP FUNCTION IF EXISTS export_dataset_mapping;
-CREATE OR REPLACE FUNCTION export_dataset_mapping(uid varchar)
-RETURNS TABLE(
-    imageID text,
-    url text
-) AS $$
-select
-    image_identifier as "imageID",
-    original_filename as "url"
-    from image i
-    where data_resource_uid = $1
-$$ LANGUAGE SQL;
 
 
 --  Function used for exporting mapping of URL -> imageID for all dataset
