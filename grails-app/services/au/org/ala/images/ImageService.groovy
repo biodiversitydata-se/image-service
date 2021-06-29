@@ -68,6 +68,35 @@ class ImageService {
         "type"
     ]
 
+    final EXPORT_DATASET_SQL = '''
+SELECT
+    i.image_identifier as "imageID",
+    NULLIF(regexp_replace(i.original_filename, '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "identifier",
+    NULLIF(regexp_replace(i.audience,          '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "audience",
+    NULLIF(regexp_replace(i.contributor,       '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "contributor",
+    NULLIF(regexp_replace(i.created,           '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "created",
+    NULLIF(regexp_replace(i.creator,           '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "creator",
+    NULLIF(regexp_replace(i.description,       '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "description",
+    NULLIF(regexp_replace(i.mime_type,         '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "format",
+    NULLIF(regexp_replace(i.license,           '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "license",
+    NULLIF(regexp_replace(i.publisher,         '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "publisher",
+    NULLIF(regexp_replace(i.dc_references,     '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "references",
+    NULLIF(regexp_replace(i.rights_holder,     '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "rightsHolder",
+    NULLIF(regexp_replace(i.source,            '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "source",
+    NULLIF(regexp_replace(i.title,             '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "title",
+    NULLIF(regexp_replace(i.type,              '[\\\\p{Cc}\\\\p{Cn}\\\\p{Cs}\\\\p{Cf}]',  '', 'g'), '')  AS  "type"
+FROM image i
+WHERE data_resource_uid = ?
+'''
+
+    final EXPORT_DATASET_MAPPING_SQL = '''
+SELECT
+    image_identifier as "imageID",
+    original_filename as "url"
+    FROM image i
+    WHERE data_resource_uid = ?
+    '''
+
     private static Queue<BackgroundTask> _backgroundQueue = new ConcurrentLinkedQueue<BackgroundTask>()
     private static Queue<BackgroundTask> _tilingQueue = new ConcurrentLinkedQueue<BackgroundTask>()
 
@@ -1457,11 +1486,11 @@ class ImageService {
      * @return
      */
     def exportDatasetMappingCSV(String datasetID, OutputStream outputStream) {
-        eachRowToCSV(outputStream.newWriter('UTF-8'), """select * from export_dataset_mapping(?)""", [datasetID], ',', '\\')
+        eachRowToCSV(outputStream.newWriter('UTF-8'), EXPORT_DATASET_MAPPING_SQL, [datasetID], ',', '\\')
     }
 
     def exportDatasetCSV(String datasetID, OutputStream outputStream) {
-        eachRowToCSV(outputStream.newWriter('UTF-8'), """select * from export_dataset(?)""", [datasetID])
+        eachRowToCSV(outputStream.newWriter('UTF-8'), EXPORT_DATASET_SQL, [datasetID])
     }
 
     /**
