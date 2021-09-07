@@ -68,8 +68,14 @@ class ImageService {
         "type"
     ]
 
+    private static Queue<BackgroundTask> _backgroundQueue = new ConcurrentLinkedQueue<BackgroundTask>()
+    private static Queue<BackgroundTask> _tilingQueue = new ConcurrentLinkedQueue<BackgroundTask>()
+
+    private static int BACKGROUND_TASKS_BATCH_SIZE = 100
+
     // missing \p{Unassigned}\p{Surrogate]\p{Control} from regex as Unicode character classes unsupported in PG.
-    final EXPORT_DATASET_SQL = '''
+    @Value('${export.sql.dataset}')
+    String EXPORT_DATASET_SQL = '''
 SELECT
     i.image_identifier as "imageID",
     NULLIF(regexp_replace(i.original_filename, '[\\x00-\\x1F\\x7F-\\x9F]',  '', 'g'), '')  AS  "identifier",
@@ -85,23 +91,20 @@ SELECT
     NULLIF(regexp_replace(i.rights_holder,     '[\\x00-\\x1F\\x7F-\\x9F]',  '', 'g'), '')  AS  "rightsHolder",
     NULLIF(regexp_replace(i.source,            '[\\x00-\\x1F\\x7F-\\x9F]',  '', 'g'), '')  AS  "source",
     NULLIF(regexp_replace(i.title,             '[\\x00-\\x1F\\x7F-\\x9F]',  '', 'g'), '')  AS  "title",
-    NULLIF(regexp_replace(i.type,              '[\\x00-\\x1F\\x7F-\\x9F]',  '', 'g'), '')  AS  "type"
+    NULLIF(regexp_replace(i.type,              '[\\x00-\\x1F\\x7F-\\x9F]',  '', 'g'), '')  AS  "type",
+    NULLIF(regexp_replace(array_to_json(i.alternate_filename)::text, '[\\x00-\\x1F\\x7F-\\x9F]',  '', 'g'), '') AS "alternativeFilename"
 FROM image i
 WHERE data_resource_uid = ?
 '''
 
-    final EXPORT_DATASET_MAPPING_SQL = '''
+    @Value('${export.sql.datasetMapping}')
+    String EXPORT_DATASET_MAPPING_SQL = '''
 SELECT
     image_identifier as "imageID",
     original_filename as "url"
     FROM image i
     WHERE data_resource_uid = ?
     '''
-
-    private static Queue<BackgroundTask> _backgroundQueue = new ConcurrentLinkedQueue<BackgroundTask>()
-    private static Queue<BackgroundTask> _tilingQueue = new ConcurrentLinkedQueue<BackgroundTask>()
-
-    private static int BACKGROUND_TASKS_BATCH_SIZE = 100
 
     @Value('${http.default.readTimeoutMs:120000}')
     int readTimeoutMs = 120000 // 2 minutes
