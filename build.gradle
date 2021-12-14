@@ -140,6 +140,10 @@ dependencies {
     testCompile 'cloud.localstack:localstack-utils:0.2.11'
     testCompile "com.amazonaws:aws-java-sdk:$amazonAwsSdkVersion" // full AWS SDK included in test scope for localstack config
     testCompile 'com.palantir.docker.compose:docker-compose-rule-junit4:1.5.0'
+
+    // override log4j in elasticsearch plugin
+    // TODO remove this once no log4j vulnerable transitive deps are used.
+    runtime 'org.apache.logging.log4j:log4j-core:2.15.0'
 }
 
 bootRun {
