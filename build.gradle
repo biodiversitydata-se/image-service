@@ -18,7 +18,7 @@ plugins {
 }
 
 
-version "1.1.7.3"
+version "1.1.7.4"
 
 group "au.org.ala"
 
@@ -134,16 +134,14 @@ dependencies {
     testRuntime "net.sourceforge.htmlunit:htmlunit:2.18"
     compile 'com.opencsv:opencsv:4.6'
     compile group: 'com.googlecode.owasp-java-html-sanitizer', name: 'owasp-java-html-sanitizer', version: '20200713.1'
-    runtime group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.12.0'
-    runtime group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.12.0'
+    // override log4j in elasticsearch plugin
+    // TODO remove this once no log4j vulnerable transitive deps are used.
+    runtime group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.15.0'
+    runtime group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.15.0'
     testCompile 'org.grails.plugins:embedded-postgres:1.1.2'
     testCompile 'cloud.localstack:localstack-utils:0.2.11'
     testCompile "com.amazonaws:aws-java-sdk:$amazonAwsSdkVersion" // full AWS SDK included in test scope for localstack config
     testCompile 'com.palantir.docker.compose:docker-compose-rule-junit4:1.5.0'
-
-    // override log4j in elasticsearch plugin
-    // TODO remove this once no log4j vulnerable transitive deps are used.
-    runtime 'org.apache.logging.log4j:log4j-core:2.15.0'
 }
 
 bootRun {
