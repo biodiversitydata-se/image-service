@@ -198,6 +198,8 @@ security:
             - '/admin/*'
             - '/admin'
             - '/admin/'
+            - '/alaAdmin'
+            - '/alaAdmin/*'
             - '/image/deleteImage/*'
             - '/storageLocation'
             - '/storageLocation/*'
