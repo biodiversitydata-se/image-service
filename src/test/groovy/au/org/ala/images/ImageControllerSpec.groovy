@@ -1,12 +1,15 @@
 package au.org.ala.images
 
 import au.org.ala.web.AuthService
+import au.org.ala.web.IAuthService
 import grails.plugins.cacheheaders.CacheHeadersService
 import grails.testing.gorm.DataTest
 import grails.testing.web.controllers.ControllerUnitTest
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
+import org.grails.spring.beans.factory.InstanceFactoryBean
 import org.grails.web.util.GrailsApplicationAttributes
+import org.grails.web.util.WebUtils
 import org.jasig.cas.client.authentication.AttributePrincipalImpl
 import org.springframework.core.io.ClassPathResource
 import spock.lang.Shared
@@ -280,6 +283,9 @@ class ImageControllerSpec extends Specification implements ControllerUnitTest<Im
 
         request.userPrincipal = new AttributePrincipalImpl('1234', [userid: '1234', email: 'test@example.org'])
         request.addUserRole('ROLE_USER')
+
+        controller.authService.delegateService = Stub(IAuthService)
+        controller.authService.delegateService.getUserId() >> { args -> WebUtils.retrieveGrailsWebRequest().userPrincipal.name }
 
         when:
         def model = controller.details()

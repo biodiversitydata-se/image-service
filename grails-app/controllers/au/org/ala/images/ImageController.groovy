@@ -6,12 +6,19 @@ import au.org.ala.web.CASRoles
 import grails.converters.JSON
 import grails.converters.XML
 import groovy.util.logging.Slf4j
-import io.swagger.annotations.Api
-import io.swagger.annotations.ApiImplicitParam
-import io.swagger.annotations.ApiImplicitParams
-import io.swagger.annotations.ApiOperation
-import io.swagger.annotations.ApiResponse
-import io.swagger.annotations.ApiResponses
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.enums.ParameterIn
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+
+//import io.swagger.annotations.Api
+//import io.swagger.annotations.ApiImplicitParam
+//import io.swagger.annotations.ApiImplicitParams
+//import io.swagger.annotations.ApiOperation
+//import io.swagger.annotations.ApiResponse
+//import io.swagger.annotations.ApiResponses
 import org.apache.catalina.connector.ClientAbortException
 import org.apache.commons.io.IOUtils
 import org.springframework.beans.factory.annotation.Value
@@ -20,8 +27,13 @@ import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.multipart.MultipartHttpServletRequest
 
 import javax.servlet.http.HttpServletRequest
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
 import java.util.concurrent.atomic.AtomicLong
 
+import static io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER
+import static io.swagger.v3.oas.annotations.enums.ParameterIn.PATH
+import static io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY
 import static javax.servlet.http.HttpServletResponse.SC_FOUND
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND
 import static javax.servlet.http.HttpServletResponse.SC_NOT_MODIFIED
@@ -29,7 +41,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK
 import static javax.servlet.http.HttpServletResponse.SC_PARTIAL_CONTENT
 import static javax.servlet.http.HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE
 
-@Api(value = "/image", tags = ["Access to image derivatives (e.g. thumbnails, tiles and originals)"], description = "Image Web Services")
+//@Api(value = "/image", tags = ["Access to image derivatives (e.g. thumbnails, tiles and originals)"], description = "Image Web Services")
 @Slf4j
 class ImageController {
 
@@ -86,19 +98,33 @@ class ImageController {
         )
     }
 
-    @ApiOperation(
-            value = "Get original image, sound or video file.",
-            nickname = "{id}/original",
-            produces = "image/jpeg",
-            httpMethod = "GET"
+    @Operation(
+            method = "GET",
+            summary = "Get original image, sound or video file.",
+            parameters = [
+                    @Parameter(name="id", in = PATH, description = 'Image Id', required = true)
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType='image/jpeg')]),
+                    @ApiResponse(responseCode = "404")
+            ],
+            tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
     )
-    @ApiResponses([
-            @ApiResponse(code = SC_OK, message = "OK"),
-            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
-    ])
+    @Produces("image/jpeg")
+    @Path("/image/{id}/original")
+//    @ApiOperation(
+//            value = "Get original image, sound or video file.",
+//            nickname = "{id}/original",
+//            produces = "image/jpeg",
+//            httpMethod = "GET"
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = SC_OK, message = "OK"),
+//            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
+//    )
+//    @ApiImplicitParams([
+//            @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
+//    ])
     def getOriginalFile() {
         serveImage(
                 { Image image -> image.fileSize },
@@ -114,19 +140,33 @@ class ImageController {
      * This method serves the image from the file system where possible for better performance.
      * proxyImageThumbnail is used heavily by applications rendering search results (biocache, BIE).
      */
-    @ApiOperation(
-            value = "Get image thumbnail",
-            nickname = "{id}/thumbnail",
-            produces = "image/jpeg",
-            httpMethod = "GET"
+    @Operation(
+            method = "GET",
+            summary = "Get image thumbnail.",
+            parameters = [
+                    @Parameter(name="id", in = PATH, description = 'Image Id', required = true)
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType='image/jpeg')]),
+                    @ApiResponse(responseCode = "404")
+            ],
+            tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
     )
-    @ApiResponses([
-            @ApiResponse(code = SC_OK, message = "OK"),
-            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
-    ])
+    @Produces("image/jpeg")
+    @Path("/image/{id}/thumbnail")
+//    @ApiOperation(
+//            value = "Get image thumbnail",
+//            nickname = "{id}/thumbnail",
+//            produces = "image/jpeg",
+//            httpMethod = "GET"
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = SC_OK, message = "OK"),
+//            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
+//    )
+//    @ApiImplicitParams([
+//            @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
+//    ])
     def proxyImageThumbnail() {
         serveImage(
                 { Image image ->
@@ -160,19 +200,33 @@ class ImageController {
         )
     }
 
-    @ApiOperation(
-            value = "Get image thumbnail large version",
-            nickname = "{id}/large",
-            produces = "image/jpeg",
-            httpMethod = "GET"
+    @Operation(
+            method = "GET",
+            summary = "Get image thumbnail large version.",
+            parameters = [
+                    @Parameter(name="id", in = PATH, description = 'Image Id', required = true)
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType='image/jpeg')]),
+                    @ApiResponse(responseCode = "404")
+            ],
+            tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
     )
-    @ApiResponses([
-            @ApiResponse(code = SC_OK, message = "OK"),
-            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
-    ])
+    @Produces("image/jpeg")
+    @Path("/image/{id}/large")
+//    @ApiOperation(
+//            value = "Get image thumbnail large version",
+//            nickname = "{id}/large",
+//            produces = "image/jpeg",
+//            httpMethod = "GET"
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = SC_OK, message = "OK"),
+//            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
+//    )
+//    @ApiImplicitParams([
+//            @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
+//    ])
     def proxyImageThumbnailType() {
         String type = params.thumbnailType ?: 'large'
         serveImage(
@@ -207,22 +261,39 @@ class ImageController {
         )
     }
 
-    @ApiOperation(
-            value = "Get image tile - for use with tile mapping service clients such as LeafletJS or Openlayers",
-            nickname = "{id}/tms/{z}/{x}/{y}.png",
-            produces = "image/jpeg",
-            httpMethod = "GET"
+    @Operation(
+            method = "GET",
+            summary = "Get image tile - for use with tile mapping service clients such as LeafletJS or Openlayers.",
+            parameters = [
+                    @Parameter(name="id", in = PATH, description = 'Image Id', required = true),
+                    @Parameter(name="z", in = PATH, description = 'Tile mapping service Z value', required = true),
+                    @Parameter(name="y", in = PATH, description = 'Tile mapping service Y value', required = true),
+                    @Parameter(name="x", in = PATH, description = 'Tile mapping service X value', required = true),
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType='image/png')]),
+                    @ApiResponse(responseCode = "404")
+            ],
+            tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
     )
-    @ApiResponses([
-            @ApiResponse(code = SC_OK, message = "OK"),
-            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string"),
-            @ApiImplicitParam(name = "x", paramType = "path", required = true, value = "Tile mapping service X value", dataType = "string"),
-            @ApiImplicitParam(name = "y", paramType = "path", required = true, value = "Tile mapping service Y value", dataType = "string"),
-            @ApiImplicitParam(name = "z", paramType = "path", required = true, value = "Tile mapping service Z value", dataType = "string")
-    ])
+    @Produces("image/png")
+    @Path("/image/{id}/tms/{z}/{x}/{y}.png")
+//    @ApiOperation(
+//            value = "Get image tile - for use with tile mapping service clients such as LeafletJS or Openlayers",
+//            nickname = "{id}/tms/{z}/{x}/{y}.png",
+//            produces = "image/jpeg",
+//            httpMethod = "GET"
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = SC_OK, message = "OK"),
+//            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
+//    )
+//    @ApiImplicitParams([
+//            @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string"),
+//            @ApiImplicitParam(name = "x", paramType = "path", required = true, value = "Tile mapping service X value", dataType = "string"),
+//            @ApiImplicitParam(name = "y", paramType = "path", required = true, value = "Tile mapping service Y value", dataType = "string"),
+//            @ApiImplicitParam(name = "z", paramType = "path", required = true, value = "Tile mapping service Z value", dataType = "string")
+//    ])
     def proxyImageTile() {
         int x = params.int('x')
         int y = params.int('y')
@@ -535,20 +606,39 @@ class ImageController {
         renderResults(results)
     }
 
-    @ApiOperation(
-            value = "Get original image",
-            nickname = "{id}",
-            notes = "To get an image, supply an 'Accept' header with a value of 'image/jpeg'",
-            produces = "image/jpeg,application/json,text/html",
-            httpMethod = "GET"
+    @Operation(
+            method = "GET",
+            summary = "Get original image.",
+            parameters = [
+                    @Parameter(name="id", in = PATH, description = 'Image Id', required = true),
+                    @Parameter(name="Accept", in = HEADER, description = "Content type requested", required = true)
+            ],
+            responses = [
+                    @ApiResponse(content = [
+                            @Content(mediaType='application/json', schema = @Schema(implementation=Map)),
+                            @Content(mediaType='image/*', schema = @Schema(type="string", format="binary")),
+                            @Content(mediaType='text/html', schema = @Schema(implementation=Map)),
+                    ]),
+                    @ApiResponse(responseCode = "404")
+            ],
+            tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
     )
-    @ApiResponses([
-            @ApiResponse(code = SC_OK, message = "OK"),
-            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
-    ])
+    @Produces("application/json")
+    @Path("/image/{id}")
+//    @ApiOperation(
+//            value = "Get original image",
+//            nickname = "{id}",
+//            notes = "To get an image, supply an 'Accept' header with a value of 'image/jpeg'",
+//            produces = "image/jpeg,application/json,text/html",
+//            httpMethod = "GET"
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = SC_OK, message = "OK"),
+//            @ApiResponse(code = SC_NOT_FOUND, message = "Image Not Found")]
+//    )
+//    @ApiImplicitParams([
+//            @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
+//    ])
     def details() {
         withFormat {
             html {

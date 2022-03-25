@@ -2,30 +2,33 @@ package au.org.ala.images
 
 import au.ala.org.ws.security.RequireApiKey
 import au.org.ala.cas.util.AuthenticationUtils
+import au.org.ala.plugins.openapi.Path
 import au.org.ala.ws.security.ApiKeyInterceptor
 import com.google.common.base.Suppliers
 import grails.converters.JSON
 import grails.converters.XML
-import io.swagger.annotations.Api
-import io.swagger.annotations.ApiImplicitParam
-import io.swagger.annotations.ApiImplicitParams
-import io.swagger.annotations.ApiOperation
-import io.swagger.annotations.ApiResponse
-import io.swagger.annotations.ApiResponses
-import io.swagger.annotations.Authorization
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.ArraySchema
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.parameters.RequestBody
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import org.apache.http.HttpStatus
 import grails.plugins.csv.CSVWriter
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.core.io.Resource
-import org.springframework.http.MediaType
 import org.springframework.web.multipart.MultipartFile
-import swagger.SwaggerService
 
 import javax.servlet.http.HttpServletRequest
+import javax.ws.rs.Consumes
+import javax.ws.rs.Produces
 import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPOutputStream
 
-@Api(value = "/ws", description = "Image Web Services")
+import static io.swagger.v3.oas.annotations.enums.ParameterIn.PATH
+import static io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY
+
+//@Api(value = "/ws", description = "Image Web Services")
 class WebServiceController {
 
     static namespace = 'ws'
@@ -40,39 +43,40 @@ class WebServiceController {
     def elasticSearchService
     def collectoryService
 
-    SwaggerService swaggerService
+//    SwaggerService swaggerService
+//
+//    @Value("classpath*:**/webjars/swagger-ui/**/index.html")
+//    Resource[] swaggerUiResources
+//
+//    def swagger() {
+//        if (params.json){
+//            String swaggerJson = swaggerService.generateSwaggerDocument()
+//            render (contentType: MediaType.APPLICATION_JSON_UTF8_VALUE, text: swaggerJson)
+//        } else {
+//            render(view: 'swagger')
+//        }
+//    }
 
-    @Value("classpath*:**/webjars/swagger-ui/**/index.html")
-    Resource[] swaggerUiResources
-
-    def swagger() {
-        if (params.json){
-            String swaggerJson = swaggerService.generateSwaggerDocument()
-            render (contentType: MediaType.APPLICATION_JSON_UTF8_VALUE, text: swaggerJson)
-        } else {
-            render(view: 'swagger')
-        }
-    }
-
-    @RequireApiKey
-    @ApiOperation(
-            value = "Delete image",
-            nickname = "image/{id}",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "DELETE",
-            response = Map.class,
-            authorizations = @Authorization(value="apiKey"),
+    @Operation(
+            method = "DELETE",
+            summary = "Delete image",
+            parameters = [
+                @Parameter(name = "id", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "405"),
+                    @ApiResponse(responseCode = "404")
+            ],
+            security = [
+               @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
-    ])
+    @Path("/ws/image/{id}")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes = "image-service:write")
     def deleteImageService() {
 
         def success = false
@@ -111,25 +115,26 @@ class WebServiceController {
         return count
     }
 
-    @RequireApiKey
-    @ApiOperation(
-            value = "Schedule thumbnail generation",
-            nickname = "scheduleThumbnailGeneration/{imageID}",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "POST",
-            response = Map.class,
-            authorizations = @Authorization(value="apiKey"),
+    @Operation(
+            method = "POST",
+            summary = "Schedule thumbnail generation",
+            parameters = [
+                    @Parameter(name = "imageID", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "405"),
+                    @ApiResponse(responseCode = "404")
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "imageID", paramType = "path", required = true, value = "Image Id", dataType = "string")
-    ])
+    @Path("/ws/scheduleThumbnailGeneration/{imageID}")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes = ['image-service:write'])
     def scheduleThumbnailGeneration() {
         def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
         def userId = getUserIdForRequest(request)
@@ -153,25 +158,26 @@ class WebServiceController {
         }
     }
 
-    @RequireApiKey
-    @ApiOperation(
-            value = "Schedule artifact generation",
-            nickname = "scheduleArtifactGeneration/{imageID}",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "POST",
-            response = Map.class,
-            authorizations = @Authorization(value="apiKey"),
+    @Operation(
+            method = "POST",
+            summary = "Schedule artifact generation",
+            parameters = [
+                    @Parameter(name = "imageID", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "405"),
+                    @ApiResponse(responseCode = "404")
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "imageID", paramType = "path", required = true, value = "Image Id", dataType = "string")
-    ])
+    @Path("/ws/scheduleArtifactGeneration/{imageID}")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes = ['image-service:write'])
     def scheduleArtifactGeneration() {
 
         def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
@@ -198,24 +204,26 @@ class WebServiceController {
         }
     }
 
-    @RequireApiKey
-    @ApiOperation(
-            value = "Schedule keyword generation",
-            nickname = "scheduleKeywordRegeneration/{imageID}",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
-            authorizations = @Authorization(value="apiKey"),
+    @Operation(
+            method = "GET",
+            summary = "Schedule keyword generation",
+            parameters = [
+                    @Parameter(name = "imageID", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "405"),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "imageID", paramType = "path", required = true, value = "Image Id", dataType = "string")
-    ])
+    @Path("/ws/scheduleKeywordRegeneration/{imageID}")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes = ['image-service:write'])
     def scheduleKeywordRegeneration() {
         def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
         def userId = request.getHeader(ApiKeyInterceptor.API_KEY_HEADER_NAME)
@@ -243,7 +251,7 @@ class WebServiceController {
         }
     }
 
-    @RequireApiKey
+    @RequireApiKey(scopes = ['image-service:write'])
     def scheduleInboxPoll() {
         def results = [success:true]
         def userId =  AuthenticationUtils.getUserId(request) ?: params.userId
@@ -251,20 +259,22 @@ class WebServiceController {
         renderResults(results)
     }
 
-    @RequireApiKey
-    @ApiOperation(
-            value = "Get tag model",
-            nickname = "tags",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Get tag model",
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "405"),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["Tag services"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
+    @Path("/ws/tags")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey
     def getTagModel() {
 
         def newNode = { Tag tag, String label, boolean disabled = false ->
@@ -312,24 +322,26 @@ class WebServiceController {
         renderResults(rootNode.children)
     }
 
-    @RequireApiKey
-    @ApiOperation(
-            value = "Create tag by path",
-            nickname = "tag",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "PUT",
-            response = Map.class,
-            authorizations = @Authorization(value="apiKey"),
+    @Operation(
+            method = "PUT",
+            summary = "Create tag by path",
+            parameters = [
+                    @Parameter(name = "tagPath", in = QUERY, required = true, description = "Tag path. Paths separated by '/'. e.g. 'Birds/Colour/Red'", schema = @Schema(implementation = String))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "405"),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["Tag services"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only PUT is allowed")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "tagPath", paramType = "query", required = true, value = "Tag path. Paths separated by '/'. e.g. 'Birds/Colour/Red'", dataType = "string")
-    ])
+    @Path("/ws/tag")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes = ['image-service:write'])
     def createTagByPath() {
         def success = false
         def tagPath = params.tagPath as String
@@ -343,26 +355,27 @@ class WebServiceController {
         renderResults([success: success, tagId: tagId])
     }
 
-    @RequireApiKey
-    @ApiOperation(
-            value = "Move tag",
-            nickname = "tag/move",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "PUT",
-            response = Map.class,
-            authorizations = @Authorization(value="apiKey"),
+    @Operation(
+            method = "PUT",
+            summary = "Create tag by path",
+            parameters = [
+                    @Parameter(name = "targetTagID", in = QUERY, required = true, description = "Target Tag ID to move", schema = @Schema(implementation = String)),
+                    @Parameter(name = "newParentTagID", in = QUERY, required = true, description = "New target parent tag ID", schema = @Schema(implementation = String))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "405"),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["Tag services"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only PUT is allowed"),
-            @ApiResponse(code = 404, message = "Tag Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "targetTagID", paramType = "query", required = true, value = "Target Tag ID to move", dataType = "string"),
-            @ApiImplicitParam(name = "newParentTagID", paramType = "query", required = true, value = "New target parent tag ID", dataType = "string")
-    ])
+    @Path("/ws/tag/move")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes = ['image-service:write'])
     def moveTag() {
 
         def target = Tag.get(params.int("targetTagId"))
@@ -376,26 +389,26 @@ class WebServiceController {
         }
     }
 
-    @RequireApiKey
-    @ApiOperation(
-            value = "Rename tag",
-            nickname = "tag/rename",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "PUT",
-            response = Map.class,
-            authorizations = @Authorization(value="apiKey"),
+    @Operation(
+            method = "PUT",
+            summary = "Rename tag",
+            parameters = [
+                    @Parameter(name = "tagID", in = QUERY, required = true, description = "Tag ID", schema = @Schema(implementation = String)),
+                    @Parameter(name = "name", in = QUERY, required = true, description = "New name", schema = @Schema(implementation = String))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["Tag services"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "tagID", paramType = "query", required = true, value = "Tag ID", dataType = "string"),
-            @ApiImplicitParam(name = "name", paramType = "query", required = true, value = "New name", dataType = "string")
-    ])
+    @Path("/ws/tag/rename")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes = ['image-service:write'])
     def renameTag() {
         def tag = Tag.get(params.int("tagID"))
         if (tag && params.name) {
@@ -406,25 +419,25 @@ class WebServiceController {
         }
     }
 
-    @RequireApiKey
-    @ApiOperation(
-            value = "Delete tag",
-            nickname = "tag/{tagID}",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "DELETE",
-            response = Map.class,
-            authorizations = @Authorization(value="apiKey"),
+    @Operation(
+            method = "DELETE",
+            summary = "Delete tag",
+            parameters = [
+                    @Parameter(name = "tagID", in = PATH, required = true, description = "Tag ID", schema = @Schema(implementation = String))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["Tag services"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "tagID", paramType = "path", required = true, value = "Tag Id", dataType = "string")
-    ])
+    @Path("/ws/tag/{tagID}")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes = ['image-service:write'])
     def deleteTag() {
         def tag = Tag.get(params.int("tagId"))
         if (tag) {
@@ -435,26 +448,26 @@ class WebServiceController {
         }
     }
 
-    @RequireApiKey
-    @ApiOperation(
-            value = "Tag an image",
-            nickname = "tag/{tagID}/image/{imageID}",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "PUT",
-            response = Map.class,
-            authorizations = @Authorization(value="apiKey"),
+    @Operation(
+            method = "PUT",
+            summary = "Tag an image",
+            parameters = [
+                    @Parameter(name = "tagID", in = PATH, required = true, description = "Tag ID", schema = @Schema(implementation = String)),
+                    @Parameter(name = "imageID", in = PATH, required = true, description = "Image ID", schema = @Schema(implementation = String))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["Tag services"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image or Tag Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "imageID", paramType = "path", required = true, value = "Image Id", dataType = "string"),
-            @ApiImplicitParam(name = "tagID", paramType = "path", required = true, value = "Tag Id", dataType = "string")
-    ])
+    @Path("/ws/tag/{tagID}/image/{imageID}")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes = ['image-service:write'])
     def attachTagToImage() {
         def success = false
         def message = ""
@@ -474,25 +487,25 @@ class WebServiceController {
         renderResults([success: success, message: message], status)
     }
 
-    @ApiOperation(
-            value = "Find images by keyword (a keyword is just the raw string of a tag)",
-            nickname = "images/keyword/{keyword}",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Find images by keyword (a keyword is just the raw string of a tag)",
+            parameters = [
+                    @Parameter(name = "keyword", in = PATH, required = true, description = "Keyword", schema = @Schema(implementation = String)),
+                    @Parameter(name = "max", in = QUERY, required = false, description = "max results to return", schema = @Schema(implementation = Integer, defaultValue = "100")),
+                    @Parameter(name = "offset", in = QUERY, required = false, description = "offset for paging", schema = @Schema(implementation = Integer, defaultValue = "0"))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["Tag services"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "keyword", paramType = "path", required = true, value = "Keyword", dataType = "string"),
-            @ApiImplicitParam(name = "max", paramType = "query", required = true, value = "max results to return", defaultValue = "100", dataType = "string"),
-            @ApiImplicitParam(name = "offset", paramType = "query", required = true, value = "offset for paging", defaultValue = "0", dataType = "string")
-
-    ])
+    @Path("/ws/images/keyword/{keyword}")
+    @Consumes("application/json")
+    @Produces("application/json")
     def getImagesForKeyword(){
         QueryResults<Image> results = searchService.findImagesByKeyword(params.keyword, params)
         renderResults([
@@ -502,24 +515,25 @@ class WebServiceController {
         ], 200, true)
     }
 
-    @ApiOperation(
-            value = "Find images by keyword (a keyword is just the raw string of a tag)",
-            nickname = "images/tag/{tagID}",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Find images by keyword (a keyword is just the raw string of a tag)",
+            parameters = [
+                    @Parameter(name = "tagID", in = PATH, required = true, description = "Tag ID", schema = @Schema(implementation = String)),
+                    @Parameter(name = "max", in = QUERY, required = false, description = "max results to return", schema = @Schema(implementation = Integer, defaultValue = "100")),
+                    @Parameter(name = "offset", in = QUERY, required = false, description = "offset for paging", schema = @Schema(implementation = Integer, defaultValue = "0"))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["Tag services"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "tagID", paramType = "path", required = true, value = "Tag Id", dataType = "string"),
-            @ApiImplicitParam(name = "max", paramType = "query", required = true, value = "max results to return", defaultValue = "100", dataType = "string"),
-            @ApiImplicitParam(name = "offset", paramType = "query", required = true, value = "offset for paging", defaultValue = "0", dataType = "string")
-    ])
+    @Path("/ws/images/tag/{tagID}")
+    @Consumes("application/json")
+    @Produces("application/json")
     def getImagesForTag(){
         QueryResults<Image> results = searchService.findImagesByTagID(params.tagID, params)
         renderResults([
@@ -529,26 +543,26 @@ class WebServiceController {
         ], 200, true)
     }
 
-    @RequireApiKey
-    @ApiOperation(
-            value = "Remove a tag from an image",
-            nickname = "tag/{tagID}/image/{imageID}",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "DELETE",
-            response = Map.class,
-            authorizations = @Authorization(value="apiKey"),
+    @Operation(
+            method = "DELETE",
+            summary = "Tag an image",
+            parameters = [
+                    @Parameter(name = "tagID", in = PATH, required = true, description = "Tag ID", schema = @Schema(implementation = String)),
+                    @Parameter(name = "imageID", in = PATH, required = true, description = "Image ID", schema = @Schema(implementation = String))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["Tag services"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image or Tag Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "imageID", paramType = "path", required = true, value = "Image Id", dataType = "string"),
-            @ApiImplicitParam(name = "tagID", paramType = "path", required = true, value = "Tag Id", dataType = "string")
-    ])
+    @Path("/ws/tag/{tagID}/image/{imageID}")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes = ['image-service:write'])
     def detachTagFromImage() {
         def success = false
         def image = Image.findByImageIdentifier(params.imageId as String, [ cache: true])
@@ -561,25 +575,26 @@ class WebServiceController {
         }
     }
 
-    @ApiOperation(
-            value = "Get Image Details - optionally include tags and other metadata (e.g. EXIF)",
-            nickname = "image/{imageID}",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Get Image Details - optionally include tags and other metadata (e.g. EXIF)",
+            parameters = [
+                    @Parameter(name = "imageID", in = PATH, required = true, description = "Image ID", schema = @Schema(implementation = String)),
+                    @Parameter(name = "includeTags", in = QUERY, required = false, description = "Include tags", schema = @Schema(implementation = Boolean)),
+                    @Parameter(name = "includeMetadata", in = QUERY, required = false, description = "Include metadata", schema = @Schema(implementation = Boolean))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "imageID", paramType = "path", required = true, value = "Image Id", dataType = "string"),
-            @ApiImplicitParam(name = "includeTags", paramType = "query", required = false, value = "Include tags", dataType = "boolean"),
-            @ApiImplicitParam(name = "includeMetadata", paramType = "query", required = false, value = "Include metadata", dataType = "boolean")
-    ])
+    @Path("/ws/image/{imageID}")
+    @Consumes("application/json")
+    @Produces("application/json")
     def getImageInfo() {
         def results = [success:false]
         def imageId = params.id ? params.id : params.imageID
@@ -594,23 +609,26 @@ class WebServiceController {
         }
     }
 
-    @ApiOperation(
-            value = "Get Image PopUp details",
-            nickname = "imagePopupInfo/{id}",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Get Image PopUp details",
+            parameters = [
+                    @Parameter(name = "id", in = PATH, required = true, description = "Image ID", schema = @Schema(implementation = String)),
+                    @Parameter(name = "includeTags", in = QUERY, required = false, description = "Include tags", schema = @Schema(implementation = Boolean)),
+                    @Parameter(name = "includeMetadata", in = QUERY, required = false, description = "Include metadata", schema = @Schema(implementation = Boolean))
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "id", paramType = "path", required = true, value = "Image Id", dataType = "string")
-    ])
+    @Path("/ws/imagePopupInfo/{id}")
+    @Consumes("application/json")
+    @Produces("application/json")
     def imagePopupInfo() {
         def results = [success:false]
         def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
@@ -653,20 +671,34 @@ class WebServiceController {
         }
     }
 
-    @ApiOperation(
-            value = "Repository statistics",
-            nickname = "repositoryStatistics",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Repository statistics",
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
+    @Path("/ws/repositoryStatistics")
+    @Consumes("application/json")
+    @Produces("application/json")
+//    @ApiOperation(
+//            value = "Repository statistics",
+//            nickname = "repositoryStatistics",
+//            produces = "application/json",
+//            consumes = "application/json",
+//            httpMethod = "GET",
+//            response = Map.class,
+//            tags = ["JSON services for accessing and updating metadata"]
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
+//            @ApiResponse(code = 404, message = "Image Not Found")]
+//    )
     def getRepositoryStatistics() {
         def results = statsCache.get()
         renderResults(results, 200, true)
@@ -683,38 +715,39 @@ class WebServiceController {
         return results
     }
 
-    @ApiOperation(
-            value = "Repository size statistics",
-            nickname = "repositorySizeOnDisk",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Repository size statistics",
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
+    @Path("/ws/repositoryStatistics")
+    @Consumes("application/json")
+    @Produces("application/json")
     def getRepositorySizeOnDisk() {
         def results = [ repoSizeOnDisk : ImageUtils.formatFileSize(imageStoreService.getRepositorySizeOnDisk()) ]
         renderResults(results, 200, true)
     }
 
-    @ApiOperation(
-            value = "Background queue statistics",
-            nickname = "backgroundQueueStats",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Background queue statistics",
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
+    @Path("/ws/backgroundQueueStats")
+    @Consumes("application/json")
+    @Produces("application/json")
     def getBackgroundQueueStats() {
         def results = [:]
         results.queueLength = imageService.getImageTaskQueueLength()
@@ -757,22 +790,30 @@ class WebServiceController {
         renderResults([success: subimage != null, subImageId: subimage?.imageIdentifier])
     }
 
-    @ApiOperation(
-            value = "Create Subimage",
-            nickname = "subimage",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "PUT",
-            response = Map.class,
-            authorizations = @Authorization(value="apiKey"),
-            tags = ["JSON services for accessing and updating metadata"]
+    @Operation(
+            method = "PUT",
+            summary = "Create Subimage",
+            parameters = [
+                    @Parameter(name = "id", in = PATH, required = true, description = "Image ID", schema = @Schema(implementation = String)),
+                    @Parameter(name = "x", in = QUERY, required = true, description = "x co-ordinate", schema = @Schema(implementation = Integer)),
+                    @Parameter(name = "y", in = QUERY, required = true, description = "y co-ordinate", schema = @Schema(implementation = Integer)),
+                    @Parameter(name = "height", in = QUERY, required = true, description = "sub image height", schema = @Schema(implementation = Integer)),
+                    @Parameter(name = "width", in = QUERY, required = true, description = "sub image width", schema = @Schema(implementation = Integer)),
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
+            tags = ["Tag services"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
-    @RequireApiKey
+    @Path("/ws/subimage/{id}")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes = ['image-service:write'])
     def subimage() {
         def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
@@ -815,7 +856,7 @@ class WebServiceController {
 
 
     def getSubimageRectangles() {
-
+        // TODO Where does this get used?
         def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"])
@@ -832,6 +873,7 @@ class WebServiceController {
     }
 
     def addUserMetadataToImage() {
+        // TODO Where does this get used?
         def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
             renderResults([success:false, message:"Image not found: ${params.id}"], HttpStatus.SC_NOT_FOUND)
@@ -857,23 +899,28 @@ class WebServiceController {
         renderResults([success:success])
     }
 
-    @ApiOperation(
-            value = "Search for images",
-            nickname = "search",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
-            tags = ["Search"]
+    @Operation(
+            method = "GET",
+            summary = "Search for images",
+            parameters = [
+                    @Parameter(name = "q", in = QUERY, required = true, description = "Query", schema = @Schema(implementation = String)),
+                    @Parameter(name = "fq", in = QUERY, required = true, description = "Filter query", schema = @Schema(implementation = String)),
+                    @Parameter(name = "max", in = QUERY, required = false, description = "Max results to return", schema = @Schema(implementation = Integer)),
+                    @Parameter(name = "offset", in = QUERY, required = false, description = "Search Offset", schema = @Schema(implementation = Integer)),
+                    @Parameter(name = "sort", in = QUERY, required = false, description = "Sort field", schema = @Schema(implementation = String)),
+                    @Parameter(name = "order", in = QUERY, required = false, description = "Sort order", schema = @Schema(implementation = String, allowableValues = ['asc', 'desc'])),
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
+            tags = ["Image search"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "q", paramType = "query", required = false, value = "Query", dataType = "string"),
-            @ApiImplicitParam(name = "fq", paramType = "query", required = false, value = "Filter Query", dataType = "string")
-    ])
+    @Path("/ws/search")
+    @Consumes("application/json")
+    @Produces("application/json")
     def search(){
         def ct = new CodeTimer("Image list")
 
@@ -899,24 +946,29 @@ class WebServiceController {
         ], 200, true)
     }
 
-    @ApiOperation(
-            value = "Facet for images",
-            nickname = "facet",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
-            tags = ["Search"]
+    @Operation(
+            method = "GET",
+            summary = "Facet search for images",
+            parameters = [
+                    @Parameter(name = "facet", in = QUERY, required = true, description = "Facet", schema = @Schema(implementation = String)),
+                    @Parameter(name = "q", in = QUERY, required = true, description = "Query", schema = @Schema(implementation = String)),
+                    @Parameter(name = "fq", in = QUERY, required = true, description = "Filter query", schema = @Schema(implementation = String)),
+                    @Parameter(name = "max", in = QUERY, required = false, description = "Max results to return", schema = @Schema(implementation = Integer)),
+                    @Parameter(name = "offset", in = QUERY, required = false, description = "Search Offset", schema = @Schema(implementation = Integer)),
+                    @Parameter(name = "sort", in = QUERY, required = false, description = "Sort field", schema = @Schema(implementation = String)),
+                    @Parameter(name = "order", in = QUERY, required = false, description = "Sort order", schema = @Schema(implementation = String, allowableValues = ['asc', 'desc'])),
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
+            tags = ["Image search"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "facet", paramType = "query", required = true, value = "Facet", dataType = "string"),
-            @ApiImplicitParam(name = "q", paramType = "query", required = false, value = "Query", dataType = "string"),
-            @ApiImplicitParam(name = "fq", paramType = "query", required = false, value = "Filter Query", dataType = "string")
-    ])
+    @Path("/ws/facet")
+    @Consumes("application/json")
+    @Produces("application/json")
     def facet(){
 
         if(!params.facet){
@@ -939,13 +991,36 @@ class WebServiceController {
             return "-1"
         }
 
+        def userId = request.remoteUser
         // First check the CAS filter cookie thing
-        def userId = AuthenticationUtils.getUserId(request)
+//        def userId = AuthenticationUtils.getUserId(request)
 
         userId
     }
 
-    @RequireApiKey
+    @Operation(
+            method = "POST",
+            summary = "Create Subimage",
+            parameters = [
+                    @Parameter(name = "id", in = PATH, required = true, description = "Image ID", schema = @Schema(implementation = String)),
+            ],
+            requestBody = @RequestBody(
+                    required = true,
+                    description = "JSON Document of fields names to field values",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
+            tags = ["Image metadata"]
+    )
+    @Path("/ws/bulkAddUserMetadataToImage/{id}")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes = ['image-service:write'])
     def bulkAddUserMetadataToImage(String id) {
         def image = Image.findByImageIdentifier(id, [ cache: true])
         def userId = getUserIdForRequest(request)
@@ -961,7 +1036,27 @@ class WebServiceController {
         renderResults([success:results != null])
     }
 
-    @RequireApiKey
+    @Operation(
+            method = "POST",
+            summary = "Remove User Metadata from Image",
+            parameters = [
+                    @Parameter(name = "id", in = PATH, required = true, description = "Image ID", schema = @Schema(implementation = String)),
+                    @Parameter(name = "key", in = QUERY, required = true, description = "Metadata key/name", schema = @Schema(implementation = String)),
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
+            tags = ["Image metadata"]
+    )
+    @Path("/ws/removeUserMetadataFromImage/{id}")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes = ['image-service:write'])
     def removeUserMetadataFromImage() {
         def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
@@ -980,19 +1075,27 @@ class WebServiceController {
         renderResults([success: success])
     }
 
-    @ApiOperation(
-            value = "Get list of metadata fields available for images. This will include any EXIF fields that have been extracted.",
-            nickname = "metadatakeys",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
-            tags = ["JSON services for accessing and updating metadata"]
+    @Operation(
+            method = "GET",
+            summary = "Remove User Metadata from Image",
+            parameters = [
+//                    @Parameter(name = "id", in = PATH, required = true, description = "Image ID", schema = @Schema(implementation = String)),
+                    @Parameter(name = "source", in = QUERY, required = false, description = "Only return metadata items with this source", schema = @Schema(implementation = MetaDataSourceType)),
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+//            security = [
+//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+//            ],
+            tags = ["Image metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
+    @Path("/ws/getMetadataKeys")
+    @Consumes("application/json")
+    @Produces("application/json")
+//    @RequireApiKey(scopes = ['image-service:write'])
     def getMetadataKeys() {
 
         def source = params.source as MetaDataSourceType
@@ -1018,24 +1121,45 @@ class WebServiceController {
         renderResults(results?.sort { it?.toLowerCase() }, 200, true)
     }
 
-    @ApiOperation(
-            value = "Get Image Links For MetaData Values",
-            nickname = "getImageLinksForMetaDataValues",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
-            tags = ["JSON services for accessing and updating metadata"]
+    @Operation(
+            method = "GET",
+            summary = "Remove User Metadata from Image",
+            parameters = [
+                    @Parameter(name = "key", in = QUERY, required = true, description = "Image ID", schema = @Schema(implementation = String)),
+                    @Parameter(name = "q", in = QUERY, required = false, description = "Query", schema = @Schema(implementation = MetaDataSourceType)),
+            ],
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+//            security = [
+//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+//            ],
+            tags = ["Image metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "key", paramType = "query", required = true, value = "Image Id", dataType = "string"),
-            @ApiImplicitParam(name = "q", paramType = "query", required = true, value = "Query", dataType = "string")
-    ])
+    @Path("/ws/getImageLinksForMetaDataValues")
+    @Consumes("application/json")
+    @Produces("application/json")
+//    @RequireApiKey(scopes = ['image-service:write'])
+//    @ApiOperation(
+//            value = "Get Image Links For MetaData Values",
+//            nickname = "getImageLinksForMetaDataValues",
+//            produces = "application/json",
+//            consumes = "application/json",
+//            httpMethod = "GET",
+//            response = Map.class,
+//            tags = ["JSON services for accessing and updating metadata"]
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
+//            @ApiResponse(code = 404, message = "Image Not Found")]
+//    )
+//    @ApiImplicitParams([
+//            @ApiImplicitParam(name = "key", paramType = "query", required = true, value = "Image Id", dataType = "string"),
+//            @ApiImplicitParam(name = "q", paramType = "query", required = true, value = "Query", dataType = "string")
+//    ])
     def getImageLinksForMetaDataValues() {
 
         def key = params.key as String
@@ -1065,20 +1189,45 @@ class WebServiceController {
         renderResults(results, 200, true)
     }
 
-    @ApiOperation(
-            value = "Get images for a list of image IDs",
-            nickname = "imageInfoForList",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
-            tags = ["JSON services for accessing and updating metadata"]
+    @Operation(
+            method = "POST",
+            summary = "Get images for a list of image IDs",
+            parameters = [
+                    @Parameter(name = "key", in = QUERY, required = true, description = "Image ID", schema = @Schema(implementation = String)),
+                    @Parameter(name = "q", in = QUERY, required = false, description = "Query", schema = @Schema(implementation = MetaDataSourceType)),
+            ],
+            requestBody = @RequestBody(
+                    required = true,
+                    description = "JSON Document of with a single field, imageIds, which contains a list of image ids.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+//            security = [
+//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+//            ],
+            tags = ["Image metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
+    @Path("/ws/getImageInfoForIdList")
+    @Consumes("application/json")
+    @Produces("application/json")
+//    @ApiOperation(
+//            value = "Get images for a list of image IDs",
+//            nickname = "imageInfoForList",
+//            produces = "application/json",
+//            consumes = "application/json",
+//            httpMethod = "GET",
+//            response = Map.class,
+//            tags = ["JSON services for accessing and updating metadata"]
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
+//            @ApiResponse(code = 404, message = "Image Not Found")]
+//    )
     def getImageInfoForIdList() {
 
         def query = request.JSON
@@ -1113,55 +1262,127 @@ class WebServiceController {
         renderResults([success:false, message:'POST with content type "application/JSON" required.'], HttpStatus.SC_BAD_REQUEST, true)
     }
 
-    @ApiOperation(
-            value = "Retrieve a list of recognised Licences",
-            nickname = "licence",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Retrieve a list of recognised Licences",
+            parameters = [
+//                    @Parameter(name = "key", in = QUERY, required = true, description = "Image ID", schema = @Schema(implementation = String)),
+//                    @Parameter(name = "q", in = QUERY, required = false, description = "Query", schema = @Schema(implementation = MetaDataSourceType)),
+            ],
+//            requestBody = @RequestBody(
+//                    required = true,
+//                    description = "JSON Document of with a single field, imageIds, which contains a list of image ids.",
+//                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+//            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+//            security = [
+//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+//            ],
             tags = ["Licences"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
+    @Path("/ws/licence")
+    @Consumes("application/json")
+    @Produces("application/json")
+//    @ApiOperation(
+//            value = "Retrieve a list of recognised Licences",
+//            nickname = "licence",
+//            produces = "application/json",
+//            consumes = "application/json",
+//            httpMethod = "GET",
+//            response = Map.class,
+//            tags = ["Licences"]
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+//    )
     def licence(){
         def licenses = License.findAll()
         renderResults (licenses, 200, true)
     }
 
-    @ApiOperation(
-            value = "Retrieve a list of string to licence mappings in use by the image service",
-            nickname = "licenceMapping",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Retrieve a list of string to licence mappings in use by the image service",
+            parameters = [
+//                    @Parameter(name = "key", in = QUERY, required = true, description = "Image ID", schema = @Schema(implementation = String)),
+//                    @Parameter(name = "q", in = QUERY, required = false, description = "Query", schema = @Schema(implementation = MetaDataSourceType)),
+            ],
+//            requestBody = @RequestBody(
+//                    required = true,
+//                    description = "JSON Document of with a single field, imageIds, which contains a list of image ids.",
+//                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+//            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+//            security = [
+//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+//            ],
             tags = ["Licences"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
+//    @ApiOperation(
+//            value = "Retrieve a list of string to licence mappings in use by the image service",
+//            nickname = "licenceMapping",
+//            produces = "application/json",
+//            consumes = "application/json",
+//            httpMethod = "GET",
+//            response = Map.class,
+//            tags = ["Licences"]
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+//    )
     def licenceMapping(){
         def licenses = LicenseMapping.findAll()
         renderResults (licenses, 200, true)
     }
 
-    @ApiOperation(
-            value = "Find image by original filename (URL)",
-            nickname = "findImagesByOriginalFilename",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "POST",
-            response = Map.class,
+    @Operation(
+            method = "POST",
+            summary = "Find image by original filename (URL)",
+            parameters = [
+//                    @Parameter(name = "key", in = QUERY, required = true, description = "Image ID", schema = @Schema(implementation = String)),
+//                    @Parameter(name = "q", in = QUERY, required = false, description = "Query", schema = @Schema(implementation = MetaDataSourceType)),
+            ],
+            requestBody = @RequestBody(
+                    required = true,
+                    description = "JSON Document of with a single field, filenames, which contains a list of file names.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+//            security = [
+//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+//            ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
+    @Path("/ws/findImagesByOriginalFilename")
+    @Consumes("application/json")
+    @Produces("application/json")
+//    @ApiOperation(
+//            value = "Find image by original filename (URL)",
+//            nickname = "findImagesByOriginalFilename",
+//            produces = "application/json",
+//            consumes = "application/json",
+//            httpMethod = "POST",
+//            response = Map.class,
+//            tags = ["JSON services for accessing and updating metadata"]
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+//    )
     def findImagesByOriginalFilename() {
 
         CodeTimer ct = new CodeTimer("Original file lookup")
@@ -1198,19 +1419,45 @@ class WebServiceController {
         ct.stop(true)
     }
 
-    @ApiOperation(
-            value = "Find images by image metadata - deprecated. Use /search instead",
-            nickname = "findImagesByMetadata",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "POST",
-            response = Map.class,
-            tags = ["Deprecated"]
+    @Operation(
+            method = "POST",
+            summary = "Find images by image metadata - deprecated. Use /search instead",
+            deprecated = false,
+            parameters = [
+//                    @Parameter(name = "key", in = QUERY, required = true, description = "Image ID", schema = @Schema(implementation = String)),
+//                    @Parameter(name = "q", in = QUERY, required = false, description = "Query", schema = @Schema(implementation = MetaDataSourceType)),
+            ],
+            requestBody = @RequestBody(
+                    required = true,
+                    description = "JSON doc with a string \"key\" and a string list \"values\" fields.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+//            security = [
+//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+//            ],
+            tags = ["JSON services for accessing and updating metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
+    @Path("/ws/findImagesByMetadata")
+    @Consumes("application/json")
+    @Produces("application/json")
+//    @ApiOperation(
+//            value = "Find images by image metadata - deprecated. Use /search instead",
+//            nickname = "findImagesByMetadata",
+//            produces = "application/json",
+//            consumes = "application/json",
+//            httpMethod = "POST",
+//            response = Map.class,
+//            tags = ["Deprecated"]
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+//    )
     @Deprecated
     def findImagesByMetadata() {
 
@@ -1267,10 +1514,36 @@ class WebServiceController {
         renderResults(results)
     }
 
-    @RequireApiKey
+    @Operation(
+            method = "POST",
+            summary = "Cancel Tile Job",
+            deprecated = false,
+            parameters = [
+                    @Parameter(name = "jobTicket", in = QUERY, required = true, description = "Job Ticket", schema = @Schema(implementation = String)),
+//                    @Parameter(name = "q", in = QUERY, required = false, description = "Query", schema = @Schema(implementation = MetaDataSourceType)),
+            ],
+            requestBody = @RequestBody(
+                    required = true,
+                    description = "JSON doc with a string \"key\" and a string list \"values\" fields.",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+//            security = [
+//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+//            ],
+            tags = ["Tile jobs"]
+    )
+    @Path("/ws/cancelTileJob")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes=["image-service:write"])
     def cancelTileJob() {
 
-        def userId = AuthenticationUtils.getUserId(request)
+        def userId = getUserIdForRequest(request)
         def ticket = params.jobTicket ?: params.ticket
         if (!ticket) {
             renderResults([success:false, message:'No job ticket specified'])
@@ -1339,22 +1612,49 @@ class WebServiceController {
      *
      * @return
      */
-    @ApiOperation(
-            value = "Update image metadata using a JSON payload",
-            nickname = "updateMetadata",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "POST",
-            response = Map.class,
-            tags = ["JSON services for accessing and updating metadata"],
-            authorizations = @Authorization(value="apiKey")
+    @Operation(
+            method = "POST",
+            summary = "Update image metadata using a JSON payload.",
+            parameters = [
+                    @Parameter(name = "imageIdentifier", in = QUERY, required = true, description = "Job Ticket", schema = @Schema(implementation = String)),
+                    @Parameter(name = "metadata", in = QUERY, required = false, description = "Metadata as a JSON document, encoded as a POST param", schema = @Schema(implementation = String)),
+                    @Parameter(name = "tags", in = QUERY, required = false, description = "List of tags", array = @ArraySchema(schema = @Schema(implementation = String))),
+            ],
+//            requestBody = @RequestBody(
+//                    required = true,
+//                    description = "JSON doc with a string \"key\" and a string list \"values\" fields.",
+//                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+//            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
+            tags = ["JSON services for accessing and updating metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
-    @RequireApiKey
+    @Path("/ws/updateMetadata")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes=["image-service:write"])
+//    @ApiOperation(
+//            value = "Update image metadata using a JSON payload",
+//            nickname = "updateMetadata",
+//            produces = "application/json",
+//            consumes = "application/json",
+//            httpMethod = "POST",
+//            response = Map.class,
+//            tags = ["JSON services for accessing and updating metadata"],
+//            authorizations = @Authorization(value="apiKey")
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
+//            @ApiResponse(code = 404, message = "Image Not Found")]
+//    )
+//    @RequireApiKey
     def updateMetadata(){
 
         CodeTimer ct = new CodeTimer("Update Image metadata ${params.imageIdentifier}")
@@ -1386,13 +1686,10 @@ class WebServiceController {
      *
      * @return
      */
-    @ApiOperation(
-            value = """
-                Upload a single image, with by URL or multipart HTTP file upload. 
-                For multipart the image must be posted in a 'image' property.
-            """,
-            notes = """
-               The following metadata properties can be set/updated:    
+    @Operation(
+            method = "POST",
+            summary = "Upload a single image, with by URL or multipart HTTP file upload.\nFor multipart the image must be posted in a 'image' property.",
+            description = """The following metadata properties can be set/updated:    
                 
                 audience      - http://purl.org/dc/terms/audience
                 contributor   - http://purl.org/dc/terms/contributor
@@ -1407,22 +1704,69 @@ class WebServiceController {
                 rightsHolder  - http://purl.org/dc/terms/rightsHolder
                 source        - http://purl.org/dc/terms/source
                 title         - http://purl.org/dc/terms/title
-                type          - http://purl.org/dc/terms/type
-            """,
-            nickname = "uploadImage",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "POST",
-            response = Map.class,
-            tags = ["Upload"],
-            authorizations = @Authorization(value="apiKey")
+                type          - http://purl.org/dc/terms/type""",
+            parameters = [
+                    @Parameter(name = "imageIdentifier", in = QUERY, required = true, description = "Job Ticket", schema = @Schema(implementation = String)),
+                    @Parameter(name = "metadata", in = QUERY, required = false, description = "Metadata as a JSON document, encoded as a POST param", schema = @Schema(implementation = String)),
+                    @Parameter(name = "tags", in = QUERY, required = false, description = "List of tags", array = @ArraySchema(schema = @Schema(implementation = String))),
+                    @Parameter(name = "imageUrl", in = QUERY, required = false, description = "An URL to be used to load the image from, use in lieu of sending a multipart upload", schema = @Schema(implementation = String)),
+            ],
+            requestBody = @RequestBody(
+                    required = false,
+                    description = "Multipart file upload, use image for the part name - TODO This needs properties for the multipart",
+                    content = @Content(mediaType = "multipart/form-data", schema = @Schema(type = 'object', implementation = String, format = 'binary'))
+            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "500", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
+            tags = ["Upload"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 400, message = "Bad request")]
-    )
-    @RequireApiKey
+    @Path("/ws/uploadImage")
+    @Consumes("multipart/form-data")
+    @Produces("application/json")
+    @RequireApiKey(scopes=["image-service:write"])
+//    @ApiOperation(
+//            value = """
+//                Upload a single image, with by URL or multipart HTTP file upload.
+//                For multipart the image must be posted in a 'image' property.
+//            """,
+//            notes = """
+//               The following metadata properties can be set/updated:
+//
+//                audience      - http://purl.org/dc/terms/audience
+//                contributor   - http://purl.org/dc/terms/contributor
+//                creator       - http://purl.org/dc/terms/creator
+//                created       - http://purl.org/dc/terms/created
+//                description   - http://purl.org/dc/terms/description
+//                format        - http://purl.org/dc/terms/format (see https://www.iana.org/assignments/media-types/media-types.xhtml)
+//                license       - http://purl.org/dc/terms/license
+//                publisher     - http://purl.org/dc/terms/publisher
+//                references    - http://purl.org/dc/terms/references
+//                rights        - http://purl.org/dc/terms/rights
+//                rightsHolder  - http://purl.org/dc/terms/rightsHolder
+//                source        - http://purl.org/dc/terms/source
+//                title         - http://purl.org/dc/terms/title
+//                type          - http://purl.org/dc/terms/type
+//            """,
+//            nickname = "uploadImage",
+//            produces = "application/json",
+//            consumes = "application/json",
+//            httpMethod = "POST",
+//            response = Map.class,
+//            tags = ["Upload"],
+//            authorizations = @Authorization(value="apiKey")
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
+//            @ApiResponse(code = 400, message = "Bad request")]
+//    )
+//    @RequireApiKey
     def uploadImage() {
         // Expect a multipart file request
         try {
@@ -1497,21 +1841,63 @@ class WebServiceController {
         }
     }
 
-    @ApiOperation(
-            value = "Asynchronous upload images by supplying a list of URLs in  a JSON  payload",
-            nickname = "uploadImagesFromUrls",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "POST",
-            response = Map.class,
-            tags = ["Upload"],
-            authorizations = @Authorization(value="apiKey")
+    @Operation(
+            method = "POST",
+            summary = "Asynchronous upload images by supplying a list of URLs in  a JSON  payload",
+//            parameters = [
+//                    @Parameter(name = "imageIdentifier", in = QUERY, required = true, description = "Job Ticket", schema = @Schema(implementation = String)),
+//                    @Parameter(name = "metadata", in = QUERY, required = false, description = "Metadata as a JSON document, encoded as a POST param", array = @Schema(implementation = String)),
+//                    @Parameter(name = "tags", in = QUERY, required = false, description = "List of tags", array = @ArraySchema(schema = @Schema(implementation = String))),
+//            ],
+            requestBody = @RequestBody(
+                    required = true,
+                    description = """JSON document with a list of images to upload.  Provide a list of objects under the images key with the follow properties:
+                imageUrl      - The image url
+                audience      - http://purl.org/dc/terms/audience
+                contributor   - http://purl.org/dc/terms/contributor
+                creator       - http://purl.org/dc/terms/creator
+                created       - http://purl.org/dc/terms/created
+                description   - http://purl.org/dc/terms/description
+                format        - http://purl.org/dc/terms/format (see https://www.iana.org/assignments/media-types/media-types.xhtml)
+                license       - http://purl.org/dc/terms/license
+                publisher     - http://purl.org/dc/terms/publisher
+                references    - http://purl.org/dc/terms/references
+                rights        - http://purl.org/dc/terms/rights
+                rightsHolder  - http://purl.org/dc/terms/rightsHolder
+                source        - http://purl.org/dc/terms/source
+                title         - http://purl.org/dc/terms/title
+                type          - http://purl.org/dc/terms/type""",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
+            tags = ["Upload"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
-    @RequireApiKey
+    @Path("/ws/uploadImagesFromUrls")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes=["image-service:write"])
+//    @ApiOperation(
+//            value = "Asynchronous upload images by supplying a list of URLs in  a JSON  payload",
+//            nickname = "uploadImagesFromUrls",
+//            produces = "application/json",
+//            consumes = "application/json",
+//            httpMethod = "POST",
+//            response = Map.class,
+//            tags = ["Upload"],
+//            authorizations = @Authorization(value="apiKey")
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+//    )
+//    @RequireApiKey
     def uploadImagesFromUrls() {
 
         def userId = getUserIdForRequest(request)
@@ -1603,21 +1989,63 @@ class WebServiceController {
         }
     }
 
-    @ApiOperation(
-            value = "Schedule upload from URLs",
-            nickname = "scheduleUploadFromUrls",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "POST",
-            response = Map.class,
-            tags = ["Upload"],
-            authorizations = @Authorization(value="apiKey")
+    @Operation(
+            method = "POST",
+            summary = "Schedule upload from URLs",
+//            parameters = [
+//                    @Parameter(name = "imageIdentifier", in = QUERY, required = true, description = "Job Ticket", schema = @Schema(implementation = String)),
+//                    @Parameter(name = "metadata", in = QUERY, required = false, description = "Metadata as a JSON document, encoded as a POST param", array = @Schema(implementation = String)),
+//                    @Parameter(name = "tags", in = QUERY, required = false, description = "List of tags", array = @ArraySchema(schema = @Schema(implementation = String))),
+//            ],
+            requestBody = @RequestBody(
+                    required = true,
+                    description = """JSON document with a list of images to upload.  Provide a list of objects under the images key with the follow properties:
+                imageUrl      - The image url
+                audience      - http://purl.org/dc/terms/audience
+                contributor   - http://purl.org/dc/terms/contributor
+                creator       - http://purl.org/dc/terms/creator
+                created       - http://purl.org/dc/terms/created
+                description   - http://purl.org/dc/terms/description
+                format        - http://purl.org/dc/terms/format (see https://www.iana.org/assignments/media-types/media-types.xhtml)
+                license       - http://purl.org/dc/terms/license
+                publisher     - http://purl.org/dc/terms/publisher
+                references    - http://purl.org/dc/terms/references
+                rights        - http://purl.org/dc/terms/rights
+                rightsHolder  - http://purl.org/dc/terms/rightsHolder
+                source        - http://purl.org/dc/terms/source
+                title         - http://purl.org/dc/terms/title
+                type          - http://purl.org/dc/terms/type""",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
+            tags = ["Upload"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only POST is allowed")]
-    )
-    @RequireApiKey
+    @Path("/ws/scheduleUploadFromUrls")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes=["image-service:write"])
+//    @ApiOperation(
+//            value = "Schedule upload from URLs",
+//            nickname = "scheduleUploadFromUrls",
+//            produces = "application/json",
+//            consumes = "application/json",
+//            httpMethod = "POST",
+//            response = Map.class,
+//            tags = ["Upload"],
+//            authorizations = @Authorization(value="apiKey")
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only POST is allowed")]
+//    )
+//    @RequireApiKey
     def scheduleUploadFromUrls() {
 
         def userId = getUserIdForRequest(request)
@@ -1647,19 +2075,45 @@ class WebServiceController {
         renderResults([success:false, message:'POST with content type "application/JSON" required.'], HttpStatus.SC_BAD_REQUEST)
     }
 
-    @ApiOperation(
-            value = "Get batch status for a batch upload of images",
-            nickname = "batchstatus",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Get batch status for a batch upload of images",
+            parameters = [
+                    @Parameter(name = "batchId", in = QUERY, required = true, description = "The batch id", schema = @Schema(implementation = String)),
+//                    @Parameter(name = "metadata", in = QUERY, required = false, description = "Metadata as a JSON document, encoded as a POST param", array = @Schema(implementation = String)),
+//                    @Parameter(name = "tags", in = QUERY, required = false, description = "List of tags", array = @ArraySchema(schema = @Schema(implementation = String))),
+            ],
+//            requestBody = @RequestBody(
+//                    required = true,
+//                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+//            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:read"])
+            ],
             tags = ["Upload"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
+    @Path("/ws/getBatchStatus")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @RequireApiKey(scopes=["image-service:read"])
+//    @ApiOperation(
+//            value = "Get batch status for a batch upload of images",
+//            nickname = "batchstatus",
+//            produces = "application/json",
+//            consumes = "application/json",
+//            httpMethod = "GET",
+//            response = Map.class,
+//            tags = ["Upload"]
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+//    )
     def getBatchStatus() {
         def status = batchService.getBatchStatus(params.batchId)
         if (status) {
@@ -1669,19 +2123,45 @@ class WebServiceController {
         }
     }
 
-    @ApiOperation(
-            value = "List the recognised darwin core terms",
-            nickname = "darwinCoreTerms",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "List the recognised darwin core terms",
+            parameters = [
+                    @Parameter(name = "q", in = QUERY, required = false, description = "Optional Darwin Core field name to query for", schema = @Schema(implementation = String)),
+//                    @Parameter(name = "metadata", in = QUERY, required = false, description = "Metadata as a JSON document, encoded as a POST param", array = @Schema(implementation = String)),
+//                    @Parameter(name = "tags", in = QUERY, required = false, description = "List of tags", array = @ArraySchema(schema = @Schema(implementation = String))),
+            ],
+//            requestBody = @RequestBody(
+//                    required = true,
+//                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+//            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+//            security = [
+//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:read"])
+//            ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
+    @Path("/ws/darwinCoreTerms")
+    @Consumes("application/json")
+    @Produces("application/json")
+//    @RequireApiKey(scopes=["image-service:read"])
+//    @ApiOperation(
+//            value = "List the recognised darwin core terms",
+//            nickname = "darwinCoreTerms",
+//            produces = "application/json",
+//            consumes = "application/json",
+//            httpMethod = "GET",
+//            response = Map.class,
+//            tags = ["JSON services for accessing and updating metadata"]
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+//    )
     def darwinCoreTerms() {
         def terms = []
 
@@ -1725,19 +2205,44 @@ class WebServiceController {
         }
     }
 
-    @ApiOperation(
-            value = "Export CSV of entire image catalogue",
-            nickname = "exportCSV",
-            produces = "application/gzip",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Export CSV of entire image catalogue",
+//            parameters = [
+//                    @Parameter(name = "q", in = QUERY, required = false, description = "Optional Darwin Core field name to query for", schema = @Schema(implementation = String)),
+//                    @Parameter(name = "metadata", in = QUERY, required = false, description = "Metadata as a JSON document, encoded as a POST param", array = @Schema(implementation = String)),
+//                    @Parameter(name = "tags", in = QUERY, required = false, description = "List of tags", array = @ArraySchema(schema = @Schema(implementation = String))),
+//            ],
+//            requestBody = @RequestBody(
+//                    required = true,
+//                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+//            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/gzip", schema = @Schema(implementation = Map, format= 'binary'))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+//            security = [
+//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:read"])
+//            ],
             tags = ["Export"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
+    @Path("/ws/exportCSV")
+    @Consumes("application/json")
+    @Produces("application/gzip")
+//    @ApiOperation(
+//            value = "Export CSV of entire image catalogue",
+//            nickname = "exportCSV",
+//            produces = "application/gzip",
+//            consumes = "application/json",
+//            httpMethod = "GET",
+//            response = Map.class,
+//            tags = ["Export"]
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+//    )
     def exportCSV(){
         response.setHeader("Content-disposition", "attachment;filename=images-export.csv.gz")
         response.contentType = "application/gzip"
@@ -1747,19 +2252,44 @@ class WebServiceController {
         bos.close()
     }
 
-    @ApiOperation(
-            value = "Export CSV of URL to imageIdentifier mappings",
-            nickname = "exportMapping",
-            produces = "application/gzip",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Export CSV of URL to imageIdentifier mappings",
+//            parameters = [
+//                    @Parameter(name = "q", in = QUERY, required = false, description = "Optional Darwin Core field name to query for", schema = @Schema(implementation = String)),
+//                    @Parameter(name = "metadata", in = QUERY, required = false, description = "Metadata as a JSON document, encoded as a POST param", array = @Schema(implementation = String)),
+//                    @Parameter(name = "tags", in = QUERY, required = false, description = "List of tags", array = @ArraySchema(schema = @Schema(implementation = String))),
+//            ],
+//            requestBody = @RequestBody(
+//                    required = true,
+//                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+//            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/gzip", schema = @Schema(implementation = Map, format= 'binary'))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+//                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+//            security = [
+//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:read"])
+//            ],
             tags = ["Export"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
+    @Path("/ws/exportMapping")
+    @Consumes("application/json")
+    @Produces("application/gzip")
+//    @ApiOperation(
+//            value = "Export CSV of URL to imageIdentifier mappings",
+//            nickname = "exportMapping",
+//            produces = "application/gzip",
+//            consumes = "application/json",
+//            httpMethod = "GET",
+//            response = Map.class,
+//            tags = ["Export"]
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+//    )
     def exportMapping(){
         response.setHeader("Content-disposition", "attachment;filename=image-mapping.csv.gz")
         response.contentType = "application/gzip"
@@ -1769,23 +2299,48 @@ class WebServiceController {
         bos.close()
     }
 
-    @ApiOperation(
-            value = "Export CSV of URL to imageIdentifier mappings",
-            nickname = "exportDatasetMapping/{dataResourceUid}",
-            produces = "application/gzip",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+    @Operation(
+            method = "GET",
+            summary = "Export CSV of URL to imageIdentifier mappings",
+            parameters = [
+                    @Parameter(name = "id", in = PATH, required = true, description = "Data Resource UID", schema = @Schema(implementation = String)),
+//                    @Parameter(name = "metadata", in = QUERY, required = false, description = "Metadata as a JSON document, encoded as a POST param", array = @Schema(implementation = String)),
+//                    @Parameter(name = "tags", in = QUERY, required = false, description = "List of tags", array = @ArraySchema(schema = @Schema(implementation = String))),
+            ],
+//            requestBody = @RequestBody(
+//                    required = true,
+//                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+//            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/gzip", schema = @Schema(implementation = Map, format= 'binary'))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+//            security = [
+//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:read"])
+//            ],
             tags = ["Export"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 400, message = "Missing dataResourceUid parameter"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "dataResourceUid", paramType = "path", required = true, value = "Data resource UID", dataType = "string")
-    ])
+    @Path("/ws/exportMapping")
+    @Consumes("application/json")
+    @Produces("application/gzip")
+//    @ApiOperation(
+//            value = "Export CSV of URL to imageIdentifier mappings",
+//            nickname = "exportDatasetMapping/{dataResourceUid}",
+//            produces = "application/gzip",
+//            consumes = "application/json",
+//            httpMethod = "GET",
+//            response = Map.class,
+//            tags = ["Export"]
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 400, message = "Missing dataResourceUid parameter"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+//    )
+//    @ApiImplicitParams([
+//            @ApiImplicitParam(name = "dataResourceUid", paramType = "path", required = true, value = "Data resource UID", dataType = "string")
+//    ])
     def exportDatasetMapping(){
         if (!params.id){
             renderResults([success: false, message: "Failed to store image!"], 400)
@@ -1799,9 +2354,10 @@ class WebServiceController {
         }
     }
 
-    @ApiOperation(
-            value = "Export CSV of URL to imageIdentifier mappings",
-            notes = """Exports the following fields in CSV:
+    @Operation(
+            method = "GET",
+            summary = "Export CSV of URL to imageIdentifier mappings",
+            description = """Exports the following fields in CSV:
                 image_identifier as "imageID"
                 identifier
                 audience
@@ -1816,23 +2372,63 @@ class WebServiceController {
                 rightsHolder
                 source
                 title
-                type
-            """,
-            nickname = "exportDataset/{dataResourceUid}",
-            produces = "application/gzip",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class,
+                type""",
+            parameters = [
+                    @Parameter(name = "id", in = PATH, required = true, description = "Data Resource UID", schema = @Schema(implementation = String)),
+//                    @Parameter(name = "metadata", in = QUERY, required = false, description = "Metadata as a JSON document, encoded as a POST param", array = @Schema(implementation = String)),
+//                    @Parameter(name = "tags", in = QUERY, required = false, description = "List of tags", array = @ArraySchema(schema = @Schema(implementation = String))),
+            ],
+//            requestBody = @RequestBody(
+//                    required = true,
+//                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
+//            ),
+            responses = [
+                    @ApiResponse(content = [@Content(mediaType = "application/gzip", schema = @Schema(implementation = Map, format= 'binary'))]),
+//                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+            ],
+//            security = [
+//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:read"])
+//            ],
             tags = ["Export"]
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 400, message = "Missing dataResourceUid parameter"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "dataResourceUid", paramType = "path", required = true, value = "Data resource UID", dataType = "string")
-    ])
+    @Path("/ws/exportMapping")
+    @Consumes("application/json")
+    @Produces("application/gzip")
+//    @ApiOperation(
+//            value = "Export CSV of URL to imageIdentifier mappings",
+//            notes = """Exports the following fields in CSV:
+//                image_identifier as "imageID"
+//                identifier
+//                audience
+//                contributor
+//                created
+//                creator
+//                description
+//                format
+//                license
+//                publisher
+//                references
+//                rightsHolder
+//                source
+//                title
+//                type
+//            """,
+//            nickname = "exportDataset/{dataResourceUid}",
+//            produces = "application/gzip",
+//            consumes = "application/json",
+//            httpMethod = "GET",
+//            response = Map.class,
+//            tags = ["Export"]
+//    )
+//    @ApiResponses([
+//            @ApiResponse(code = 200, message = "OK"),
+//            @ApiResponse(code = 400, message = "Missing dataResourceUid parameter"),
+//            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
+//    )
+//    @ApiImplicitParams([
+//            @ApiImplicitParam(name = "dataResourceUid", paramType = "path", required = true, value = "Data resource UID", dataType = "string")
+//    ])
     def exportDataset(){
         if (!params.id){
             renderResults([success: false, message: "Failed to store image!"], 400)

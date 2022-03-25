@@ -39,7 +39,7 @@ class S3ByteSinkFactory implements ByteSinkFactory {
                 def tempPath = Files.createTempFile("thumbnail-$uuid-${names.join('-')}", ".jpg")
                 def file = tempPath.toFile()
                 file.deleteOnExit()
-                return new FilterOutputStream(tempPath.newOutputStream()) {
+                return new FilterOutputStream(new BufferedOutputStream(Files.newOutputStream(tempPath))) {
                     @Override
                     void close() throws IOException {
                         super.close()

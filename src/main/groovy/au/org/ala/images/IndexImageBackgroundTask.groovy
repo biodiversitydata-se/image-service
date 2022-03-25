@@ -3,7 +3,9 @@ package au.org.ala.images
 import com.opencsv.CSVReaderBuilder
 import com.opencsv.RFC4180ParserBuilder
 import grails.gorm.transactions.Transactional
-import org.apache.log4j.Logger
+import groovy.util.logging.Slf4j
+
+//import org.apache.log4j.Logger
 
 class IndexImageBackgroundTask extends BackgroundTask {
 
@@ -30,12 +32,13 @@ class IndexImageBackgroundTask extends BackgroundTask {
     }
 }
 
+@Slf4j
 class ScheduleReindexAllImagesTask extends BackgroundTask {
 
     private ImageService _imageService
     private ElasticSearchService _elasticSearchService
     private int _batchIndexSize = 1000
-    private Logger log = Logger.getLogger(ScheduleReindexAllImagesTask.class)
+//    private Logger log = Logger.getLogger(ScheduleReindexAllImagesTask.class)
 
     ScheduleReindexAllImagesTask(ImageService imageService, ElasticSearchService elasticSearchService, int batchIndexSize) {
         _imageService = imageService

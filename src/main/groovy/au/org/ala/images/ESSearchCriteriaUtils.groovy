@@ -318,7 +318,7 @@ class ESSearchCriteriaUtils {
                 case "gt":
                     return QueryBuilders.rangeFilter(field).gte(startDate)
                 case "bt":
-                    return QueryBuildersa.rangeFilter(field).gte(startDate).lte(endDate)
+                    return QueryBuilders.rangeFilter(field).gte(startDate).lte(endDate)
             }
         }
 

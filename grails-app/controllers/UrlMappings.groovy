@@ -33,9 +33,9 @@ class UrlMappings {
             controller = "webService"
         }
 
-        "/ws/api"(controller: 'apiDoc', action: 'getDocuments')
-        name api_doc: "/ws/"(controller: 'webService', action: 'swagger')
-        "/ws"(controller: 'webService', action: 'swagger')
+//        "/ws/api"(controller: 'apiDoc', action: 'getDocuments')
+//        name api_doc: "/ws/"(controller: 'webService', action: 'swagger')
+//        "/ws"(controller: 'webService', action: 'swagger')
 
         // legacy URLS
         "/image/imageTooltipFragment"(controller: "image", action: "imageTooltipFragment")

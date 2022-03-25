@@ -11,13 +11,15 @@ import org.grails.orm.hibernate.cfg.Settings
 import org.hibernate.Session
 import org.hibernate.SessionFactory
 import org.junit.ClassRule
-import org.springframework.boot.env.PropertySourcesLoader
-import org.springframework.context.annotation.Bean
+import org.springframework.boot.env.PropertySourceLoader
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.env.MutablePropertySources
 import org.springframework.core.env.PropertyResolver
+import org.springframework.core.env.PropertySource
 import org.springframework.core.io.DefaultResourceLoader
+import org.springframework.core.io.Resource
 import org.springframework.core.io.ResourceLoader
+import org.springframework.core.io.support.SpringFactoriesLoader
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionStatus
 import org.springframework.transaction.interceptor.DefaultTransactionAttribute
@@ -39,15 +41,26 @@ abstract class FlybernateSpec extends Specification {
 
     @Shared @AutoCleanup HibernateDatastore hibernateDatastore
     @Shared PlatformTransactionManager transactionManager
-//    @Shared Flyway flyway = null
-    @Shared Flyway flyway = new Flyway()
+    @Shared Flyway flyway = null
+//    @Shared Flyway flyway = new Flyway()
 
     static Config getConfig() { // CHANGED extracted from setupSpec so postgresRule can access
-        PropertySourcesLoader loader = new PropertySourcesLoader()
+
+        List<PropertySourceLoader> propertySourceLoaders = SpringFactoriesLoader.loadFactories(PropertySourceLoader.class, FlybernateSpec.class.getClassLoader())
         ResourceLoader resourceLoader = new DefaultResourceLoader()
-        MutablePropertySources propertySources = loader.propertySources
-        loader.load resourceLoader.getResource("application.yml")
-        loader.load resourceLoader.getResource("application.groovy")
+        MutablePropertySources propertySources = new MutablePropertySources()
+        PropertySourceLoader ymlLoader = propertySourceLoaders.find { it.getFileExtensions().toList().contains("yml") }
+        if (ymlLoader) {
+            load(resourceLoader, ymlLoader, "application.yml").each {
+                propertySources.addLast(it)
+            }
+        }
+        PropertySourceLoader groovyLoader = propertySourceLoaders.find { it.getFileExtensions().toList().contains("groovy") }
+        if (groovyLoader) {
+            load(resourceLoader, groovyLoader, "application.groovy").each {
+                propertySources.addLast(it)
+            }
+        }
         propertySources.addFirst(new MapPropertySource("defaults", getConfiguration()))
         return new PropertySourcesConfig(propertySources)
     }
@@ -55,13 +68,15 @@ abstract class FlybernateSpec extends Specification {
     void setupSpec() {
         Config config = getConfig()
         // CHANGED added flyway migrate
-        flyway.setDataSource(config.getProperty('dataSource.url'), config.getProperty('dataSource.username'), config.getProperty('dataSource.password'))
-        flyway.placeholders = [
-                'imageRoot': config.getProperty('imageservice.imagestore.root'),
-                'exportRoot': config.getProperty('imageservice.imagestore.exportDir', '/data/image-service/exports'),
-                'baseUrl': config.getProperty('grails.serverURL', 'https://devt.ala.org.au/image-service')
-        ]
-        flyway.setLocations('db/migration')
+        def flywayConfig = Flyway.configure()
+                .dataSource(config.getProperty('dataSource.url'), config.getProperty('dataSource.username'), config.getProperty('dataSource.password'))
+                .placeholders([
+                        'imageRoot': config.getProperty('imageservice.imagestore.root'),
+                        'exportRoot': config.getProperty('imageservice.imagestore.exportDir', '/data/image-service/exports'),
+                        'baseUrl': config.getProperty('grails.serverURL', 'https://devt.ala.org.au/image-service')
+                ])
+                .locations('db/migration')
+        flyway = new Flyway(flywayConfig)
         flyway.clean()
         flyway.migrate()
         // END CHANGED
@@ -71,13 +86,9 @@ abstract class FlybernateSpec extends Specification {
 
         if (!domainClasses) {
             Package packageToScan = Package.getPackage(packageName) ?: getClass().getPackage()
-            hibernateDatastore = new HibernateDatastore(
-                    (PropertyResolver)config,
-                    packageToScan)
+            hibernateDatastore = new HibernateDatastore((PropertyResolver) config, packageToScan)
         } else {
-            hibernateDatastore = new HibernateDatastore(
-                    (PropertyResolver)config,
-                    domainClasses as Class[])
+            hibernateDatastore = new HibernateDatastore((PropertyResolver) config, domainClasses as Class[])
         }
         transactionManager = hibernateDatastore.getTransactionManager()
     }
@@ -92,10 +103,9 @@ abstract class FlybernateSpec extends Specification {
     }
 
     void cleanup() {
-        if(isRollback()) {
+        if (isRollback()) {
             transactionManager.rollback(transactionStatus)
-        }
-        else {
+        } else {
             transactionManager.commit(transactionStatus)
         }
         flyway.clean() // CHANGED added flyway.clean() to drop all db content
@@ -128,6 +138,7 @@ abstract class FlybernateSpec extends Specification {
     boolean isRollback() {
         return true
     }
+
     /**
      * @return The domain classes
      */
@@ -141,5 +152,23 @@ abstract class FlybernateSpec extends Specification {
      */
     protected String getPackageToScan(Config config) {
         config.getProperty('grails.codegen.defaultPackage', getClass().package.name)
+    }
+
+    // Changed: Made static for getConfig()
+    private static List<PropertySource> load(ResourceLoader resourceLoader, PropertySourceLoader loader, String filename) {
+        if (canLoadFileExtension(loader, filename)) {
+            Resource appYml = resourceLoader.getResource(filename)
+            return loader.load(appYml.getDescription(), appYml) as List<PropertySource>
+        } else {
+            return Collections.emptyList()
+        }
+    }
+
+    // Changed: Made static for getConfig()
+    private static boolean canLoadFileExtension(PropertySourceLoader loader, String name) {
+        return Arrays
+                .stream(loader.fileExtensions)
+                .map { String extension -> extension.toLowerCase() }
+                .anyMatch { String extension -> name.toLowerCase().endsWith(extension) }
     }
 }
