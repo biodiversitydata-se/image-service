@@ -37,5 +37,6 @@ after_failure:
 
 env:
   global:
+    - JAVA_TOOL_OPTIONS=-Dhttps.protocols=TLSv1.2
   - secure: rWlywM7xq6UpiQJKSmfXM/lEURpBBtczVabWTFsL2APFu/ZkqeN8WTlLvvyupi6B4MXBUCpXkVQyGSdsoxUNrAQ6+HI7vYuCI0C44j+SelkoMgLjxsfWvRmc4FnP924LX3c9KqAjkjuMZ/cfUjomEuWiUiMCvwJO5laCCE9+Do4=
   - secure: L2tXyQ3jVEDAOnhTUWJR8mzXXRp9VLAmlybS9gNy9cnsSdegLFZk/P8Og+AjY+X54sHGc7KOipMs5cJmNE9XG5IDCKq0m7LFNog6goI8N4/xi95k6vNXyeoIlcASpCAMW0YqLyZNz+oGbmmdhIwz8xdSZTPnrZWHPyczYkbb++0=
