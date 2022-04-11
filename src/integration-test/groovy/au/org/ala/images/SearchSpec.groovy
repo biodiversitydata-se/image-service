@@ -3,7 +3,7 @@ package au.org.ala.images
 import grails.plugins.rest.client.RestBuilder
 import grails.plugins.rest.client.RestResponse
 import grails.testing.mixin.integration.Integration
-import grails.transaction.Rollback
+import grails.gorm.transactions.Rollback
 import groovy.json.JsonSlurper
 import spock.lang.Shared
 import spock.lang.Specification

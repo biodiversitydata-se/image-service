@@ -4,7 +4,7 @@ import grails.core.GrailsApplication
 import grails.plugins.rest.client.RestBuilder
 import grails.plugins.rest.client.RestResponse
 import grails.testing.mixin.integration.Integration
-import grails.transaction.*
+import grails.gorm.transactions.*
 import groovy.json.JsonSlurper
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap

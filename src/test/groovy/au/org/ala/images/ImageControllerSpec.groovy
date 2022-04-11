@@ -5,6 +5,7 @@ import au.org.ala.web.IAuthService
 import grails.plugins.cacheheaders.CacheHeadersService
 import grails.testing.gorm.DataTest
 import grails.testing.web.controllers.ControllerUnitTest
+import grails.web.mapping.LinkGenerator
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.grails.spring.beans.factory.InstanceFactoryBean
@@ -29,7 +30,6 @@ class ImageControllerSpec extends Specification implements ControllerUnitTest<Im
     Closure doWithSpring() {{ ->
         imageService(ImageService)
         cacheHeadersService(CacheHeadersService)
-        authService(AuthService)
     }}
 
     @Override
@@ -67,6 +67,10 @@ class ImageControllerSpec extends Specification implements ControllerUnitTest<Im
     def setup() {
         controller.boundaryCounter = new AtomicLong(0) // reset this for each run
         storageLocation = new FileSystemStorageLocation(basePath: '/tmp')
+        defineBeans {
+            grailsLinkGenerator(InstanceFactoryBean, Stub(LinkGenerator), LinkGenerator)
+            authService(AuthService)
+        }
     }
 
     @Unroll
