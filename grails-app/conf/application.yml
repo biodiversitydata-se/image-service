@@ -224,10 +224,14 @@ security:
     oidc:
         enabled: true
         scope: openid profile email ala roles
+        clientId: auth-dev-oidc-client-id
+        secret: u85789gnghdfb765
         allowUnsignedIdTokens: true # Disable once CAS no longer suggests the none algorithm
+        discoveryUri: https://auth-dev.ala.org.au/cas/oidc/.well-known
     jwt:
         enabled: true
         fallbackToLegacyKeys: true # Reset to false once legacy api keys no longer supported
+        discoveryUri: https://auth-dev.ala.org.au/cas/oidc/.well-known
 
 imageservice:
     imagestore:

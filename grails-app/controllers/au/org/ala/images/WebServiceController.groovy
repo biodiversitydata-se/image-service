@@ -595,6 +595,19 @@ class WebServiceController {
     @Path("/ws/image/{imageID}")
     @Consumes("application/json")
     @Produces("application/json")
+    @Operation(
+            method = "GET",
+            tags = "images",
+            operationId = "Get Image Info",
+            summary = "Get Image Info",
+            description = "Get Image Info",
+            responses = [
+                    @ApiResponse(
+                            description = "Get Image Info",
+                            responseCode = "200"
+                    )
+            ]
+    )
     def getImageInfo() {
         def results = [success:false]
         def imageId = params.id ? params.id : params.imageID
