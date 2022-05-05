@@ -232,6 +232,8 @@ security:
         enabled: true
         fallbackToLegacyKeys: true # Reset to false once legacy api keys no longer supported
         discoveryUri: https://auth-dev.ala.org.au/cas/oidc/.well-known
+        requiredClaims: ["sub", "iat", "exp", "jti", "client_id", "iss"]
+        permissionAttributes: ["scope", "scp", "scopes"]
 
 imageservice:
     imagestore:
@@ -253,6 +255,7 @@ skin:
     layout: 'ala-main'
     fluidLayout: true
 headerAndFooter:
+    baseURL: https://www.ala.org.au/commonui-bs3-2019
     version: 2
 
 quartz:

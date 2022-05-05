@@ -31,7 +31,6 @@ import static io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY
 //@Api(value = "/ws", description = "Image Web Services")
 class WebServiceController {
 
-    static namespace = 'ws'
     static allowedMethods = [findImagesByMetadata: 'POST', getImageInfoForIdList: 'POST']
 
     def imageService
