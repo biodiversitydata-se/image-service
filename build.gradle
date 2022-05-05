@@ -79,7 +79,7 @@ dependencies {
 
     // ALA plugins
     compile group: 'org.grails.plugins', name: 'ala-ws-plugin', version: '3.0.0-SNAPSHOT', changing: true
-    compile group: 'org.grails.plugins', name: 'ala-bootstrap3', version: '4.0.1-SNAPSHOT', changing: true
+    compile group: 'org.grails.plugins', name: 'ala-bootstrap3', version: '4.0.0-SNAPSHOT', changing: true
     compile group: 'org.grails.plugins', name: 'ala-admin-plugin', version: '2.2', changing: true
     compile group: 'org.grails.plugins', name: 'ala-auth', version: '5.0.0-SNAPSHOT', changing: true
     compile group: 'org.grails.plugins', name: 'ala-ws-security-plugin', version: '4.0.0-SNAPSHOT', changing: true
@@ -150,7 +150,6 @@ dependencies {
 //    compile "org.hibernate:hibernate-core:5.4.18.Final"
     compile "org.hibernate:hibernate-jcache"
     runtime 'org.ehcache:ehcache'
-    compile "org.grails:grails-datastore-rest-client:6.1.12.RELEASE"
 
     compile "org.grails.plugins:gsp"
     compileOnly "io.micronaut:micronaut-inject-groovy"
@@ -172,7 +171,12 @@ dependencies {
     testRuntime "org.seleniumhq.selenium:selenium-chrome-driver:3.14.0"
     testRuntime "org.seleniumhq.selenium:selenium-firefox-driver:3.14.0"
 
-    // Testing
+    // TODO This is a Grails 3 dependency, migrate integration tests off Grails RestBuilder to Micronaut HTTPClient
+    testCompile("org.grails:grails-datastore-rest-client:6.1.9.RELEASE") {
+        exclude group: 'org.grails', module: 'grails-plugin-converters'
+    }
+
+    // Testing  
     testCompile 'org.grails.plugins:embedded-postgres:1.1.2'
     testCompile "com.opentable.components:otj-pg-embedded:0.13.0" // required transitive dependency from the plugin.
     testCompile 'cloud.localstack:localstack-utils:0.2.20'

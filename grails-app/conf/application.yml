@@ -208,7 +208,7 @@ security:
         optional-filter-pattern:
           - '/ws/createSubimage'
     cas:
-        enabled: false
+        enabled: true # default for backwards compat with v1
         appServerName: 'http://dev.ala.org.au:8080'
         uriFilterPattern:
           - '/admin/*'
@@ -222,16 +222,16 @@ security:
         bypass: false
         disableCAS: false
     oidc:
-        enabled: true
+        enabled: false # default for backwards compat with v1
         scope: openid profile email ala roles
-        clientId: auth-dev-oidc-client-id
-        secret: u85789gnghdfb765
+        clientId: changeme
+        secret: changeme
         allowUnsignedIdTokens: true # Disable once CAS no longer suggests the none algorithm
         discoveryUri: https://auth-dev.ala.org.au/cas/oidc/.well-known
     jwt:
-        enabled: true
+        enabled: false # default for backwards compat with v1
         fallbackToLegacyKeys: true # Reset to false once legacy api keys no longer supported
-        discoveryUri: https://auth-dev.ala.org.au/cas/oidc/.well-known
+        discoveryUri: ${security.oidc.discoveryUri}
         requiredClaims: ["sub", "iat", "exp", "jti", "client_id", "iss"]
         permissionAttributes: ["scope", "scp", "scopes"]
 
@@ -255,8 +255,8 @@ skin:
     layout: 'ala-main'
     fluidLayout: true
 headerAndFooter:
-    baseURL: https://www.ala.org.au/commonui-bs3-2019
-    version: 2
+  version: "2"
+  baseURL: "https://www.ala.org.au/commonui-bs3-2019"
 
 quartz:
     autoStartup: true
