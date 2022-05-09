@@ -19,7 +19,7 @@ class TagSpec extends Specification {
     def grailsApplication
 
     private String getBaseUrl() {
-        def serverContextPath = grailsApplication.config.getProperty('server.contextPath', String, '')
+        def serverContextPath = grailsApplication.config.getProperty('server.servlet.context-path', String, '')
         def url = "http://localhost:${serverPort}${serverContextPath}"
         return url
     }

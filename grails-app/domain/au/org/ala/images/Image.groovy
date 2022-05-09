@@ -1,6 +1,6 @@
 package au.org.ala.images
 
-import net.kaleidos.hibernate.usertype.ArrayType
+//import net.kaleidos.hibernate.usertype.ArrayType
 
 class Image {
 

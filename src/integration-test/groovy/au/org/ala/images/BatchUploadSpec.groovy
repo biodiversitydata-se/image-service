@@ -1,12 +1,16 @@
 package au.org.ala.images
 
 import grails.core.GrailsApplication
-import grails.plugins.rest.client.RestBuilder
-import grails.plugins.rest.client.RestResponse
 import grails.testing.mixin.integration.Integration
 import grails.gorm.transactions.Rollback
 import groovy.json.JsonSlurper
-import spock.lang.Shared
+import io.micronaut.http.HttpMethod
+import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
+import io.micronaut.http.client.BlockingHttpClient
+import io.micronaut.http.client.HttpClient
+import io.micronaut.http.client.multipart.MultipartBody
 import spock.lang.Specification
 
 import static au.org.ala.images.AvroUtils.AUDIENCE
@@ -21,14 +25,17 @@ class BatchUploadSpec extends Specification {
     static final int TIMEOUT_SECONDS = 60
     static final String TEST_DR_UID = 'test-123'
 
-    @Shared RestBuilder rest = new RestBuilder()
 
     GrailsApplication grailsApplication
 
-    private String getBaseUrl() {
-        def serverContextPath = grailsApplication.config.getProperty('server.contextPath', String, '')
+    private BlockingHttpClient getRest() {
+        HttpClient.create(baseUrl).toBlocking()
+    }
+
+    private URL getBaseUrl() {
+        def serverContextPath = grailsApplication.config.getProperty('server.servlet.contextPath', String, '')
         def url = "http://localhost:${serverPort}${serverContextPath}"
-        return url
+        return url.toURL()
     }
 
     /**
@@ -42,13 +49,15 @@ class BatchUploadSpec extends Specification {
 
         when:
 
-        RestResponse uploadResponse = rest.post("${baseUrl}/batch/upload") {
-            contentType "multipart/form-data"
-            setProperty "dataResourceUid", TEST_DR_UID
-            setProperty "archive", avro
-        }
+        def request = HttpRequest.create(HttpMethod.POST, "batch/upload")
+                .contentType("multipart/form-data")
+                .body(MultipartBody.builder()
+                        .addPart("dataResourceUid", TEST_DR_UID)
+                        .addPart('archive', avro)
+                        .build())
+        HttpResponse uploadResponse = rest.exchange(request, String)
 
-        def response = new JsonSlurper().parseText(uploadResponse.body)
+        def response = new JsonSlurper().parseText(uploadResponse.body())
 
         // wait for batch files and images to be created
         int start = System.currentTimeSeconds()
@@ -91,13 +100,22 @@ class BatchUploadSpec extends Specification {
 
         when:
 
-        RestResponse uploadResponse = rest.post("${baseUrl}/batch/upload") {
-            contentType "multipart/form-data"
-            setProperty "dataResourceUid", TEST_DR_UID
-            setProperty "archive", avro
-        }
+        HttpResponse uploadResponse = rest.exchange(HttpRequest.create(HttpMethod.POST, "/batch/upload")
+                .contentType("multipart/form-data")
+                .body(MultipartBody.builder()
+                        .addPart("dataResourceUid", TEST_DR_UID)
+                        .addPart('archive', avro)
+                        .build()), String)
 
-        def response = new JsonSlurper().parseText(uploadResponse.body)
+        def response = new JsonSlurper().parseText(uploadResponse.body())
+
+//        RestResponse uploadResponse = rest.post("${baseUrl}/batch/upload") {
+//            contentType "multipart/form-data"
+//            setProperty "dataResourceUid", TEST_DR_UID
+//            setProperty "archive", avro
+//        }
+//
+//        def response = new JsonSlurper().parseText(uploadResponse.body)
 
         // wait for batch files and images to be created
         int start = System.currentTimeSeconds()
@@ -148,13 +166,22 @@ class BatchUploadSpec extends Specification {
 
         when:
 
-        RestResponse uploadResponse = rest.post("${baseUrl}/batch/upload") {
-            contentType "multipart/form-data"
-            setProperty "dataResourceUid", TEST_DR_UID
-            setProperty "archive", avro
-        }
+        HttpResponse uploadResponse = rest.exchange(HttpRequest.create(HttpMethod.POST, "/batch/upload")
+                .contentType("multipart/form-data")
+                .body(MultipartBody.builder()
+                        .addPart("dataResourceUid", TEST_DR_UID)
+                        .addPart('archive', avro)
+                        .build()), String)
 
-        def response = new JsonSlurper().parseText(uploadResponse.body)
+        def response = new JsonSlurper().parseText(uploadResponse.body())
+
+//        RestResponse uploadResponse = rest.post("${baseUrl}/batch/upload") {
+//            contentType "multipart/form-data"
+//            setProperty "dataResourceUid", TEST_DR_UID
+//            setProperty "archive", avro
+//        }
+//
+//        def response = new JsonSlurper().parseText(uploadResponse.body)
 
         // wait for batch files and images to be created
         int start = System.currentTimeSeconds()
@@ -202,13 +229,22 @@ class BatchUploadSpec extends Specification {
 
         when:
 
-        RestResponse uploadResponse = rest.post("${baseUrl}/batch/upload") {
-            contentType "multipart/form-data"
-            setProperty "dataResourceUid", TEST_DR_UID
-            setProperty "archive", avro
-        }
+        HttpResponse uploadResponse = rest.exchange(HttpRequest.create(HttpMethod.POST, "/batch/upload")
+                .contentType("multipart/form-data")
+                .body(MultipartBody.builder()
+                        .addPart("dataResourceUid", TEST_DR_UID)
+                        .addPart('archive', avro)
+                        .build()), String)
 
-        def response = new JsonSlurper().parseText(uploadResponse.body)
+        def response = new JsonSlurper().parseText(uploadResponse.body())
+
+//        RestResponse uploadResponse = rest.post("${baseUrl}/batch/upload") {
+//            contentType "multipart/form-data"
+//            setProperty "dataResourceUid", TEST_DR_UID
+//            setProperty "archive", avro
+//        }
+//
+//        def response = new JsonSlurper().parseText(uploadResponse.body)
 
         // wait for batch files and images to be created
         int start = System.currentTimeSeconds()
@@ -234,13 +270,14 @@ class BatchUploadSpec extends Specification {
 
         when: "uploading a duplicate image again, the duplicate is detected before it is downloaded again"
 
-        uploadResponse = rest.post("${baseUrl}/batch/upload") {
-            contentType "multipart/form-data"
-            setProperty "dataResourceUid", TEST_DR_UID
-            setProperty "archive", avro
-        }
+        uploadResponse = rest.exchange(HttpRequest.create(HttpMethod.POST, "/batch/upload")
+                .contentType("multipart/form-data")
+                .body(MultipartBody.builder()
+                        .addPart("dataResourceUid", TEST_DR_UID)
+                        .addPart('archive', avro)
+                        .build()), String)
 
-        response = new JsonSlurper().parseText(uploadResponse.body)
+        response = new JsonSlurper().parseText(uploadResponse.body())
 
         // wait for batch files and images to be created
         start = System.currentTimeSeconds()
@@ -277,13 +314,14 @@ class BatchUploadSpec extends Specification {
 
         when:
 
-        RestResponse uploadResponse = rest.post("${baseUrl}/batch/upload") {
-            contentType "multipart/form-data"
-            setProperty "dataResourceUid", TEST_DR_UID
-            setProperty "archive", avro
-        }
+        HttpResponse uploadResponse = rest.exchange(HttpRequest.create(HttpMethod.POST, "/batch/upload")
+                .contentType("multipart/form-data")
+                .body(MultipartBody.builder()
+                        .addPart("dataResourceUid", TEST_DR_UID)
+                        .addPart('archive', avro)
+                        .build()), String)
 
-        def response = new JsonSlurper().parseText(uploadResponse.body)
+        def response = new JsonSlurper().parseText(uploadResponse.body())
 
         // wait for batch files and images to be created
         int start = System.currentTimeSeconds()
@@ -330,8 +368,8 @@ class BatchUploadSpec extends Specification {
         return failedUpload
     }
 
-    private void checkCommonResponse(RestResponse uploadResponse, Map response, List<List<?>> imageUrls, String dataResourceUid) {
-        uploadResponse.status == 200
+    private void checkCommonResponse(HttpResponse uploadResponse, Map response, List<List<?>> imageUrls, String dataResourceUid) {
+        uploadResponse.status == HttpStatus.OK
 
         // Check the response from the server
         response.batchID != null

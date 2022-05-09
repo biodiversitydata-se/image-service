@@ -8,23 +8,14 @@ import grails.converters.XML
 import groovy.util.logging.Slf4j
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 
-//import io.swagger.annotations.Api
-//import io.swagger.annotations.ApiImplicitParam
-//import io.swagger.annotations.ApiImplicitParams
-//import io.swagger.annotations.ApiOperation
-//import io.swagger.annotations.ApiResponse
-//import io.swagger.annotations.ApiResponses
 import org.apache.catalina.connector.ClientAbortException
 import org.apache.commons.io.IOUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.Resource
-import org.springframework.web.multipart.MultipartFile
-import org.springframework.web.multipart.MultipartHttpServletRequest
 
 import javax.servlet.http.HttpServletRequest
 import javax.ws.rs.Path
@@ -33,7 +24,6 @@ import java.util.concurrent.atomic.AtomicLong
 
 import static io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER
 import static io.swagger.v3.oas.annotations.enums.ParameterIn.PATH
-import static io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY
 import static javax.servlet.http.HttpServletResponse.SC_FOUND
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND
 import static javax.servlet.http.HttpServletResponse.SC_NOT_MODIFIED
