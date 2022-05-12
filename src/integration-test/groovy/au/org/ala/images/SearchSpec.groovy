@@ -1,30 +1,35 @@
 package au.org.ala.images
 
-import grails.plugins.rest.client.RestBuilder
-import grails.plugins.rest.client.RestResponse
 import grails.testing.mixin.integration.Integration
 import grails.gorm.transactions.Rollback
 import groovy.json.JsonSlurper
-import spock.lang.Shared
+import io.micronaut.http.HttpMethod
+import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
+import io.micronaut.http.client.BlockingHttpClient
+import io.micronaut.http.client.HttpClient
 import spock.lang.Specification
 
 @Integration(applicationClass = Application.class)
 @Rollback
 class SearchSpec extends Specification {
 
-    @Shared RestBuilder rest = new RestBuilder()
-
     def grailsApplication
 
-    private String getBaseUrl() {
+    private URL getBaseUrl() {
         def serverContextPath = grailsApplication.config.getProperty('server.servlet.context-path', String, '')
         def url = "http://localhost:${serverPort}${serverContextPath}"
-        return url
+        return url.toURL()
     }
 
     def setup() {}
 
     def cleanup() {}
+
+    private BlockingHttpClient getRest() {
+        HttpClient.create(baseUrl).toBlocking()
+    }
 
     void 'test upload'() {
 
@@ -34,18 +39,17 @@ class SearchSpec extends Specification {
         //first upload an image
         def testUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Red_kangaroo_-_melbourne_zoo.jpg/800px-Red_kangaroo_-_melbourne_zoo.jpg"
 
-        RestResponse uploadResponse = rest.post("${baseUrl}/ws/uploadImagesFromUrls", {
-            json {
-                [images: [[
+        def request = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/uploadImagesFromUrls")
+        .contentType("application/json")
+                .body([images: [[
                                   sourceUrl   : testUrl,
                                   occurrenceID: occurrenceID
-                          ]]]
-            }
-        })
-        def jsonUploadResponse = new JsonSlurper().parseText(uploadResponse.body)
+                          ]]])
+        HttpResponse uploadResponse = rest.exchange(request, String)
+        def jsonUploadResponse = new JsonSlurper().parseText(uploadResponse.body())
 
         then:
-        uploadResponse.status == 200
+        uploadResponse.status == HttpStatus.OK
         jsonUploadResponse.success == true
     }
 
@@ -61,8 +65,9 @@ class SearchSpec extends Specification {
         int MAX_CHECKS = 10
 
         while (hasBacklog && counter < MAX_CHECKS) {
-            RestResponse statsResp = rest.get("${baseUrl}/ws/backgroundQueueStats")
-            def json = new JsonSlurper().parseText(statsResp.body)
+            def request = HttpRequest.create(HttpMethod.GET,"${baseUrl}/ws/backgroundQueueStats")
+            HttpResponse response = rest.exchange(request, String)
+            def json = new JsonSlurper().parseText(response.body())
             if (json.queueLength > 0) {
                 println("Queue length: " + json.queueLength)
                 Thread.sleep(5000)
@@ -72,23 +77,23 @@ class SearchSpec extends Specification {
             counter += 1
         }
 
-        RestResponse countsResp = rest.get("${baseUrl}/ws/search")
-        def jsonCount = new JsonSlurper().parseText(countsResp.body)
+        def countRequest = HttpRequest.create(HttpMethod.GET,"${baseUrl}/ws/search")
+        HttpResponse countResponse = rest.exchange(countRequest, String)
+        def jsonCount = new JsonSlurper().parseText(countResponse.body())
         jsonCount
 
         //search by occurrence ID
-        RestResponse resp = rest.post("${baseUrl}/ws/findImagesByMetadata", {
-            json {
-                [
-                    "key"   : "occurrenceid",
-                    "values": ["f4c13adc-2926-44c8-b2cd-fb2d62378a1a"]
-                ]
-            }
-        })
-        def jsonResponse = new JsonSlurper().parseText(resp.body)
+        def request = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/findImagesByMetadata")
+                .contentType("application/json")
+                .body([
+                    key : "occurrenceid", values : ["f4c13adc-2926-44c8-b2cd-fb2d62378a1a"]
+                ])
+        HttpResponse searchResponse = rest.exchange(request, String)
+
+        def jsonResponse = new JsonSlurper().parseText(searchResponse.body())
 
         then:
-        resp.status == 200
+        searchResponse.status == HttpStatus.OK
         jsonResponse.count > 0
         //check for legacy fields
         jsonResponse.images.size() > 0

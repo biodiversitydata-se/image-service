@@ -171,11 +171,7 @@ dependencies {
     testRuntime "org.seleniumhq.selenium:selenium-chrome-driver:3.14.0"
     testRuntime "org.seleniumhq.selenium:selenium-firefox-driver:3.14.0"
 
-    // TODO This is a Grails 3 dependency, migrate integration tests off Grails RestBuilder to Micronaut HTTPClient
     testCompile 'io.micronaut:micronaut-http-client'
-    testCompile("org.grails:grails-datastore-rest-client:6.1.9.RELEASE") {
-        exclude group: 'org.grails', module: 'grails-plugin-converters'
-    }
 
     // Testing
     testCompile 'org.grails.plugins:embedded-postgres:1.1.2'

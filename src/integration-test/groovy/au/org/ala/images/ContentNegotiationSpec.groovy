@@ -1,13 +1,18 @@
 package au.org.ala.images
 
-import grails.plugins.rest.client.RestBuilder
-import grails.plugins.rest.client.RestResponse
 import grails.testing.mixin.integration.Integration
 import grails.gorm.transactions.Rollback
 import groovy.json.JsonSlurper
+import io.micronaut.http.HttpMethod
+import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
+import io.micronaut.http.MediaType
+import io.micronaut.http.client.BlockingHttpClient
+import io.micronaut.http.client.HttpClient
+import io.micronaut.http.client.exceptions.HttpClientResponseException
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
-import spock.lang.Shared
 import groovyx.net.http.HTTPBuilder
 import groovyx.net.http.Method
 import spock.lang.Specification
@@ -21,28 +26,25 @@ import java.security.MessageDigest
 @Rollback
 class ContentNegotiationSpec extends Specification {
 
-
-    @Shared RestBuilder rest = new RestBuilder()
-
     def imageId
     def grailsApplication
 
-    private String getBaseUrl() {
+    private URL getBaseUrl() {
         def serverContextPath = grailsApplication.config.getProperty('server.servlet.context-path', String, '')
         def url = "http://localhost:${serverPort}${serverContextPath}"
-        return url
+        return url.toURL()
     }
 
     def setup() {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<String, String>()
         form.add("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/e/ed/Puma_concolor_camera_trap_Arizona_2.jpg")
 
-        RestResponse resp = rest.post("${baseUrl}/ws/uploadImage", {
-            contentType("application/x-www-form-urlencoded")
-            body(form)
-        })
+        def request = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/uploadImage")
+                .contentType("application/x-www-form-urlencoded")
+                .body(form)
+        HttpResponse uploadResponse = rest.exchange(request, String)
 
-        def jsonResponse = new JsonSlurper().parseText(resp.body)
+        def jsonResponse = new JsonSlurper().parseText(uploadResponse.body())
         imageId = jsonResponse.imageId
 
         assert imageId != null
@@ -51,21 +53,26 @@ class ContentNegotiationSpec extends Specification {
     def cleanup() {
     }
 
+    private BlockingHttpClient getRest() {
+        HttpClient.create(baseUrl).toBlocking()
+    }
+
     /**
      * Testing equivalent of
      * curl -X GET "https://images.ala.org.au/image/1a6dc180-96b1-45df-87da-7d0912dddd4f" -H "Accept: application/json"
      */
     void "Test accept: application/json"() {
         when:
-        RestResponse resp = rest.get("${baseUrl}/image/${imageId}"){
-            accept "application/json"
-        }
+        def request = HttpRequest.create(HttpMethod.GET,"${baseUrl}/image/${imageId}")
+            .accept(MediaType.APPLICATION_JSON_TYPE)
+        HttpResponse uploadResponse = rest.exchange(request, String)
+
         println("response received")
-        def jsonResponse = new JsonSlurper().parseText(resp.body)
+        def jsonResponse = new JsonSlurper().parseText(uploadResponse.body())
         println("response parsed")
 
         then:
-        resp.status == 200
+        uploadResponse.status == HttpStatus.OK
         println("checking")
         jsonResponse.originalFileName != null
         println("checked")
@@ -77,14 +84,15 @@ class ContentNegotiationSpec extends Specification {
      */
     void "Test accept: application/json with expected 404"() {
         when:
-        RestResponse resp = rest.get("${baseUrl}/image/ABC"){
-            accept "application/json"
-        }
-
-        def jsonResponse = new JsonSlurper().parseText(resp.body)
+        def request = HttpRequest.create(HttpMethod.GET,"${baseUrl}/image/ABC")
+            .accept(MediaType.APPLICATION_JSON_TYPE)
+        HttpResponse resp = rest.exchange(request, String)
 
         then:
-        resp.status == 404
+        HttpClientResponseException ex = thrown()
+        def jsonResponse = new JsonSlurper().parseText(ex.response.body())
+        and:
+        ex.status == HttpStatus.NOT_FOUND
         jsonResponse.success == false
     }
 
@@ -94,14 +102,15 @@ class ContentNegotiationSpec extends Specification {
      */
     void "Test WS accept: application/json with expected 404"() {
         when:
-        RestResponse resp = rest.get("${baseUrl}/image/ABC"){
-            accept "application/json"
-        }
-
-        def jsonResponse = new JsonSlurper().parseText(resp.body)
+        def request = HttpRequest.create(HttpMethod.GET, "${baseUrl}/image/ABC")
+            .accept(MediaType.APPLICATION_JSON_TYPE)
+        HttpResponse resp = rest.exchange(request, String)
 
         then:
-        resp.status == 404
+        HttpClientResponseException ex = thrown()
+        def jsonResponse = new JsonSlurper().parseText(ex.response.body())
+        and:
+        ex.status == HttpStatus.NOT_FOUND
         jsonResponse.success == false
     }
 

@@ -1,48 +1,65 @@
 package au.org.ala.images
 
 import grails.core.GrailsApplication
-import grails.plugins.rest.client.RestBuilder
-import grails.plugins.rest.client.RestResponse
 import grails.testing.mixin.integration.Integration
 import grails.gorm.transactions.*
 import groovy.json.JsonSlurper
+import io.micronaut.http.HttpMethod
+import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
+import io.micronaut.http.client.BlockingHttpClient
+import io.micronaut.http.client.DefaultHttpClient
+import io.micronaut.http.client.DefaultHttpClientConfiguration
+import io.micronaut.http.client.HttpClientConfiguration
+import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.http.client.multipart.MultipartBody
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 import spock.lang.Ignore
-import spock.lang.Shared
 import spock.lang.Specification
+import java.time.Duration
 
 @Integration(applicationClass = Application.class)
 @Rollback
 class ImageUploadSpec extends Specification {
 
-    @Shared RestBuilder rest = new RestBuilder()
-
     GrailsApplication grailsApplication
 
-    private String getBaseUrl() {
+    private URL getBaseUrl() {
         def serverContextPath = grailsApplication.config.getProperty('server.servlet.context-path', String, '')
         def url = "http://localhost:${serverPort}${serverContextPath}"
-        return url
+        return url.toURL()
     }
 
     def setup() {}
 
     def cleanup() {}
 
+    private BlockingHttpClient getRest() {
+        HttpClientConfiguration configuration = new DefaultHttpClientConfiguration()
+        configuration.readTimeout = Duration.ofSeconds(30)
+        new DefaultHttpClient(baseUrl, configuration).toBlocking()
+    }
+
     void "test home page"() {
         when:
-        RestResponse resp = rest.get("${baseUrl}")
-        println(resp.status)
+        def request = HttpRequest.create(HttpMethod.GET,"${baseUrl}")
+        HttpResponse uploadResponse = rest.exchange(request, String)
+        println(uploadResponse.status)
         then:
-        resp.status == 200
+        uploadResponse.status == HttpStatus.OK
     }
 
     void "test upload image - empty request - should result in 400"() {
         when:
-        RestResponse resp = rest.post("${baseUrl}/ws/uploadImagesFromUrls", [:])
+        def request = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/uploadImagesFromUrls")
+                .contentType("application/json")
+                .body([:])
         then:
-        resp.status == 400
+        HttpClientResponseException ex = thrown()
+        and:
+        ex.status == HttpStatus.BAD_REQUEST
     }
 
     void "test upload image"() {
@@ -50,12 +67,12 @@ class ImageUploadSpec extends Specification {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<String, String>()
         form.add("imageUrl", "https://www.ala.org.au/app/uploads/2019/05/palm-cockatoo-by-Alan-Pettigrew-1920-1200-CCBY-28072018-640x480.jpg")
 
-        RestResponse resp = rest.post("${baseUrl}/ws/uploadImage", {
-            contentType("application/x-www-form-urlencoded")
-            body(form)
-        })
+        def request = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/uploadImage")
+            .contentType("application/x-www-form-urlencoded")
+            .body(form)
+        HttpResponse resp = rest.exchange(request, String)
         then:
-        resp.status == 200
+        resp.status == HttpStatus.OK
     }
 
     void "test multi upload image - bad submission"() {
@@ -64,14 +81,14 @@ class ImageUploadSpec extends Specification {
         def url1 = "https://www.ala.org.au/app/uploads/2019/05/mycena-epipterygia-by-Reiner-Richter-CCBYNCInt-26052018-1920-1200--640x480.jpg"
         def url2 = "https://www.ala.org.au/app/uploads/2019/06/Rufous-Betting-by-Graham-Armstrong-CCBY-25-Apr-2019-1920-x-1200-640x480.jpg"
 
-        RestResponse resp = rest.post("${baseUrl}/ws/uploadImagesFromUrls",{
-            json {
-                [images:[[sourceURL:url1], [sourceURL: url2]]]
-            }
-        })
+        def request = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/uploadImagesFromUrls")
+                .contentType("application/json")
+                .body([images:[[sourceURL:url1], [sourceURL: url2]]])
 
         then:
-        resp.status == 400
+        HttpClientResponseException ex = thrown()
+        and:
+        ex.status == HttpStatus.BAD_REQUEST
     }
 
 
@@ -81,15 +98,15 @@ class ImageUploadSpec extends Specification {
         def url1 = "https://www.ala.org.au/app/uploads/2019/05/mycena-epipterygia-by-Reiner-Richter-CCBYNCInt-26052018-1920-1200--640x480.jpg"
         def url2 = "https://www.ala.org.au/app/uploads/2019/06/Rufous-Betting-by-Graham-Armstrong-CCBY-25-Apr-2019-1920-x-1200-640x480.jpg"
 
-        RestResponse resp = rest.post("${baseUrl}/ws/uploadImagesFromUrls",{
-            json {
-                [images:[[sourceUrl:url1], [sourceUrl: url2]]]
-            }
-        })
-        def jsonResponse = new JsonSlurper().parseText(resp.body)
+        def request = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/uploadImagesFromUrls")
+                .contentType("application/json")
+                .body([images:[[sourceUrl:url1], [sourceUrl: url2]]])
+        HttpResponse resp = rest.exchange(request, String)
+
+        def jsonResponse = new JsonSlurper().parseText(resp.body())
 
         then:
-        resp.status == 200
+        resp.status == HttpStatus.OK
         jsonResponse.success == true
         jsonResponse.results.get(url1).success == true
         jsonResponse.results.get(url2).success == true
@@ -104,23 +121,24 @@ class ImageUploadSpec extends Specification {
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<String, String>()
         form.add("imageUrl", "https://static.inaturalist.org/photos/35335345/original.jpeg?1555821308")
-        RestResponse resp = rest.post("${baseUrl}/ws/uploadImage", {
-            contentType("application/x-www-form-urlencoded")
-            body(form)
-        })
-        def jsonResponse1 = new JsonSlurper().parseText(resp.body)
+        def request = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/uploadImage")
+            .contentType("application/x-www-form-urlencoded")
+            .body(form)
+
+        HttpResponse resp = rest.exchange(request, String)
+        def jsonResponse1 = new JsonSlurper().parseText(resp.body())
 
         MultiValueMap<String, String> form2 = new LinkedMultiValueMap<String, String>()
         form2.add("imageUrl", "https://static.inaturalist.org/photos/35335341/original.jpeg?1555821307")
-        RestResponse resp2 = rest.post("${baseUrl}/ws/uploadImage", {
-            contentType("application/x-www-form-urlencoded")
-            body(form2)
-        })
-        def jsonResponse2 = new JsonSlurper().parseText(resp2.body)
+        def request2 = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/uploadImage")
+            .contentType("application/x-www-form-urlencoded")
+            .body(form2)
+        HttpResponse resp2 = rest.exchange(request2, String)
+        def jsonResponse2 = new JsonSlurper().parseText(resp2.body())
 
         then:
-        resp.status == 200
-        resp2.status == 200
+        resp.status == HttpStatus.OK
+        resp2.status == HttpStatus.OK
         jsonResponse1.imageId != null
         jsonResponse2.imageId != null
         jsonResponse1.imageId != jsonResponse2.imageId
@@ -131,17 +149,19 @@ class ImageUploadSpec extends Specification {
 
         File imageFile = new File("src/integration-test/resources/test.jpg")
 
-        RestResponse resp = rest.post("${baseUrl}/ws/uploadImage") {
-            contentType "multipart/form-data"
-            setProperty "image", imageFile
-        }
-        def jsonResponse = new JsonSlurper().parseText(resp.body)
+        def request = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/uploadImage")
+                .contentType("multipart/form-data")
+                .body(MultipartBody.builder()
+                        .addPart("image", imageFile)
+                        .build())
+        HttpResponse resp = rest.exchange(request, String)
+        def jsonResponse = new JsonSlurper().parseText(resp.body())
 
         println("Response status: " + resp.status)
         println(resp.body)
 
         then:
-        resp.status == 200
+        resp.status == HttpStatus.OK
         jsonResponse.imageId != null
     }
 }
