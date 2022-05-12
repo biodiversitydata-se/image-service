@@ -56,6 +56,7 @@ class ImageUploadSpec extends Specification {
         def request = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/uploadImagesFromUrls")
                 .contentType("application/json")
                 .body([:])
+        HttpResponse resp = rest.exchange(request, String)
         then:
         HttpClientResponseException ex = thrown()
         and:
@@ -84,6 +85,7 @@ class ImageUploadSpec extends Specification {
         def request = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/uploadImagesFromUrls")
                 .contentType("application/json")
                 .body([images:[[sourceURL:url1], [sourceURL: url2]]])
+        HttpResponse resp = rest.exchange(request, String)
 
         then:
         HttpClientResponseException ex = thrown()

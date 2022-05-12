@@ -10,7 +10,6 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.BlockingHttpClient
 import io.micronaut.http.client.DefaultHttpClient
 import io.micronaut.http.client.DefaultHttpClientConfiguration
-import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.HttpClientConfiguration
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
