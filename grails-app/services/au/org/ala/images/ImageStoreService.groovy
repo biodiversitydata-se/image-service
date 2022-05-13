@@ -23,6 +23,8 @@ import java.awt.Rectangle
 import java.awt.image.BufferedImage
 import java.nio.file.Files
 
+import org.grails.orm.hibernate.cfg.GrailsHibernateUtil
+
 class ImageStoreService {
 
     def grailsApplication
@@ -210,7 +212,7 @@ class ImageStoreService {
         def config = new ImageTilerConfig(2,2,256, 6, TileFormat.JPEG)
         config.setTileBackgroundColor(new Color(221, 221, 221))
         def tiler = new ImageTiler(config)
-        return tiler.tileImage(image.originalInputStream(), new TilerSink.PathBasedTilerSink(image.storageLocation.tilerByteSinkFactory(image.imageIdentifier)))
+        return tiler.tileImage(image.originalInputStream(), new TilerSink.PathBasedTilerSink(GrailsHibernateUtil.unwrapIfProxy(image.storageLocation).tilerByteSinkFactory(image.imageIdentifier)))
     }
 
     boolean storeTilesArchiveForImage(Image image, MultipartFile zipFile) {

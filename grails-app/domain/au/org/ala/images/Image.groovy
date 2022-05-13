@@ -1,6 +1,7 @@
 package au.org.ala.images
 
 //import net.kaleidos.hibernate.usertype.ArrayType
+import org.grails.orm.hibernate.cfg.GrailsHibernateUtil
 
 class Image {
 
@@ -146,59 +147,59 @@ class Image {
     }
 
     byte[] retrieve() {
-        storageLocation.retrieve(this.imageIdentifier)
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).retrieve(this.imageIdentifier)
     }
 
     boolean stored() {
-        storageLocation.stored(this.imageIdentifier)
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).stored(this.imageIdentifier)
     }
 
     long consumedSpace() {
-        storageLocation.consumedSpace(this.imageIdentifier)
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).consumedSpace(this.imageIdentifier)
     }
 
     boolean deleteStored() {
-        storageLocation.deleteStored(this.imageIdentifier)
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).deleteStored(this.imageIdentifier)
     }
 
     InputStream originalInputStream() throws FileNotFoundException {
-        storageLocation.originalInputStream(this.imageIdentifier, Range.emptyRange(this.fileSize))
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).originalInputStream(this.imageIdentifier, Range.emptyRange(this.fileSize))
     }
 
     InputStream originalInputStream(Range range) throws FileNotFoundException {
-        storageLocation.originalInputStream(this.imageIdentifier, range)
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).originalInputStream(this.imageIdentifier, range)
     }
 
     InputStream thumbnailInputStream(Range range) throws FileNotFoundException {
-        storageLocation.thumbnailInputStream(this.imageIdentifier, range)
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).thumbnailInputStream(this.imageIdentifier, range)
     }
 
     InputStream thumbnailTypeInputStream(String type, Range range) throws FileNotFoundException {
-        storageLocation.thumbnailTypeInputStream(this.imageIdentifier, type, range)
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).thumbnailTypeInputStream(this.imageIdentifier, type, range)
     }
 
     InputStream tileInputStream(Range range, int x, int y, int z) throws FileNotFoundException {
-        storageLocation.tileInputStream(this.imageIdentifier, x, y, z, range)
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).tileInputStream(this.imageIdentifier, x, y, z, range)
     }
 
     long originalStoredLength() throws FileNotFoundException {
-        storageLocation.originalStoredLength(this.imageIdentifier)
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).originalStoredLength(this.imageIdentifier)
     }
 
     long thumbnailStoredLength() throws FileNotFoundException {
-        storageLocation.thumbnailStoredLength(this.imageIdentifier)
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).thumbnailStoredLength(this.imageIdentifier)
     }
 
     long thumbnailTypeStoredLength(String type) throws FileNotFoundException {
-        storageLocation.thumbnailTypeStoredLength(this.imageIdentifier, type)
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).thumbnailTypeStoredLength(this.imageIdentifier, type)
     }
 
     long tileStoredLength(int x, int y, int z) throws FileNotFoundException {
-        storageLocation.tileStoredLength(this.imageIdentifier, x, y, z)
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).tileStoredLength(this.imageIdentifier, x, y, z)
     }
 
     void migrateTo(StorageLocation destination) {
-        storageLocation.migrateTo(this.imageIdentifier, this.mimeType, destination)
+        GrailsHibernateUtil.unwrapIfProxy(storageLocation).migrateTo(this.imageIdentifier, this.mimeType, destination)
     }
 
     static Image byOriginalFileOrAlternateFilename(String filename) {

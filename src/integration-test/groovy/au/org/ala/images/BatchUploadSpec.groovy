@@ -49,7 +49,7 @@ class BatchUploadSpec extends Specification {
 
         when:
 
-        def request = HttpRequest.create(HttpMethod.POST, "batch/upload")
+        def request = HttpRequest.create(HttpMethod.POST, "/batch/upload")
                 .contentType("multipart/form-data")
                 .body(MultipartBody.builder()
                         .addPart("dataResourceUid", TEST_DR_UID)
