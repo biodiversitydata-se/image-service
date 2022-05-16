@@ -183,7 +183,7 @@ class ImageStoreService {
             new ThumbDefinition(size, true, Color.darkGray, "thumbnail_square_darkGray"),
             new ThumbDefinition(650, false, null, "thumbnail_large"),
         ]
-        def results = t.generateThumbnails(imageBytes, image.storageLocation.thumbnailByteSinkFactory(image.imageIdentifier), thumbDefs as List<ThumbDefinition>)
+        def results = t.generateThumbnails(imageBytes, GrailsHibernateUtil.unwrapIfProxy(image.storageLocation).thumbnailByteSinkFactory(image.imageIdentifier), thumbDefs as List<ThumbDefinition>)
         auditService.log(imageIdentifier, "Thumbnails created", "N/A")
         return results
     }
@@ -233,7 +233,7 @@ class ImageStoreService {
                 szf.getInputStream(fh).withStream { stream ->
                     def contentType = tika.detect(stream, fh.fileName)
                     def length = fh.uncompressedSize
-                    image.storageLocation.storeTileZipInputStream(image.imageIdentifier, fh.fileName, contentType, length, szf.getInputStream(fh))
+                    GrailsHibernateUtil.unwrapIfProxy(image.storageLocation).storeTileZipInputStream(image.imageIdentifier, fh.fileName, contentType, length, szf.getInputStream(fh))
                 }
             }
 
