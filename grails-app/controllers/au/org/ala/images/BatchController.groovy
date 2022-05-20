@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
-
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import org.apache.commons.io.FileUtils
 
 import javax.ws.rs.Consumes
@@ -17,6 +17,7 @@ import javax.ws.rs.Path
 import javax.ws.rs.Produces
 
 import static io.swagger.v3.oas.annotations.enums.ParameterIn.PATH
+import static io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY
 
 class BatchController {
 
@@ -28,7 +29,7 @@ class BatchController {
             method = "POST",
             summary = "Upload zipped AVRO files for loading",
             parameters = [
-                    @Parameter(name="dataResourceUid", in = PATH, description = 'Data Resource UID', required = true)
+                    @Parameter(name="dataResourceUid", in = QUERY, description = 'Data Resource UId', required = true)
             ],
             requestBody = @RequestBody(
                     description = "The gzipped upload file",
@@ -42,12 +43,15 @@ class BatchController {
                             @Content(mediaType='application/json', schema = @Schema(implementation=Map))
                     ])
             ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ['BatchUpdate']
     )
     @Consumes('multipart/form-data')
     @Produces("application/json")
     @Path("/ws/batch/upload")
-    @RequireApiKey(scopes = ["images:write"])
+    @RequireApiKey(scopes = ["image-service:write"])
     def upload(){
 
         //multi part upload
@@ -100,7 +104,7 @@ class BatchController {
             method = "GET",
             summary = "Get batch update status",
             parameters = [
-                    @Parameter(name="batchID", in = PATH, description = 'The batch id', required = true)
+                    @Parameter(name="id", in = PATH, description = 'The batch id', required = true)
             ],
             responses = [
                     @ApiResponse(content = [
@@ -111,7 +115,7 @@ class BatchController {
             tags = ['BatchUpdate']
     )
     @Produces("application/json")
-    @Path("/ws/batch/status/{batchID}")
+    @Path("/ws/batch/status/{id}")
     def status(){
 
         //write zip file to filesystem
@@ -129,7 +133,7 @@ class BatchController {
             method = "GET",
             summary = "Get batch update status",
             parameters = [
-                    @Parameter(name="dataResourceUid", in = PATH, description = 'Data Resource UID', required = true)
+                    @Parameter(name="dataResourceUid", in = PATH, description = 'Data Resource UId', required = true)
             ],
             responses = [
                     @ApiResponse(content = [

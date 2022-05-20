@@ -60,7 +60,7 @@ class WebServiceController {
             method = "DELETE",
             summary = "Delete image",
             parameters = [
-                @Parameter(name = "id", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
+                @Parameter(name = "imageID", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
             ],
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
@@ -72,7 +72,7 @@ class WebServiceController {
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @Path("/ws/image/{id}")
+    @Path("/ws/image/{imageID}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = "image-service:write")
@@ -118,7 +118,7 @@ class WebServiceController {
             method = "POST",
             summary = "Schedule thumbnail generation",
             parameters = [
-                    @Parameter(name = "imageID", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
+                    @Parameter(name = "id", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
             ],
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
@@ -130,7 +130,7 @@ class WebServiceController {
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @Path("/ws/scheduleThumbnailGeneration/{imageID}")
+    @Path("/ws/scheduleThumbnailGeneration/{id}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service:write'])
@@ -161,7 +161,7 @@ class WebServiceController {
             method = "POST",
             summary = "Schedule artifact generation",
             parameters = [
-                    @Parameter(name = "imageID", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
+                    @Parameter(name = "id", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
             ],
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
@@ -173,7 +173,7 @@ class WebServiceController {
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @Path("/ws/scheduleArtifactGeneration/{imageID}")
+    @Path("/ws/scheduleArtifactGeneration/{id}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service:write'])
@@ -207,7 +207,7 @@ class WebServiceController {
             method = "GET",
             summary = "Schedule keyword generation",
             parameters = [
-                    @Parameter(name = "imageID", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
+                    @Parameter(name = "id", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
             ],
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
@@ -219,7 +219,7 @@ class WebServiceController {
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @Path("/ws/scheduleKeywordRegeneration/{imageID}")
+    @Path("/ws/scheduleKeywordRegeneration/{id}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service:write'])
@@ -273,7 +273,7 @@ class WebServiceController {
     @Path("/ws/tags")
     @Consumes("application/json")
     @Produces("application/json")
-    @RequireApiKey
+    @RequireApiKey(scopes=["image-service:write"])
     def getTagModel() {
 
         def newNode = { Tag tag, String label, boolean disabled = false ->
@@ -356,10 +356,10 @@ class WebServiceController {
 
     @Operation(
             method = "PUT",
-            summary = "Create tag by path",
+            summary = "Move tag",
             parameters = [
-                    @Parameter(name = "targetTagID", in = QUERY, required = true, description = "Target Tag ID to move", schema = @Schema(implementation = String)),
-                    @Parameter(name = "newParentTagID", in = QUERY, required = true, description = "New target parent tag ID", schema = @Schema(implementation = String))
+                    @Parameter(name = "targetTagId", in = QUERY, required = true, description = "Target Tag Id to move", schema = @Schema(implementation = String)),
+                    @Parameter(name = "newParentTagId", in = QUERY, required = true, description = "New target parent tag Id", schema = @Schema(implementation = String))
             ],
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
@@ -422,7 +422,7 @@ class WebServiceController {
             method = "DELETE",
             summary = "Delete tag",
             parameters = [
-                    @Parameter(name = "tagID", in = PATH, required = true, description = "Tag ID", schema = @Schema(implementation = String))
+                    @Parameter(name = "tagId", in = PATH, required = true, description = "Tag Id", schema = @Schema(implementation = String))
             ],
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
@@ -433,7 +433,7 @@ class WebServiceController {
             ],
             tags = ["Tag services"]
     )
-    @Path("/ws/tag/{tagID}")
+    @Path("/ws/tag/{tagId}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service:write'])
@@ -451,8 +451,8 @@ class WebServiceController {
             method = "PUT",
             summary = "Tag an image",
             parameters = [
-                    @Parameter(name = "tagID", in = PATH, required = true, description = "Tag ID", schema = @Schema(implementation = String)),
-                    @Parameter(name = "imageID", in = PATH, required = true, description = "Image ID", schema = @Schema(implementation = String))
+                    @Parameter(name = "tagId", in = PATH, required = true, description = "Tag Id", schema = @Schema(implementation = String)),
+                    @Parameter(name = "imageId", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
             ],
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
@@ -463,7 +463,7 @@ class WebServiceController {
             ],
             tags = ["Tag services"]
     )
-    @Path("/ws/tag/{tagID}/image/{imageID}")
+    @Path("/ws/tag/{tagId}/image/{imageId}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service:write'])
@@ -497,9 +497,6 @@ class WebServiceController {
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
             ],
-            security = [
-                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
-            ],
             tags = ["Tag services"]
     )
     @Path("/ws/images/keyword/{keyword}")
@@ -525,9 +522,6 @@ class WebServiceController {
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
             ],
-            security = [
-                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
-            ],
             tags = ["Tag services"]
     )
     @Path("/ws/images/tag/{tagID}")
@@ -544,10 +538,10 @@ class WebServiceController {
 
     @Operation(
             method = "DELETE",
-            summary = "Tag an image",
+            summary = "Detach tag from image",
             parameters = [
-                    @Parameter(name = "tagID", in = PATH, required = true, description = "Tag ID", schema = @Schema(implementation = String)),
-                    @Parameter(name = "imageID", in = PATH, required = true, description = "Image ID", schema = @Schema(implementation = String))
+                    @Parameter(name = "tagId", in = PATH, required = true, description = "Tag Id", schema = @Schema(implementation = String)),
+                    @Parameter(name = "imageId", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
             ],
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
@@ -558,7 +552,7 @@ class WebServiceController {
             ],
             tags = ["Tag services"]
     )
-    @Path("/ws/tag/{tagID}/image/{imageID}")
+    @Path("/ws/tag/{tagId}/image/{imageId}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service:write'])
@@ -585,9 +579,6 @@ class WebServiceController {
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
-            ],
-            security = [
-                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
@@ -619,9 +610,6 @@ class WebServiceController {
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
-            ],
-            security = [
-                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
@@ -676,9 +664,6 @@ class WebServiceController {
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
             ],
-            security = [
-                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
-            ],
             tags = ["JSON services for accessing and updating metadata"]
     )
     @Path("/ws/repositoryStatistics")
@@ -720,9 +705,6 @@ class WebServiceController {
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
             ],
-            security = [
-                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
-            ],
             tags = ["JSON services for accessing and updating metadata"]
     )
     @Path("/ws/repositoryStatistics")
@@ -738,9 +720,6 @@ class WebServiceController {
             summary = "Background queue statistics",
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
-            ],
-            security = [
-                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
@@ -912,9 +891,6 @@ class WebServiceController {
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
-            security = [
-                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
-            ],
             tags = ["Image search"]
     )
     @Path("/ws/search")
@@ -960,9 +936,6 @@ class WebServiceController {
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
-            security = [
-                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
-            ],
             tags = ["Image search"]
     )
     @Path("/ws/facet")
@@ -999,7 +972,7 @@ class WebServiceController {
 
     @Operation(
             method = "POST",
-            summary = "Create Subimage",
+            summary = "Bulk Add User Metadata To Image",
             parameters = [
                     @Parameter(name = "id", in = PATH, required = true, description = "Image ID", schema = @Schema(implementation = String)),
             ],
@@ -1076,7 +1049,7 @@ class WebServiceController {
 
     @Operation(
             method = "GET",
-            summary = "Remove User Metadata from Image",
+            summary = "Get Metadata",
             parameters = [
 //                    @Parameter(name = "id", in = PATH, required = true, description = "Image ID", schema = @Schema(implementation = String)),
                     @Parameter(name = "source", in = QUERY, required = false, description = "Only return metadata items with this source", schema = @Schema(implementation = MetaDataSourceType)),
@@ -1122,7 +1095,7 @@ class WebServiceController {
 
     @Operation(
             method = "GET",
-            summary = "Remove User Metadata from Image",
+            summary = "Get ImageLinks For MetaData Values",
             parameters = [
                     @Parameter(name = "key", in = QUERY, required = true, description = "Image ID", schema = @Schema(implementation = String)),
                     @Parameter(name = "q", in = QUERY, required = false, description = "Query", schema = @Schema(implementation = MetaDataSourceType)),
@@ -1339,6 +1312,7 @@ class WebServiceController {
 //            @ApiResponse(code = 200, message = "OK"),
 //            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed")]
 //    )
+    @Path("/ws/licenceMapping")
     def licenceMapping(){
         def licenses = LicenseMapping.findAll()
         renderResults (licenses, 200, true)
@@ -1531,9 +1505,9 @@ class WebServiceController {
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
 //                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
-//            security = [
-//                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
-//            ],
+            security = [
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+            ],
             tags = ["Tile jobs"]
     )
     @Path("/ws/cancelTileJob")

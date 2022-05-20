@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import static io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER
 import static io.swagger.v3.oas.annotations.enums.ParameterIn.PATH
+import static io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY
 import static javax.servlet.http.HttpServletResponse.SC_FOUND
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND
 import static javax.servlet.http.HttpServletResponse.SC_NOT_MODIFIED
@@ -600,7 +601,7 @@ class ImageController {
             method = "GET",
             summary = "Get original image.",
             parameters = [
-                    @Parameter(name="id", in = PATH, description = 'Image Id', required = true),
+                    @Parameter(name="id", in = QUERY, description = 'Image Id', required = true),
                     @Parameter(name="Accept", in = HEADER, description = "Content type requested", required = true)
             ],
             responses = [
@@ -614,7 +615,7 @@ class ImageController {
             tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
     )
     @Produces("application/json")
-    @Path("/image/{id}")
+    @Path("/image/details")
 //    @ApiOperation(
 //            value = "Get original image",
 //            nickname = "{id}",
