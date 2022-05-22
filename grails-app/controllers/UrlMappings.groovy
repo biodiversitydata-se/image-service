@@ -21,8 +21,8 @@ class UrlMappings {
 
         "/ws/batch/$id"(controller: "batch", action: "status")
         "/ws/batch/status/$id"(controller: "batch", action: "status")
-        "/ws/batch/dataset/$dataResourceUID"(controller: "batch", action: "statusForDataResource")
-        "/ws/batch/dataresource/$dataResourceUID"(controller: "batch", action: "statusForDataResource")
+        "/ws/batch/dataset/$dataResourceUid"(controller: "batch", action: "statusForDataResource")
+        "/ws/batch/dataresource/$dataResourceUid"(controller: "batch", action: "statusForDataResource")
         "/ws/batch/upload"(controller: "batch", action: "upload")
 
         "/ws/$action?/$id?(.$format)?" {
