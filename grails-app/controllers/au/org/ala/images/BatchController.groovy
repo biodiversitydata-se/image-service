@@ -4,6 +4,7 @@ import au.ala.org.ws.security.RequireApiKey
 import grails.converters.JSON
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.headers.Header
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -41,7 +42,13 @@ class BatchController {
             responses = [
                     @ApiResponse(content = [
                             @Content(mediaType='application/json', schema = @Schema(implementation=Map))
-                    ])
+                            ],
+                            responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
@@ -109,7 +116,13 @@ class BatchController {
             responses = [
                     @ApiResponse(content = [
                             @Content(mediaType='application/json', schema = @Schema(implementation=Map))
-                    ]),
+                            ],
+                            responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404")
             ],
             tags = ['BatchUpdate']
@@ -138,7 +151,13 @@ class BatchController {
             responses = [
                     @ApiResponse(content = [
                             @Content(mediaType='application/json', array = @ArraySchema(schema = @Schema(implementation=Map)))
-                    ]),
+                            ],
+                            responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404")
             ],
             tags = ['BatchUpdate']

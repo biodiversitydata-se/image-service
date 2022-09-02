@@ -208,7 +208,7 @@ security:
         optional-filter-pattern:
           - '/ws/createSubimage'
     cas:
-        enabled: true # default for backwards compat with v1
+        enabled: false # default for backwards compat with v1
         appServerName: 'http://dev.ala.org.au:8080'
         uriFilterPattern:
           - '/admin/*'
@@ -222,14 +222,14 @@ security:
         bypass: false
         disableCAS: false
     oidc:
-        enabled: false # default for backwards compat with v1
+        enabled: true # default for backwards compat with v1
         scope: openid profile email ala roles
         clientId: changeme
         secret: changeme
         allowUnsignedIdTokens: true # Disable once CAS no longer suggests the none algorithm
-        discoveryUri: https://auth-dev.ala.org.au/cas/oidc/.well-known
+        discoveryUri: https://auth-test.ala.org.au/cas/oidc/.well-known
     jwt:
-        enabled: false # default for backwards compat with v1
+        enabled: true # default for backwards compat with v1
         fallbackToLegacyKeys: true # Reset to false once legacy api keys no longer supported
         discoveryUri: ${security.oidc.discoveryUri}
 

@@ -8,6 +8,7 @@ import grails.converters.XML
 import groovy.util.logging.Slf4j
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.headers.Header
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -96,7 +97,12 @@ class ImageController {
                     @Parameter(name="id", in = PATH, description = 'Image Id', required = true)
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType='image/jpeg')]),
+                    @ApiResponse(content = [@Content(mediaType='image/jpeg')],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404")
             ],
             tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
@@ -138,7 +144,12 @@ class ImageController {
                     @Parameter(name="id", in = PATH, description = 'Image Id', required = true)
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType='image/jpeg')]),
+                    @ApiResponse(content = [@Content(mediaType='image/jpeg')],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404")
             ],
             tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
@@ -198,7 +209,12 @@ class ImageController {
                     @Parameter(name="id", in = PATH, description = 'Image Id', required = true)
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType='image/jpeg')]),
+                    @ApiResponse(content = [@Content(mediaType='image/jpeg')],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404")
             ],
             tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
@@ -262,7 +278,12 @@ class ImageController {
                     @Parameter(name="x", in = PATH, description = 'Tile mapping service X value', required = true),
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType='image/png')]),
+                    @ApiResponse(content = [@Content(mediaType='image/png')],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404")
             ],
             tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
@@ -609,7 +630,12 @@ class ImageController {
                             @Content(mediaType='application/json', schema = @Schema(implementation=Map)),
                             @Content(mediaType='image/*', schema = @Schema(type="string", format="binary")),
                             @Content(mediaType='text/html', schema = @Schema(implementation=Map)),
-                    ]),
+                    ],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404")
             ],
             tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']

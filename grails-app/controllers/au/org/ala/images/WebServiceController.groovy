@@ -9,6 +9,7 @@ import grails.converters.JSON
 import grails.converters.XML
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.headers.Header
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -63,7 +64,12 @@ class WebServiceController {
                 @Parameter(name = "imageID", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "405"),
                     @ApiResponse(responseCode = "404")
             ],
@@ -121,7 +127,12 @@ class WebServiceController {
                     @Parameter(name = "id", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "405"),
                     @ApiResponse(responseCode = "404")
             ],
@@ -164,7 +175,12 @@ class WebServiceController {
                     @Parameter(name = "id", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "405"),
                     @ApiResponse(responseCode = "404")
             ],
@@ -210,7 +226,12 @@ class WebServiceController {
                     @Parameter(name = "id", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "405"),
             ],
@@ -262,7 +283,12 @@ class WebServiceController {
             method = "GET",
             summary = "Get tag model",
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "405"),
             ],
             security = [
@@ -328,7 +354,12 @@ class WebServiceController {
                     @Parameter(name = "tagPath", in = QUERY, required = true, description = "Tag path. Paths separated by '/'. e.g. 'Birds/Colour/Red'", schema = @Schema(implementation = String))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "405"),
             ],
@@ -362,7 +393,12 @@ class WebServiceController {
                     @Parameter(name = "newParentTagId", in = QUERY, required = true, description = "New target parent tag Id", schema = @Schema(implementation = String))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "405"),
             ],
@@ -396,7 +432,12 @@ class WebServiceController {
                     @Parameter(name = "name", in = QUERY, required = true, description = "New name", schema = @Schema(implementation = String))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
             security = [
@@ -425,7 +466,12 @@ class WebServiceController {
                     @Parameter(name = "tagId", in = PATH, required = true, description = "Tag Id", schema = @Schema(implementation = String))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
             security = [
@@ -455,7 +501,12 @@ class WebServiceController {
                     @Parameter(name = "imageId", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
             security = [
@@ -495,7 +546,12 @@ class WebServiceController {
                     @Parameter(name = "offset", in = QUERY, required = false, description = "offset for paging", schema = @Schema(implementation = Integer, defaultValue = "0"))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ])
             ],
             tags = ["Tag services"]
     )
@@ -520,7 +576,12 @@ class WebServiceController {
                     @Parameter(name = "offset", in = QUERY, required = false, description = "offset for paging", schema = @Schema(implementation = Integer, defaultValue = "0"))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ])
             ],
             tags = ["Tag services"]
     )
@@ -544,7 +605,12 @@ class WebServiceController {
                     @Parameter(name = "imageId", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
             security = [
@@ -577,7 +643,12 @@ class WebServiceController {
                     @Parameter(name = "includeMetadata", in = QUERY, required = false, description = "Include metadata", schema = @Schema(implementation = Boolean))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
             tags = ["JSON services for accessing and updating metadata"]
@@ -608,7 +679,12 @@ class WebServiceController {
                     @Parameter(name = "includeMetadata", in = QUERY, required = false, description = "Include metadata", schema = @Schema(implementation = Boolean))
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
             tags = ["JSON services for accessing and updating metadata"]
@@ -662,7 +738,12 @@ class WebServiceController {
             method = "GET",
             summary = "Repository statistics",
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ])
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
@@ -703,7 +784,12 @@ class WebServiceController {
             method = "GET",
             summary = "Repository size statistics",
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ])
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
@@ -719,7 +805,12 @@ class WebServiceController {
             method = "GET",
             summary = "Background queue statistics",
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))])
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ])
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
@@ -779,7 +870,12 @@ class WebServiceController {
                     @Parameter(name = "width", in = QUERY, required = true, description = "sub image width", schema = @Schema(implementation = Integer)),
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -889,7 +985,12 @@ class WebServiceController {
                     @Parameter(name = "order", in = QUERY, required = false, description = "Sort order", schema = @Schema(implementation = String, allowableValues = ['asc', 'desc'])),
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
             ],
             tags = ["Image search"]
     )
@@ -934,7 +1035,12 @@ class WebServiceController {
                     @Parameter(name = "order", in = QUERY, required = false, description = "Sort order", schema = @Schema(implementation = String, allowableValues = ['asc', 'desc'])),
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
             ],
             tags = ["Image search"]
     )
@@ -982,7 +1088,12 @@ class WebServiceController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
             ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
@@ -1016,7 +1127,12 @@ class WebServiceController {
                     @Parameter(name = "key", in = QUERY, required = true, description = "Metadata key/name", schema = @Schema(implementation = String)),
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -1055,7 +1171,12 @@ class WebServiceController {
                     @Parameter(name = "source", in = QUERY, required = false, description = "Only return metadata items with this source", schema = @Schema(implementation = MetaDataSourceType)),
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
 //                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -1101,7 +1222,12 @@ class WebServiceController {
                     @Parameter(name = "q", in = QUERY, required = false, description = "Query", schema = @Schema(implementation = MetaDataSourceType)),
             ],
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -1174,7 +1300,12 @@ class WebServiceController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
             ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -1247,7 +1378,12 @@ class WebServiceController {
 //                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
 //            ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
 //                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -1290,7 +1426,12 @@ class WebServiceController {
 //                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
 //            ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
 //                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -1331,7 +1472,12 @@ class WebServiceController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
             ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
 //                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -1406,7 +1552,12 @@ class WebServiceController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
             ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
 //                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -1501,7 +1652,12 @@ class WebServiceController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
             ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
 //                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -1599,7 +1755,12 @@ class WebServiceController {
 //                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
 //            ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
 //                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -1690,7 +1851,12 @@ class WebServiceController {
                     content = @Content(mediaType = "multipart/form-data", schema = @Schema(type = 'object', implementation = String, format = 'binary'))
             ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "500", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -1843,7 +2009,12 @@ class WebServiceController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
             ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
 //                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -1991,7 +2162,12 @@ class WebServiceController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
             ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -2061,7 +2237,12 @@ class WebServiceController {
 //                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
 //            ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -2109,7 +2290,12 @@ class WebServiceController {
 //                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
 //            ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
 //                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -2191,7 +2377,12 @@ class WebServiceController {
 //                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
 //            ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/gzip", schema = @Schema(implementation = Map, format= 'binary'))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/gzip", schema = @Schema(implementation = Map, format= 'binary'))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
 //                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -2238,7 +2429,12 @@ class WebServiceController {
 //                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
 //            ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/gzip", schema = @Schema(implementation = Map, format= 'binary'))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/gzip", schema = @Schema(implementation = Map, format= 'binary'))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
 //                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -2285,7 +2481,12 @@ class WebServiceController {
 //                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
 //            ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/gzip", schema = @Schema(implementation = Map, format= 'binary'))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/gzip", schema = @Schema(implementation = Map, format= 'binary'))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],
@@ -2356,7 +2557,12 @@ class WebServiceController {
 //                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
 //            ),
             responses = [
-                    @ApiResponse(content = [@Content(mediaType = "application/gzip", schema = @Schema(implementation = Map, format= 'binary'))]),
+                    @ApiResponse(content = [@Content(mediaType = "application/gzip", schema = @Schema(implementation = Map, format= 'binary'))],responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
 //                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
                     @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
             ],

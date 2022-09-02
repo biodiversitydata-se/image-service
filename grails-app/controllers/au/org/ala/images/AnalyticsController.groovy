@@ -3,6 +3,7 @@ package au.org.ala.images
 import grails.converters.JSON
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.headers.Header
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -55,7 +56,13 @@ class AnalyticsController {
             responses = [
                     @ApiResponse(content = [
                             @Content(mediaType='application/json', schema = @Schema(implementation=Map))
-                    ]),
+                            ],
+                            responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
                     @ApiResponse(responseCode = "400")
             ],
             tags = ['Analytics services - image usage tracking']
@@ -96,7 +103,13 @@ class AnalyticsController {
             responses = [
                     @ApiResponse(content = [
                             @Content(mediaType='application/json', schema = @Schema(implementation=Map))
-                    ])
+                            ],
+                            responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ])
             ],
             tags = ['Analytics services - image usage tracking']
     )
