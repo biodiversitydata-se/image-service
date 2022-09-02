@@ -314,6 +314,12 @@ openapi:
         url: https://www.mozilla.org/en-US/MPL/1.1/
     version: '@info.app.version@'
     cachetimeoutms: 0
+    components:
+      security:
+        oauth2:
+          scopes:
+            image-service/read: Read or list any or all images records
+            image-service/write: Write to an images record
 
 facets: ["recognisedLicence", "dataResourceUid", "creator.keyword", "imageSize", "fileType", "format", "dateUploadedYearMonth"]
 

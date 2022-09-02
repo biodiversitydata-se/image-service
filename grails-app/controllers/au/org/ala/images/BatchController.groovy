@@ -29,6 +29,7 @@ class BatchController {
     @Operation(
             method = "POST",
             summary = "Upload zipped AVRO files for loading",
+            description = "Upload zipped AVRO files for loading. Required scopes: 'image-service/write'.",
             parameters = [
                     @Parameter(name="dataResourceUid", in = QUERY, description = 'Data Resource UId', required = true)
             ],
@@ -51,14 +52,14 @@ class BatchController {
                             ])
             ],
             security = [
-                    @SecurityRequirement(name="openIdConnect", scopes=["image-service:write"])
+                    @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
             ],
             tags = ['BatchUpdate']
     )
     @Consumes('multipart/form-data')
     @Produces("application/json")
     @Path("/ws/batch/upload")
-    @RequireApiKey(scopes = ["image-service:write"])
+    @RequireApiKey(scopes = ["image-service/write"])
     def upload(){
 
         //multi part upload
@@ -110,6 +111,7 @@ class BatchController {
     @Operation(
             method = "GET",
             summary = "Get batch update status",
+            description = "Get batch update status.",
             parameters = [
                     @Parameter(name="id", in = PATH, description = 'The batch id', required = true)
             ],
@@ -145,6 +147,7 @@ class BatchController {
     @Operation(
             method = "GET",
             summary = "Get batch update status",
+            description = "Get batch update status.",
             parameters = [
                     @Parameter(name="dataResourceUid", in = PATH, description = 'Data Resource UId', required = true)
             ],
