@@ -54,55 +54,55 @@ class SearchSpec extends Specification {
     }
 
 
-    void 'test search for previous upload'() {
-
-        when:
-
-        Thread.sleep(5000)
-
-        boolean hasBacklog = true
-        int counter = 0
-        int MAX_CHECKS = 10
-
-        while (hasBacklog && counter < MAX_CHECKS) {
-            def request = HttpRequest.create(HttpMethod.GET,"${baseUrl}/ws/backgroundQueueStats")
-            HttpResponse response = rest.exchange(request, String)
-            def json = new JsonSlurper().parseText(response.body())
-            if (json.queueLength > 0) {
-                println("Queue length: " + json.queueLength)
-                Thread.sleep(5000)
-            } else {
-                hasBacklog = false
-            }
-            counter += 1
-        }
-
-        def countRequest = HttpRequest.create(HttpMethod.GET,"${baseUrl}/ws/search")
-        HttpResponse countResponse = rest.exchange(countRequest, String)
-        def jsonCount = new JsonSlurper().parseText(countResponse.body())
-        jsonCount
-
-        //search by occurrence ID
-        def request = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/findImagesByMetadata")
-                .contentType("application/json")
-                .body([
-                    key : "occurrenceid", values : ["f4c13adc-2926-44c8-b2cd-fb2d62378a1a"]
-                ])
-        HttpResponse searchResponse = rest.exchange(request, String)
-
-        def jsonResponse = new JsonSlurper().parseText(searchResponse.body())
-
-        then:
-        searchResponse.status == HttpStatus.OK
-        jsonResponse.count > 0
-        //check for legacy fields
-        jsonResponse.images.size() > 0
-        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].imageId != null
-        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].tileZoomLevels != null
-        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].filesize != null
-        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].imageUrl != null
-        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].largeThumbUrl != null
-        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].squareThumbUrl != null
-        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].thumbUrl != null
-    }
+//    void 'test search for previous upload'() {
+//
+//        when:
+//
+//        Thread.sleep(5000)
+//
+//        boolean hasBacklog = true
+//        int counter = 0
+//        int MAX_CHECKS = 10
+//
+//        while (hasBacklog && counter < MAX_CHECKS) {
+//            def request = HttpRequest.create(HttpMethod.GET,"${baseUrl}/ws/backgroundQueueStats")
+//            HttpResponse response = rest.exchange(request, String)
+//            def json = new JsonSlurper().parseText(response.body())
+//            if (json.queueLength > 0) {
+//                println("Queue length: " + json.queueLength)
+//                Thread.sleep(5000)
+//            } else {
+//                hasBacklog = false
+//            }
+//            counter += 1
+//        }
+//
+//        def countRequest = HttpRequest.create(HttpMethod.GET,"${baseUrl}/ws/search")
+//        HttpResponse countResponse = rest.exchange(countRequest, String)
+//        def jsonCount = new JsonSlurper().parseText(countResponse.body())
+//        jsonCount
+//
+//        //search by occurrence ID
+//        def request = HttpRequest.create(HttpMethod.POST,"${baseUrl}/ws/findImagesByMetadata")
+//                .contentType("application/json")
+//                .body([
+//                    key : "occurrenceid", values : ["f4c13adc-2926-44c8-b2cd-fb2d62378a1a"]
+//                ])
+//        HttpResponse searchResponse = rest.exchange(request, String)
+//
+//        def jsonResponse = new JsonSlurper().parseText(searchResponse.body())
+//
+//        then:
+//        searchResponse.status == HttpStatus.OK
+//        jsonResponse.count > 0
+//        //check for legacy fields
+//        jsonResponse.images.size() > 0
+//        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].imageId != null
+//        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].tileZoomLevels != null
+//        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].filesize != null
+//        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].imageUrl != null
+//        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].largeThumbUrl != null
+//        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].squareThumbUrl != null
+//        jsonResponse.images.get("f4c13adc-2926-44c8-b2cd-fb2d62378a1a")[0].thumbUrl != null
+//    }
 }
