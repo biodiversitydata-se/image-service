@@ -109,14 +109,6 @@ class BatchUploadSpec extends Specification {
 
         def response = new JsonSlurper().parseText(uploadResponse.body())
 
-//        RestResponse uploadResponse = rest.post("${baseUrl}/batch/upload") {
-//            contentType "multipart/form-data"
-//            setProperty "dataResourceUid", TEST_DR_UID
-//            setProperty "archive", avro
-//        }
-//
-//        def response = new JsonSlurper().parseText(uploadResponse.body)
-
         // wait for batch files and images to be created
         int start = System.currentTimeSeconds()
         def origFilename = 'https://www.ala.org.au/app/uploads/2019/05/palm-cockatoo-by-Alan-Pettigrew-1920-1200-CCBY-28072018-640x480.jpg'
@@ -175,14 +167,6 @@ class BatchUploadSpec extends Specification {
 
         def response = new JsonSlurper().parseText(uploadResponse.body())
 
-//        RestResponse uploadResponse = rest.post("${baseUrl}/batch/upload") {
-//            contentType "multipart/form-data"
-//            setProperty "dataResourceUid", TEST_DR_UID
-//            setProperty "archive", avro
-//        }
-//
-//        def response = new JsonSlurper().parseText(uploadResponse.body)
-
         // wait for batch files and images to be created
         int start = System.currentTimeSeconds()
         // Poll until the image tiler has run on the last image in the batch upload
@@ -237,14 +221,6 @@ class BatchUploadSpec extends Specification {
                         .build()), String)
 
         def response = new JsonSlurper().parseText(uploadResponse.body())
-
-//        RestResponse uploadResponse = rest.post("${baseUrl}/batch/upload") {
-//            contentType "multipart/form-data"
-//            setProperty "dataResourceUid", TEST_DR_UID
-//            setProperty "archive", avro
-//        }
-//
-//        def response = new JsonSlurper().parseText(uploadResponse.body)
 
         // wait for batch files and images to be created
         int start = System.currentTimeSeconds()
