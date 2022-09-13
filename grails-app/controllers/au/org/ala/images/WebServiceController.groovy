@@ -508,7 +508,7 @@ class WebServiceController {
             summary = "Rename tag",
             description = "Rename tag. Required scopes: 'image-service/write'.",
             parameters = [
-                    @Parameter(name = "tagID", in = QUERY, required = true, description = "Tag ID", schema = @Schema(implementation = String)),
+                    @Parameter(name = "tagID", in = PATH, required = true, description = "Tag ID", schema = @Schema(implementation = String)),
                     @Parameter(name = "name", in = QUERY, required = true, description = "New name", schema = @Schema(implementation = String))
             ],
             responses = [
@@ -534,7 +534,7 @@ class WebServiceController {
             ],
             tags = ["Tag services"]
     )
-    @Path("/ws/tag/rename")
+    @Path("/ws/tag/{tagID}/rename")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service/write'])
@@ -696,7 +696,7 @@ class WebServiceController {
             ],
             tags = ["Tag services"]
     )
-    @Path("/ws/images/tag/{tagID}")
+    @Path("/ws/tag/{tagID}/images")
     @Consumes("application/json")
     @Produces("application/json")
     def getImagesForTag(){
