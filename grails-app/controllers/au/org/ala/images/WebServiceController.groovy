@@ -1363,7 +1363,7 @@ class WebServiceController {
             summary = "Get ImageLinks For MetaData Values",
             description = "Get ImageLinks For MetaData Values.",
             parameters = [
-                    @Parameter(name = "key", in = QUERY, required = true, description = "Image ID", schema = @Schema(implementation = String)),
+                    @Parameter(name = "key", in = QUERY, required = true, description = "Metadata key", schema = @Schema(implementation = String)),
                     @Parameter(name = "q", in = QUERY, required = false, description = "Query", schema = @Schema(implementation = MetaDataSourceType)),
             ],
             responses = [
@@ -1402,12 +1402,14 @@ class WebServiceController {
         def images = searchService.findImagesByMetadata(key, [query], params)
         def results = [images:[], success: true, count: images.totalCount]
 
-        def keyValues = imageService.getMetadataItemValuesForImages(images, key)
+        if(images.get(key) != null) {
+            def keyValues = imageService.getMetadataItemValuesForImages(images, key)
 
-        images.each { image ->
-            def info =  imageService.getImageInfoMap(image)
-            info[key] = keyValues[image.id]
-            results.images << info
+            images.each { image ->
+                def info = imageService.getImageInfoMap(image)
+                info[key] = keyValues[image.id]
+                results.images << info
+            }
         }
 
         renderResults(results, 200, true)
