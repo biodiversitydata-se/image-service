@@ -103,7 +103,11 @@ class ImageController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404")
+                    @ApiResponse(responseCode = "404", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
     )
@@ -138,7 +142,11 @@ class ImageController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404")
+                    @ApiResponse(responseCode = "404", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
     )
@@ -191,7 +199,11 @@ class ImageController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404")
+                    @ApiResponse(responseCode = "404", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
     )
@@ -248,7 +260,11 @@ class ImageController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404")
+                    @ApiResponse(responseCode = "404", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
     )
@@ -585,7 +601,11 @@ class ImageController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404")
+                    @ApiResponse(responseCode = "404", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             tags = ['Access to image derivatives (e.g. thumbnails, tiles and originals)']
     )

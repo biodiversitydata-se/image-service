@@ -49,7 +49,12 @@ class BatchController {
                                     @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
-                            ])
+                            ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -125,7 +130,11 @@ class BatchController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404")
+                    @ApiResponse(responseCode = "404", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             tags = ['BatchUpdate']
     )
@@ -161,7 +170,11 @@ class BatchController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404")
+                    @ApiResponse(responseCode = "404", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             tags = ['BatchUpdate']
     )

@@ -56,8 +56,21 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "405"),
-                    @ApiResponse(responseCode = "404")
+                    @ApiResponse(responseCode = "405",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "404",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -120,8 +133,21 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "405"),
-                    @ApiResponse(responseCode = "404")
+                    @ApiResponse(responseCode = "405", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+            ]),
+                    @ApiResponse(responseCode = "404", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -169,8 +195,21 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "405"),
-                    @ApiResponse(responseCode = "404")
+                    @ApiResponse(responseCode = "405", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "404", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -221,8 +260,21 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
-                    @ApiResponse(responseCode = "405"),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "405", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -279,7 +331,16 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "405"),
+                    @ApiResponse(responseCode = "405", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -351,8 +412,21 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
-                    @ApiResponse(responseCode = "405"),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "405", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -391,8 +465,21 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
-                    @ApiResponse(responseCode = "405"),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "405", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -431,7 +518,16 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -466,7 +562,16 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -502,7 +607,16 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -609,7 +723,16 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -648,7 +771,11 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
@@ -685,7 +812,11 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
@@ -866,8 +997,21 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
-                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -1087,6 +1231,11 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -1127,7 +1276,16 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -1215,7 +1373,11 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
             ],
             tags = ["Image metadata"]
     )
@@ -1271,7 +1433,11 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
             ],
             tags = ["Image metadata"]
     )
@@ -1505,7 +1671,12 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
-                            ])],
+                            ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
             ],
@@ -1602,7 +1773,16 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -1681,8 +1861,21 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "500", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
-                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "500", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -1798,7 +1991,16 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "404", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -1931,7 +2133,16 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/write"])
@@ -1984,7 +2195,16 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
+                    @ApiResponse(responseCode = "403",headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             security = [
                     @SecurityRequirement(name="openIdConnect", scopes=["image-service/read"])
@@ -2131,7 +2351,11 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
             ],
             tags = ["Export"]
     )
@@ -2180,7 +2404,11 @@ class WebServiceController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))]),
+                    @ApiResponse(responseCode = "400", content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))], headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ]),
             ],
             tags = ["Export"]
     )

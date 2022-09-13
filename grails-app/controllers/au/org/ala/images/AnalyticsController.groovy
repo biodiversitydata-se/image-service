@@ -55,7 +55,11 @@ class AnalyticsController {
                                     @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
                                     @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
                             ]),
-                    @ApiResponse(responseCode = "400")
+                    @ApiResponse(responseCode = "400", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
             ],
             tags = ['Analytics services - image usage tracking']
     )
