@@ -696,7 +696,7 @@ class WebServiceController {
             ],
             tags = ["Tag services"]
     )
-    @Path("/ws/tag/{tagID}/images")
+    @Path("/ws/images/tag/{tagID}")
     @Consumes("application/json")
     @Produces("application/json")
     def getImagesForTag(){
