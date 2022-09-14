@@ -1418,11 +1418,7 @@ class WebServiceController {
     @Operation(
             method = "POST",
             summary = "Get images for a list of image IDs",
-            description = "Get images for a list of image IDs. Required scopes: 'image-service/write'.",
-            parameters = [
-                    @Parameter(name = "key", in = QUERY, required = true, description = "Image ID", schema = @Schema(implementation = String)),
-                    @Parameter(name = "q", in = QUERY, required = false, description = "Query", schema = @Schema(implementation = MetaDataSourceType)),
-            ],
+            description = "Get images for a list of image IDs.",
             requestBody = @RequestBody(
                     required = true,
                     description = "JSON Document of with a single field, imageIds, which contains a list of image ids.",
