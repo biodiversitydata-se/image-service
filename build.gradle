@@ -29,7 +29,8 @@ apply plugin:"org.grails.grails-web"
 apply plugin:"com.github.erdi.webdriver-binaries"
 apply plugin:"com.bertramlabs.asset-pipeline"
 apply plugin:"org.grails.grails-gsp"
-apply plugin:"maven-publish"
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
 
 //apply from: 'https://raw.githubusercontent.com/AtlasOfLivingAustralia/travis-build-configuration/master/travis_grails_publish.gradle'
@@ -181,6 +182,15 @@ dependencies {
     testCompile 'com.palantir.docker.compose:docker-compose-rule-junit4:1.7.0'
 }
 
+bootJar {
+    enabled = true
+    classifier = 'exec'
+    launchScript()
+}
+
+bootWar {
+    enabled = false
+}
 
 springBoot {
     buildInfo()
@@ -197,11 +207,6 @@ bootRun {
     sourceResources sourceSets.main
     String springProfilesActive = 'spring.profiles.active'
     systemProperty springProfilesActive, System.getProperty(springProfilesActive)
-}
-
-bootWar {
-    launchScript()
-    classifier = 'exec'
 }
 
 tasks.withType(GroovyCompile) {
@@ -236,7 +241,20 @@ publishing {
     }
     publications {
         mavenJar(MavenPublication) {
-            artifact bootWar
+            pom.withXml {
+                def pomNode = asNode()
+                pomNode.dependencyManagement.replaceNode {}
+
+                // simply remove dependencies without a version
+                // version-less dependencies are handled with dependencyManagement
+                // see https://github.com/spring-gradle-plugins/dependency-management-plugin/issues/8 for more complete solutions
+                pomNode.dependencies.dependency.findAll {
+                    it.version.text().isEmpty()
+                }.each {
+                    it.replaceNode {}
+                }
+            }
+            artifact bootJar
         }
     }
 }
