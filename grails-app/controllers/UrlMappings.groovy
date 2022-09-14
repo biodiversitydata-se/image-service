@@ -83,6 +83,7 @@ class UrlMappings {
         "/ws/tag/$tagId/move"(controller: "webService", action: "moveTag")
             "/ws/tag/move"(controller: "webService", action: "moveTag")
         "/ws/tag/$tagID/images"(controller: "webService", action: "getImagesForTag")
+            "/ws/tag/$tagId"(controller: "webService", action: "deleteTag")
 
         "/ws/images/keyword/$keyword"(controller: "webService", action: "getImagesForKeyword")
         "/ws/images/tag/$tagID"(controller: "webService", action: "getImagesForTag")
