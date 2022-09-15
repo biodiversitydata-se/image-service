@@ -1364,7 +1364,7 @@ class WebServiceController {
             description = "Get ImageLinks For MetaData Values.",
             parameters = [
                     @Parameter(name = "key", in = QUERY, required = true, description = "Metadata key", schema = @Schema(implementation = String)),
-                    @Parameter(name = "q", in = QUERY, required = false, description = "Query", schema = @Schema(implementation = MetaDataSourceType)),
+                    @Parameter(name = "q", in = QUERY, required = true, description = "Query", schema = @Schema(implementation = MetaDataSourceType)),
             ],
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
@@ -1658,11 +1658,6 @@ class WebServiceController {
             parameters = [
                     @Parameter(name = "jobTicket", in = QUERY, required = true, description = "Job Ticket", schema = @Schema(implementation = String))
             ],
-            requestBody = @RequestBody(
-                    required = true,
-                    description = "JSON doc with a string \"key\" and a string list \"values\" fields.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
-            ),
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
                             headers = [
@@ -1760,7 +1755,7 @@ class WebServiceController {
             summary = "Update image metadata using a JSON payload.",
             description = "Update image metadata using a JSON payload. Required scopes: 'image-service/write'.",
             parameters = [
-                    @Parameter(name = "imageIdentifier", in = QUERY, required = true, description = "Job Ticket", schema = @Schema(implementation = String)),
+                    @Parameter(name = "imageIdentifier", in = QUERY, required = true, description = "Image Identifier", schema = @Schema(implementation = String)),
                     @Parameter(name = "metadata", in = QUERY, required = false, description = "Metadata as a JSON document, encoded as a POST param", schema = @Schema(implementation = String)),
                     @Parameter(name = "tags", in = QUERY, required = false, description = "List of tags", array = @ArraySchema(schema = @Schema(implementation = String))),
             ],
@@ -1807,7 +1802,7 @@ class WebServiceController {
             }.call()
 
             imageService.updateImageMetadata(image, metadata)
-            tagService.updateTags(image, params.tags, userId)
+            tagService.updateTags(image, params.tags as List, userId)
 
             renderResults([success: true])
         } else {
