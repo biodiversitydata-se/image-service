@@ -26,6 +26,7 @@ import javax.ws.rs.Produces
 import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPOutputStream
 
+import static io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER
 import static io.swagger.v3.oas.annotations.enums.ParameterIn.PATH
 import static io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY
 
@@ -47,7 +48,8 @@ class WebServiceController {
             summary = "Delete image",
             description = "Delete image. Required scopes: 'image-service/write'.",
             parameters = [
-                @Parameter(name = "imageID", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String))
+                    @Parameter(name = "imageID", in = PATH, required = true, description = "Image Id", schema = @Schema(implementation = String)),
+                    @Parameter(name = "apiKey", in = HEADER, required = true, description = "User Id as api key", schema = @Schema(implementation = String))
             ],
             responses = [
                     @ApiResponse(content = [@Content(mediaType = "application/json", schema = @Schema(implementation = Map))],responseCode = "200",
@@ -1837,7 +1839,6 @@ class WebServiceController {
                 title         - http://purl.org/dc/terms/title
                 type          - http://purl.org/dc/terms/type""",
             parameters = [
-                    @Parameter(name = "imageIdentifier", in = QUERY, required = true, description = "Image Identifier", schema = @Schema(implementation = String)),
                     @Parameter(name = "metadata", in = QUERY, required = false, description = "Metadata as a JSON document, encoded as a POST param", schema = @Schema(implementation = String)),
                     @Parameter(name = "tags", in = QUERY, required = false, description = "List of tags", array = @ArraySchema(schema = @Schema(implementation = String))),
                     @Parameter(name = "imageUrl", in = QUERY, required = false, description = "An URL to be used to load the image from, use in lieu of sending a multipart upload", schema = @Schema(implementation = String)),
@@ -1926,9 +1927,9 @@ class WebServiceController {
 
             if (storeResult && storeResult.image) {
 
-                CodeTimer ct = new CodeTimer("Setting Image metadata ${params.imageIdentifier}")
+                CodeTimer ct = new CodeTimer("Setting Image metadata ${storeResult.image.imageIdentifier}")
 
-                tagService.updateTags(storeResult.image, params.tags, userId)
+                tagService.updateTags(storeResult.image, params.tags as List, userId)
 
                 if (storeResult.alreadyStored) {
                     //reindex if already stored
@@ -1956,25 +1957,24 @@ class WebServiceController {
     @Operation(
             method = "POST",
             summary = "Asynchronous upload images by supplying a list of URLs in  a JSON  payload",
-            description = "Asynchronous upload images by supplying a list of URLs in  a JSON  payload. Required scopes: 'image-service/write'.",
-            requestBody = @RequestBody(
-                    required = true,
-                    description = """JSON document with a list of images to upload.  Provide a list of objects under the images key with the follow properties:
-                imageUrl      - The image url
+            description = """Asynchronous upload images by supplying a list of URLs in  a JSON  payload. Required scopes: 'image-service/write'. JSON document with a list of images to upload.  Provide a list of objects under the images key with the follow properties:
+                
                 audience      - http://purl.org/dc/terms/audience
                 contributor   - http://purl.org/dc/terms/contributor
                 creator       - http://purl.org/dc/terms/creator
-                created       - http://purl.org/dc/terms/created
-                description   - http://purl.org/dc/terms/description
-                format        - http://purl.org/dc/terms/format (see https://www.iana.org/assignments/media-types/media-types.xhtml)
+                created       - http://purl.org/dc/terms/created  
+                description   - http://purl.org/dc/terms/description 
+                format        - http://purl.org/dc/terms/format (see https://www.iana.org/assignments/media-types/media-types.xhtml) 
                 license       - http://purl.org/dc/terms/license
                 publisher     - http://purl.org/dc/terms/publisher
-                references    - http://purl.org/dc/terms/references
-                rights        - http://purl.org/dc/terms/rights
+                references    - http://purl.org/dc/terms/references   
+                rights        - http://purl.org/dc/terms/rights 
                 rightsHolder  - http://purl.org/dc/terms/rightsHolder
                 source        - http://purl.org/dc/terms/source
                 title         - http://purl.org/dc/terms/title
                 type          - http://purl.org/dc/terms/type""",
+            requestBody = @RequestBody(
+                    required = true,
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
             ),
             responses = [
@@ -2098,10 +2098,8 @@ class WebServiceController {
     @Operation(
             method = "POST",
             summary = "Schedule upload from URLs",
-            description = "Schedule upload from URLs. Required scopes: 'image-service/write'.",
-            requestBody = @RequestBody(
-                    required = true,
-                    description = """JSON document with a list of images to upload.  Provide a list of objects under the images key with the follow properties:
+            description = """Schedule upload from URLs. Required scopes: 'image-service/write'. JSON document with a list of images to upload.  Provide a list of objects under the images key with the follow properties:
+                
                 imageUrl      - The image url
                 audience      - http://purl.org/dc/terms/audience
                 contributor   - http://purl.org/dc/terms/contributor
@@ -2117,6 +2115,8 @@ class WebServiceController {
                 source        - http://purl.org/dc/terms/source
                 title         - http://purl.org/dc/terms/title
                 type          - http://purl.org/dc/terms/type""",
+            requestBody = @RequestBody(
+                    required = true,
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map))
             ),
             responses = [
