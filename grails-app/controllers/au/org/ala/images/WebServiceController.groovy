@@ -1837,7 +1837,7 @@ class WebServiceController {
                 title         - http://purl.org/dc/terms/title
                 type          - http://purl.org/dc/terms/type""",
             parameters = [
-                    @Parameter(name = "imageIdentifier", in = QUERY, required = true, description = "Job Ticket", schema = @Schema(implementation = String)),
+                    @Parameter(name = "imageIdentifier", in = QUERY, required = true, description = "Image Identifier", schema = @Schema(implementation = String)),
                     @Parameter(name = "metadata", in = QUERY, required = false, description = "Metadata as a JSON document, encoded as a POST param", schema = @Schema(implementation = String)),
                     @Parameter(name = "tags", in = QUERY, required = false, description = "List of tags", array = @ArraySchema(schema = @Schema(implementation = String))),
                     @Parameter(name = "imageUrl", in = QUERY, required = false, description = "An URL to be used to load the image from, use in lieu of sending a multipart upload", schema = @Schema(implementation = String)),
