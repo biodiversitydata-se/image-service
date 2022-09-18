@@ -1124,6 +1124,7 @@ SELECT
         return false
     }
 
+    @Transactional
     def setMetadataItems(Image image, Map<String, Object> metadata, MetaDataSourceType source, String userId) {
         if (!userId) {
             userId = "<unknown>"
