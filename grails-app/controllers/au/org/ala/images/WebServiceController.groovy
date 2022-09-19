@@ -1804,7 +1804,9 @@ class WebServiceController {
             }.call()
 
             imageService.updateImageMetadata(image, metadata)
-            tagService.updateTags(image, params.tags as List, userId)
+
+            List tags = params.tags instanceof String ? [params.tags] : params.tags as List
+            tagService.updateTags(image, tags as List, userId)
 
             renderResults([success: true])
         } else {
@@ -1929,7 +1931,8 @@ class WebServiceController {
 
                 CodeTimer ct = new CodeTimer("Setting Image metadata ${storeResult.image.imageIdentifier}")
 
-                tagService.updateTags(storeResult.image, params.tags as List, userId)
+                List tags = params.tags instanceof String ? [params.tags] : params.tags as List
+                tagService.updateTags(storeResult.image, tags, userId)
 
                 if (storeResult.alreadyStored) {
                     //reindex if already stored
