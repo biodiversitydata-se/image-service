@@ -1161,6 +1161,7 @@ SELECT
         return true
     }
 
+    @Transactional
     def removeMetaDataItem(Image image, String key, MetaDataSourceType source, String userId="<unknown>") {
         def count = 0
         def items = ImageMetaDataItem.findAllByImageAndNameAndSource(image, key, source)
