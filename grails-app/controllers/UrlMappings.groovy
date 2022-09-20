@@ -21,8 +21,8 @@ class UrlMappings {
 
         "/ws/batch/$id"(controller: "batch", action: "status")
         "/ws/batch/status/$id"(controller: "batch", action: "status")
-        "/ws/batch/dataset/$dataResourceUID"(controller: "batch", action: "statusForDataResource")
-        "/ws/batch/dataresource/$dataResourceUID"(controller: "batch", action: "statusForDataResource")
+        "/ws/batch/dataset/$dataResourceUid"(controller: "batch", action: "statusForDataResource")
+        "/ws/batch/dataresource/$dataResourceUid"(controller: "batch", action: "statusForDataResource")
         "/ws/batch/upload"(controller: "batch", action: "upload")
 
         "/ws/$action?/$id?(.$format)?" {
@@ -33,9 +33,9 @@ class UrlMappings {
             controller = "webService"
         }
 
-        "/ws/api"(controller: 'apiDoc', action: 'getDocuments')
-        name api_doc: "/ws/"(controller: 'webService', action: 'swagger')
-        "/ws"(controller: 'webService', action: 'swagger')
+        "/ws/api"(controller: 'openApi', action: 'openapi')
+        name api_doc: "/ws/"(controller: 'openApi', action: 'index')
+        "/ws"(controller: 'openApi', action: 'index')
 
         // legacy URLS
         "/image/imageTooltipFragment"(controller: "image", action: "imageTooltipFragment")
@@ -79,9 +79,11 @@ class UrlMappings {
         "/ws/tags"(controller: "webService", action: "getTagModel")
         "/ws/tag"(controller: "webService", action: "createTagByPath")
 
-        "/ws/tag/$tagId/rename"(controller: "webService", action: "renameTag")
+        "/ws/tag/$tagID/rename"(controller: "webService", action: "renameTag")
         "/ws/tag/$tagId/move"(controller: "webService", action: "moveTag")
-        "/ws/tag/$tagId/images"(controller: "webService", action: "getImagesForTag")
+            "/ws/tag/move"(controller: "webService", action: "moveTag")
+        "/ws/tag/$tagID/images"(controller: "webService", action: "getImagesForTag")
+            "/ws/tag/$tagId"(controller: "webService", action: "deleteTag")
 
         "/ws/images/keyword/$keyword"(controller: "webService", action: "getImagesForKeyword")
         "/ws/images/tag/$tagID"(controller: "webService", action: "getImagesForTag")

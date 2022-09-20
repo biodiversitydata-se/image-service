@@ -14,8 +14,8 @@ class RangeSpec extends Specification {
 
         then:
         ranges.size() == 1
-        ranges[0]._start == 200
-        ranges[0]._end == 1000
+        ranges[0].start == 200
+        ranges[0].end == 1000
         ranges[0].start() == 200
         ranges[0].end() == 1000
         ranges[0].length() == 801
@@ -31,27 +31,27 @@ class RangeSpec extends Specification {
 
         then:
         ranges.size() == 4
-        ranges[0]._start == 200
-        ranges[0]._end == 1000
+        ranges[0].start == 200
+        ranges[0].end == 1000
         ranges[0].start() == 200
         ranges[0].end() == 1000
         ranges[0].length() == 801
 
-        ranges[1]._start == 2000
-        ranges[1]._end == 6576
+        ranges[1].start == 2000
+        ranges[1].end == 6576
         ranges[1].start() == 2000
         ranges[1].end() == 6576
         ranges[1].length() == 4577
 
-        ranges[2]._start == 19000
-        ranges[2]._end == null
+        ranges[2].start == 19000
+        ranges[2].end == null
         ranges[2].start() == 19000
         ranges[2].end() == 19999
         ranges[2].length() == 1000
 
-        ranges[3]._suffixLength == 1000
-        ranges[3]._start == null
-        ranges[3]._end == null
+        ranges[3].suffixLength == 1000
+        ranges[3].start == null
+        ranges[3].end == null
         ranges[3].start() == 19000
         ranges[3].end() == 19999
         ranges[3].length() == 1000

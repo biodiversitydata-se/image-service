@@ -155,7 +155,7 @@ class FileSystemStorageLocation extends StorageLocation {
         def basePath = createBasePathFromUUID(uuid)
         Files.walk(Paths.get(basePath), FileVisitOption.FOLLOW_LINKS).map { Path path ->
             if (Files.isRegularFile(path)) {
-                destination.storeAnywhere(uuid, path.newInputStream(), path.toString() - basePath, contentType, null, Files.size(path))
+                destination.storeAnywhere(uuid, new BufferedInputStream(Files.newInputStream(path)), path.toString() - basePath, contentType, null, Files.size(path))
             }
         }.collect(Collectors.toList())
     }

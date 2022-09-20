@@ -12,7 +12,7 @@
   - implied. See the License for the specific language governing
   - rights and limitations under the License.
   --}%
-<g:applyLayout name="main">
+<g:applyLayout name="_main">
     <head>
         <title>Admin</title>
         <meta name="breadcrumbs" content="${g.createLink( controller: 'search', action: 'list')}, Images"/>

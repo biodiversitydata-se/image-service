@@ -1,7 +1,9 @@
 package au.org.ala.images
 
 import com.opencsv.CSVWriter
-import org.apache.log4j.Logger
+import groovy.util.logging.Slf4j
+
+//import org.apache.log4j.Logger
 import org.apache.tomcat.util.http.fileupload.FileUtils
 import org.hibernate.ScrollableResults
 
@@ -9,11 +11,12 @@ import org.hibernate.ScrollableResults
  * Cycles through the database outputting details of images that are referenced in the database
  * but are missing on the file system
  */
+@Slf4j
 class ScheduleMissingImagesBackgroundTask extends BackgroundTask {
 
     private ImageStoreService _imageStoreService
     String _exportDirectory
-    private Logger log = Logger.getLogger(ScheduleMissingImagesBackgroundTask.class)
+//    private Logger log = Logger.getLogger(ScheduleMissingImagesBackgroundTask.class)
     boolean requiresSession = true
 
     ScheduleMissingImagesBackgroundTask(ImageStoreService imageStoreService, String exportDirectory) {

@@ -1124,6 +1124,7 @@ SELECT
         return false
     }
 
+    @Transactional
     def setMetadataItems(Image image, Map<String, Object> metadata, MetaDataSourceType source, String userId) {
         if (!userId) {
             userId = "<unknown>"
@@ -1160,6 +1161,7 @@ SELECT
         return true
     }
 
+    @Transactional
     def removeMetaDataItem(Image image, String key, MetaDataSourceType source, String userId="<unknown>") {
         def count = 0
         def items = ImageMetaDataItem.findAllByImageAndNameAndSource(image, key, source)
