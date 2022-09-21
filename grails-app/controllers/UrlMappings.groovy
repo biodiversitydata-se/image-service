@@ -77,13 +77,18 @@ class UrlMappings {
 
         //tags
         "/ws/tags"(controller: "webService", action: "getTagModel")
+            "/ws/tagsWS"(controller: "webService", action: [GET: "getTagModelWS"])
         "/ws/tag"(controller: "webService", action: "createTagByPath")
+            "/ws/tagWS"(controller: "webService", action: [PUT: "createTagByPathWS"])
 
         "/ws/tag/$tagID/rename"(controller: "webService", action: "renameTag")
+            "/ws/tag/$tagID/renameWS"(controller: "webService", action: "renameTagWS")
         "/ws/tag/$tagId/move"(controller: "webService", action: "moveTag")
             "/ws/tag/move"(controller: "webService", action: "moveTag")
+            "/ws/tag/moveWS"(controller: "webService", action: "moveTagWS")
         "/ws/tag/$tagID/images"(controller: "webService", action: "getImagesForTag")
             "/ws/tag/$tagId"(controller: "webService", action: "deleteTag")
+            "/ws/tag/delete/$tagId"(controller: "webService", action: [DELETE: "deleteTagWS"])
 
         "/ws/images/keyword/$keyword"(controller: "webService", action: "getImagesForKeyword")
         "/ws/images/tag/$tagID"(controller: "webService", action: "getImagesForTag")
@@ -91,6 +96,9 @@ class UrlMappings {
         "/ws/tag/$tagId/image/$imageId"(controller: "webService"){
            action = [GET: 'attachTagToImage', PUT: 'attachTagToImage', DELETE: 'detachTagFromImage']
         }
+            "/ws/tag/$tagId/imageWS/$imageId"(controller: "webService"){
+                    action = [GET: 'attachTagToImageWS', PUT: 'attachTagToImageWS', DELETE: 'detachTagFromImageWS']
+            }
         "/ws/tag/$tagId/images"(controller: "webService", action:"getImagesForTag")
 
         "/"(controller:'search', action:'list')

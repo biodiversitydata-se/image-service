@@ -156,10 +156,14 @@ class WebServiceController {
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @Path("/ws/scheduleThumbnailGeneration/{id}")
+    @Path("/ws/scheduleThumbnailGenerationWS/{id}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service/write'])
+    def scheduleThumbnailGenerationWS() {
+        scheduleThumbnailGeneration()
+    }
+
     def scheduleThumbnailGeneration() {
         def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
         def userId = getUserIdForRequest(request)
@@ -218,10 +222,14 @@ class WebServiceController {
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @Path("/ws/scheduleArtifactGeneration/{id}")
+    @Path("/ws/scheduleArtifactGenerationWS/{id}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service/write'])
+    def scheduleArtifactGenerationWS() {
+        scheduleArtifactGeneration()
+    }
+
     def scheduleArtifactGeneration() {
 
         def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
@@ -283,10 +291,14 @@ class WebServiceController {
             ],
             tags = ["JSON services for accessing and updating metadata"]
     )
-    @Path("/ws/scheduleKeywordRegeneration/{id}")
+    @Path("/ws/scheduleKeywordRegenerationWS/{id}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service/write'])
+    def scheduleKeywordRegenerationWS() {
+        scheduleKeywordRegeneration()
+    }
+
     def scheduleKeywordRegeneration() {
         def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
         def userId = request.getHeader(ApiKeyInterceptor.API_KEY_HEADER_NAME)
@@ -315,6 +327,10 @@ class WebServiceController {
     }
 
     @RequireApiKey(scopes = ['image-service/write'])
+    def scheduleInboxPollWS() {
+        scheduleInboxPoll()
+    }
+
     def scheduleInboxPoll() {
         def results = [success:true]
         def userId =  AuthenticationUtils.getUserId(request) ?: params.userId
@@ -349,10 +365,14 @@ class WebServiceController {
             ],
             tags = ["Tag services"]
     )
-    @Path("/ws/tags")
+    @Path("/ws/tagsWS")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes=["image-service/write"])
+    def getTagModelWS() {
+        getTagModel()
+    }
+
     def getTagModel() {
 
         def newNode = { Tag tag, String label, boolean disabled = false ->
@@ -435,10 +455,14 @@ class WebServiceController {
             ],
             tags = ["Tag services"]
     )
-    @Path("/ws/tag")
+    @Path("/ws/tagWS")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service/write'])
+    def createTagByPathWS() {
+        createTagByPath()
+    }
+
     def createTagByPath() {
         def success = false
         def tagPath = params.tagPath as String
@@ -488,10 +512,14 @@ class WebServiceController {
             ],
             tags = ["Tag services"]
     )
-    @Path("/ws/tag/move")
+    @Path("/ws/tag/moveWS")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service/write'])
+    def moveTagWS() {
+        moveTag()
+    }
+
     def moveTag() {
 
         def target = Tag.get(params.int("targetTagId"))
@@ -536,10 +564,14 @@ class WebServiceController {
             ],
             tags = ["Tag services"]
     )
-    @Path("/ws/tag/{tagID}/rename")
+    @Path("/ws/tag/{tagID}/renameWS")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service/write'])
+    def renameTagWS() {
+        renameTag()
+    }
+
     def renameTag() {
         def tag = Tag.get(params.int("tagID"))
         if (tag && params.name) {
@@ -580,10 +612,14 @@ class WebServiceController {
             ],
             tags = ["Tag services"]
     )
-    @Path("/ws/tag/{tagId}")
+    @Path("/ws/tag/delete/{tagId}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service/write'])
+    def deleteTagWS() {
+        deleteTag()
+    }
+
     def deleteTag() {
         def tag = Tag.get(params.int("tagId"))
         if (tag) {
@@ -625,10 +661,14 @@ class WebServiceController {
             ],
             tags = ["Tag services"]
     )
-    @Path("/ws/tag/{tagId}/image/{imageId}")
+    @Path("/ws/tag/{tagId}/imageWS/{imageId}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service/write'])
+    def attachTagToImageWS() {
+        attachTagToImage()
+    }
+
     def attachTagToImage() {
         def success = false
         def message = ""
@@ -741,10 +781,14 @@ class WebServiceController {
             ],
             tags = ["Tag services"]
     )
-    @Path("/ws/tag/{tagId}/image/{imageId}")
+    @Path("/ws/tag/{tagId}/imageWS/{imageId}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service/write'])
+    def detachTagFromImageWS() {
+        detachTagFromImage()
+    }
+
     def detachTagFromImage() {
         def success = false
         def image = Image.findByImageIdentifier(params.imageId as String, [ cache: true])
@@ -1294,10 +1338,14 @@ class WebServiceController {
             ],
             tags = ["Image metadata"]
     )
-    @Path("/ws/removeUserMetadataFromImage/{id}")
+    @Path("/ws/removeUserMetadataFromImageWS/{id}")
     @Consumes("application/json")
     @Produces("application/json")
     @RequireApiKey(scopes = ['image-service/write'])
+    def removeUserMetadataFromImageWS() {
+        removeUserMetadataFromImage()
+    }
+
     def removeUserMetadataFromImage() {
         def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
