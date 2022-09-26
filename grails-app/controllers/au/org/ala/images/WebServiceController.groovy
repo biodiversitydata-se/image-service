@@ -1,7 +1,6 @@
 package au.org.ala.images
 
 import au.ala.org.ws.security.RequireApiKey
-import au.org.ala.cas.util.AuthenticationUtils
 import au.org.ala.plugins.openapi.Path
 import au.org.ala.ws.security.ApiKeyInterceptor
 import com.google.common.base.Suppliers
@@ -42,6 +41,7 @@ class WebServiceController {
     def batchService
     def elasticSearchService
     def collectoryService
+    def authService
 
     @Operation(
             method = "DELETE",
@@ -333,7 +333,7 @@ class WebServiceController {
 
     def scheduleInboxPoll() {
         def results = [success:true]
-        def userId =  AuthenticationUtils.getUserId(request) ?: params.userId
+        def userId =  authService.getUserId() ?: params.userId
         results.importBatchId = imageService.schedulePollInbox(userId)
         renderResults(results)
     }
@@ -682,7 +682,7 @@ class WebServiceController {
             message = "Unrecognised tag ID"
             status = HttpStatus.SC_NOT_FOUND
         } else if (image && tag) {
-            success = tagService.attachTagToImage(image, tag, AuthenticationUtils.getUserId(request))
+            success = tagService.attachTagToImage(image, tag, authService.getUserId())
             status = HttpStatus.SC_OK
         }
         renderResults([success: success, message: message], status)
@@ -1253,7 +1253,7 @@ class WebServiceController {
 
         def userId = request.remoteUser
         // First check the CAS filter cookie thing
-//        def userId = AuthenticationUtils.getUserId(request)
+//        def userId = authService.getUserId()
 
         userId
     }

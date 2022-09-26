@@ -1,6 +1,5 @@
 package au.org.ala.images
 
-import au.org.ala.cas.util.AuthenticationUtils
 import au.org.ala.web.AlaSecured
 import au.org.ala.web.CASRoles
 import grails.converters.JSON
@@ -15,6 +14,7 @@ class SearchController {
     def selectionService
     def elasticSearchService
     def collectoryService
+    def authService
 
     def index() {
         boolean hasCriteria = searchService.getSearchCriteriaList()?.size() > 0
@@ -36,7 +36,7 @@ class SearchController {
 
         QueryResults<Image> results = searchService.search(params)
 
-        def userId = AuthenticationUtils.getUserId(request)
+        def userId = authService.getUserId()
 
         def isLoggedIn = StringUtils.isNotEmpty(userId)
         def selectedImageMap = [:] // selectionService.getSelectedImageIdsAsMap(userId)
@@ -233,7 +233,7 @@ class SearchController {
     def searchResultsFragment() {
         params.max = params.max ?: 48
         def searchResults = searchService.search(params)
-        def userId = AuthenticationUtils.getUserId(request)
+        def userId = authService.getUserId()
         def selectedImageMap = [:]
         if (userId) {
             selectedImageMap = selectionService.getSelectedImageIdsAsMap(userId)
@@ -246,7 +246,7 @@ class SearchController {
     def ajaxSelectAllCurrentQuery() {
 
         def results = [success: true]
-        def userId = AuthenticationUtils.getUserId(request)
+        def userId = authService.getUserId()
         if (userId) {
             searchService.withCriteriaImageIds(null, { idList ->
                 selectionService.selectImages(userId, idList)

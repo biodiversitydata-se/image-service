@@ -1,6 +1,5 @@
 package au.org.ala.images
 
-import au.org.ala.cas.util.AuthenticationUtils
 import au.org.ala.web.AlaSecured
 import au.org.ala.web.CASRoles
 import grails.converters.JSON
@@ -563,7 +562,7 @@ class ImageController {
     def scheduleArtifactGeneration() {
 
         def imageInstance = imageService.getImageFromParams(params)
-        def userId = AuthenticationUtils.getUserId(request)
+        def userId = authService.getUserId()
         def results = [success: true]
 
         if (imageInstance) {
@@ -808,7 +807,7 @@ class ImageController {
         if (grailsApplication.config.security.cas.disableCAS.toBoolean()){
             return "-1"
         }
-        AuthenticationUtils.getUserId(request)
+        authService.getUserId()
     }
 
     private List<Range> decodeRangeHeader(long totalLength) {
