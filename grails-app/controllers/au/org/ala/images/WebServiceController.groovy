@@ -2,6 +2,7 @@ package au.org.ala.images
 
 import au.ala.org.ws.security.RequireApiKey
 import au.org.ala.plugins.openapi.Path
+import au.org.ala.web.SSO
 import au.org.ala.ws.security.ApiKeyInterceptor
 import com.google.common.base.Suppliers
 import grails.converters.JSON
@@ -164,6 +165,7 @@ class WebServiceController {
         scheduleThumbnailGeneration()
     }
 
+    @SSO
     def scheduleThumbnailGeneration() {
         def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
         def userId = getUserIdForRequest(request)
@@ -230,6 +232,7 @@ class WebServiceController {
         scheduleArtifactGeneration()
     }
 
+    @SSO
     def scheduleArtifactGeneration() {
 
         def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
@@ -299,6 +302,7 @@ class WebServiceController {
         scheduleKeywordRegeneration()
     }
 
+    @SSO
     def scheduleKeywordRegeneration() {
         def imageInstance = Image.findByImageIdentifier(params.id as String, [ cache: true])
         def userId = request.getHeader(ApiKeyInterceptor.API_KEY_HEADER_NAME)
@@ -331,6 +335,7 @@ class WebServiceController {
         scheduleInboxPoll()
     }
 
+    @SSO
     def scheduleInboxPoll() {
         def results = [success:true]
         def userId =  authService.getUserId() ?: params.userId
@@ -373,6 +378,7 @@ class WebServiceController {
         getTagModel()
     }
 
+    @SSO
     def getTagModel() {
 
         def newNode = { Tag tag, String label, boolean disabled = false ->
@@ -463,6 +469,7 @@ class WebServiceController {
         createTagByPath()
     }
 
+    @SSO
     def createTagByPath() {
         def success = false
         def tagPath = params.tagPath as String
@@ -520,6 +527,7 @@ class WebServiceController {
         moveTag()
     }
 
+    @SSO
     def moveTag() {
 
         def target = Tag.get(params.int("targetTagId"))
@@ -572,6 +580,7 @@ class WebServiceController {
         renameTag()
     }
 
+    @SSO
     def renameTag() {
         def tag = Tag.get(params.int("tagID"))
         if (tag && params.name) {
@@ -620,6 +629,7 @@ class WebServiceController {
         deleteTag()
     }
 
+    @SSO
     def deleteTag() {
         def tag = Tag.get(params.int("tagId"))
         if (tag) {
@@ -669,6 +679,7 @@ class WebServiceController {
         attachTagToImage()
     }
 
+    @SSO
     def attachTagToImage() {
         def success = false
         def message = ""
@@ -789,6 +800,7 @@ class WebServiceController {
         detachTagFromImage()
     }
 
+    @SSO
     def detachTagFromImage() {
         def success = false
         def image = Image.findByImageIdentifier(params.imageId as String, [ cache: true])
@@ -1346,6 +1358,7 @@ class WebServiceController {
         removeUserMetadataFromImage()
     }
 
+    @SSO
     def removeUserMetadataFromImage() {
         def image = Image.findByImageIdentifier(params.id as String, [ cache: true])
         if (!image) {
