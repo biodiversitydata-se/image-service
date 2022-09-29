@@ -52,7 +52,7 @@ class TagSpec extends Specification {
 
     void "test create tag"() {
         when:
-        def request = HttpRequest.create(HttpMethod.PUT,"${baseUrl}/ws/tag?tagPath=Birds/Colour/Red")
+        def request = HttpRequest.create(HttpMethod.PUT,"${baseUrl}/ws/tagWS?tagPath=Birds/Colour/Red")
         HttpResponse resp = rest.exchange(request, String)
         def jsonResponse = new JsonSlurper().parseText(resp.body())
         then:
@@ -62,7 +62,7 @@ class TagSpec extends Specification {
 
     void "test get tag model"() {
         when:
-        def request = HttpRequest.create(HttpMethod.GET,"${baseUrl}/ws/tags")
+        def request = HttpRequest.create(HttpMethod.GET,"${baseUrl}/ws/tagsWS")
         HttpResponse resp = rest.exchange(request, String)
         def jsonResponse = new JsonSlurper().parseText(resp.body())
         then:
@@ -87,17 +87,17 @@ class TagSpec extends Specification {
         println("Created image: " + imageId)
 
         //create a tag
-        def request2 = HttpRequest.create(HttpMethod.PUT, "${baseUrl}/ws/tag?tagPath=Birds/Colour/Blue")
+        def request2 = HttpRequest.create(HttpMethod.PUT, "${baseUrl}/ws/tagWS?tagPath=Birds/Colour/Blue")
         HttpResponse createTagResp = rest.exchange(request2, String)
         def tagId = new JsonSlurper().parseText(createTagResp.body()).tagId
 
         //remove existing tags if present
-        def request3 = HttpRequest.create(HttpMethod.DELETE, "${baseUrl}/ws/tag/${tagId}/image/${imageId}")
+        def request3 = HttpRequest.create(HttpMethod.DELETE, "${baseUrl}/ws/tag/${tagId}/imageWS/${imageId}")
         HttpResponse tagRemoveResp = rest.exchange(request3, String)
         println("Delete response status: " + tagRemoveResp.body())
 
         //tag the image
-        def request4 = HttpRequest.create(HttpMethod.PUT, "${baseUrl}/ws/tag/${tagId}/image/${imageId}")
+        def request4 = HttpRequest.create(HttpMethod.PUT, "${baseUrl}/ws/tag/${tagId}/imageWS/${imageId}")
         HttpResponse tagResp = rest.exchange(request4, String)
         def taggedJson = new JsonSlurper().parseText(tagResp.body())
 
