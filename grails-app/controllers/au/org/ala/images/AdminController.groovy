@@ -1,6 +1,5 @@
 package au.org.ala.images
 
-import au.org.ala.cas.util.AuthenticationUtils
 import au.org.ala.web.AlaSecured
 import au.org.ala.web.CASRoles
 import com.opencsv.CSVReader
@@ -90,7 +89,7 @@ class AdminController {
             return
         }
 
-        def userId = AuthenticationUtils.getUserId(request) ?: "<anonymous>"
+        def userId = authService.getUserId() ?: "<anonymous>"
 
         //retrieve metadata
         def metadata = [

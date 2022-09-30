@@ -107,7 +107,9 @@ if (Environment.isDevelopmentMode() && targetDir != null) {
 
 root(INFO, ['STDOUT'])
 
-final error = []
+final error = [
+        'org.hibernate.orm.deprecation'
+]
 final warn = [
         'au.org.ala',
         'au.org.ala.ws',

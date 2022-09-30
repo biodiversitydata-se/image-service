@@ -193,8 +193,9 @@ class BatchService {
         while (reader.hasNext() ) {
             GenericRecord currRecord = reader.next()
             // Here we can add in data manipulation like anonymization etc
-            def multimediaRecords = currRecord.get(MULTIMEDIA_ITEMS)
-            if (multimediaRecords) {
+            boolean hasField =  currRecord.hasField(MULTIMEDIA_ITEMS)
+            if (hasField) {
+                def multimediaRecords = currRecord.get(MULTIMEDIA_ITEMS)
                 multimediaRecords.each { GenericRecord record ->
                     def identifier = record.get("identifier")
                     if (identifier) {
@@ -248,8 +249,9 @@ class BatchService {
             while (reader.hasNext() && batchSize < batchReadSize) {
                 GenericRecord currRecord = reader.next()
 
-                def multimediaRecords = currRecord.get(MULTIMEDIA_ITEMS);
-                if (multimediaRecords) {
+                boolean hasField =  currRecord.hasField(MULTIMEDIA_ITEMS)
+                if (hasField) {
+                    def multimediaRecords = currRecord.get(MULTIMEDIA_ITEMS);
                     // Here we can add in data manipulation like anonymization etc
                     multimediaRecords.each { GenericRecord record ->
                         // check URL

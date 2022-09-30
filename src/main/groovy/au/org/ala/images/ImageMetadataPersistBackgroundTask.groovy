@@ -1,10 +1,12 @@
 package au.org.ala.images
 
+import groovy.util.logging.Slf4j
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.lang.StringUtils
-import org.apache.log4j.Logger
+//import org.apache.log4j.Logger
 import org.hibernate.Session
 
+@Slf4j
 class ImageMetadataPersistBackgroundTask extends BackgroundTask {
 
     Long _imageId
@@ -14,7 +16,7 @@ class ImageMetadataPersistBackgroundTask extends BackgroundTask {
     String _uploaderId
     String _imageIdentifier
     String _originalFilename
-    private Logger log = Logger.getLogger(ImageMetadataPersistBackgroundTask.class)
+//    private Logger log = Logger.getLogger(ImageMetadataPersistBackgroundTask.class)
 
     ImageMetadataPersistBackgroundTask(Long imageId,
                                        String imageIdentifier,

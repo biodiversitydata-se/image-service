@@ -21,8 +21,8 @@ class UrlMappings {
 
         "/ws/batch/$id"(controller: "batch", action: "status")
         "/ws/batch/status/$id"(controller: "batch", action: "status")
-        "/ws/batch/dataset/$dataResourceUID"(controller: "batch", action: "statusForDataResource")
-        "/ws/batch/dataresource/$dataResourceUID"(controller: "batch", action: "statusForDataResource")
+        "/ws/batch/dataset/$dataResourceUid"(controller: "batch", action: "statusForDataResource")
+        "/ws/batch/dataresource/$dataResourceUid"(controller: "batch", action: "statusForDataResource")
         "/ws/batch/upload"(controller: "batch", action: "upload")
 
         "/ws/$action?/$id?(.$format)?" {
@@ -33,9 +33,9 @@ class UrlMappings {
             controller = "webService"
         }
 
-        "/ws/api"(controller: 'apiDoc', action: 'getDocuments')
-        name api_doc: "/ws/"(controller: 'webService', action: 'swagger')
-        "/ws"(controller: 'webService', action: 'swagger')
+        "/ws/api"(controller: 'openApi', action: 'openapi')
+        name api_doc: "/ws/"(controller: 'openApi', action: 'index')
+        "/ws"(controller: 'openApi', action: 'index')
 
         // legacy URLS
         "/image/imageTooltipFragment"(controller: "image", action: "imageTooltipFragment")
@@ -77,11 +77,18 @@ class UrlMappings {
 
         //tags
         "/ws/tags"(controller: "webService", action: "getTagModel")
+            "/ws/tagsWS"(controller: "webService", action: [GET: "getTagModelWS"])
         "/ws/tag"(controller: "webService", action: "createTagByPath")
+            "/ws/tagWS"(controller: "webService", action: [PUT: "createTagByPathWS"])
 
-        "/ws/tag/$tagId/rename"(controller: "webService", action: "renameTag")
+        "/ws/tag/$tagID/rename"(controller: "webService", action: "renameTag")
+            "/ws/tag/$tagID/renameWS"(controller: "webService", action: "renameTagWS")
         "/ws/tag/$tagId/move"(controller: "webService", action: "moveTag")
-        "/ws/tag/$tagId/images"(controller: "webService", action: "getImagesForTag")
+            "/ws/tag/move"(controller: "webService", action: "moveTag")
+            "/ws/tag/moveWS"(controller: "webService", action: "moveTagWS")
+        "/ws/tag/$tagID/images"(controller: "webService", action: "getImagesForTag")
+            "/ws/tag/$tagId"(controller: "webService", action: "deleteTag")
+            "/ws/tag/delete/$tagId"(controller: "webService", action: [DELETE: "deleteTagWS"])
 
         "/ws/images/keyword/$keyword"(controller: "webService", action: "getImagesForKeyword")
         "/ws/images/tag/$tagID"(controller: "webService", action: "getImagesForTag")
@@ -89,6 +96,9 @@ class UrlMappings {
         "/ws/tag/$tagId/image/$imageId"(controller: "webService"){
            action = [GET: 'attachTagToImage', PUT: 'attachTagToImage', DELETE: 'detachTagFromImage']
         }
+            "/ws/tag/$tagId/imageWS/$imageId"(controller: "webService"){
+                    action = [GET: 'attachTagToImageWS', PUT: 'attachTagToImageWS', DELETE: 'detachTagFromImageWS']
+            }
         "/ws/tag/$tagId/images"(controller: "webService", action:"getImagesForTag")
 
         "/"(controller:'search', action:'list')

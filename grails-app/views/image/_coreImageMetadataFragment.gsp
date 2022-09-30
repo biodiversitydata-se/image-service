@@ -153,7 +153,7 @@
     </g:if>
     <tr>
         <td colspan="2">
-            <g:link mapping="image_ws_url" params="[imageId:imageInstance.imageIdentifier,includeMetadata:true,includeTags:true]" title="View JSON metadata" class="btn btn-default">
+            <g:link mapping="image_ws_url" params="[imageId:imageInstance.imageIdentifier + '.json',includeMetadata:true,includeTags:true]" title="View JSON metadata" class="btn btn-default">
                 <i class="glyphicon glyphicon-wrench"> </i>
             </g:link>
             <g:if test="${isImage}">

@@ -166,8 +166,8 @@ abstract class StorageLocationSpec extends Specification implements DomainUnitTe
     @Unroll
     def "test range #storageLocation"(StorageLocation storageLocation) {
         setup:
-        def range = new Range(_start: 10, _end: 20, _suffixLength: null, _totalLength: resourceLength)
-        def endRange = new Range(_start: null, _end: null, _suffixLength: 10, _totalLength: resourceLength)
+        def range = new Range(start: 10, end: 20, suffixLength: null, totalLength: resourceLength)
+        def endRange = new Range(start: null, end: null, suffixLength: 10, totalLength: resourceLength)
 
         when:
         storageLocation.store(uuid, connection.inputStream, 'image/jpeg', null, resourceLength)

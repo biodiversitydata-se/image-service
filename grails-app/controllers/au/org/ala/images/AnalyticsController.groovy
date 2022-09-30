@@ -1,12 +1,17 @@
 package au.org.ala.images
 
 import grails.converters.JSON
-import io.swagger.annotations.Api
-import io.swagger.annotations.ApiImplicitParam
-import io.swagger.annotations.ApiImplicitParams
-import io.swagger.annotations.ApiOperation
-import io.swagger.annotations.ApiResponse
-import io.swagger.annotations.ApiResponses
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.headers.Header
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
+
+import static io.swagger.v3.oas.annotations.enums.ParameterIn.PATH
 
 /**
  * Instructions for obtaining required JSON...
@@ -29,27 +34,37 @@ import io.swagger.annotations.ApiResponses
  *   "client_x509_cert_url": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
  * }
  */
-@Api(value = "/ws", tags = ["Analytics services - image usage tracking"], description = "Image Web Services")
 class AnalyticsController {
 
     def analyticsService
 
-    @ApiOperation(
-            value = "Get image usage for data resource. e.g dataResourceUID=dr123",
-            nickname = "analytics/{dataResourceUID}",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class
+    @Operation(
+            method = "GET",
+            summary = "Get image usage for data resource. e.g dataResourceUID=dr123",
+            description = "Get image usage for data resource.",
+            parameters = [
+                    @Parameter(name="dataResourceUID", in = PATH, description = 'Data Resource UID', required = true)
+            ],
+            responses = [
+                    @ApiResponse(content = [
+                            @Content(mediaType='application/json', schema = @Schema(implementation=Map))
+                            ],
+                            responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ]),
+                    @ApiResponse(responseCode = "400", headers = [
+                            @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                            @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                    ])
+            ],
+            tags = ['Analytics services - image usage tracking']
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
-    @ApiImplicitParams([
-            @ApiImplicitParam(name = "dataResourceUID", paramType = "path", required = true, value = "Data Resource UID", dataType = "string" )
-    ])
+    @Produces("application/json")
+    @Path("/ws/analytics/{dataResourceUID}")
     def byDataResource() {
 
         def dataResourceUID = params.dataResourceUID
@@ -62,19 +77,25 @@ class AnalyticsController {
         }
     }
 
-    @ApiOperation(
-            value = "Get overall image usage for the system",
-            nickname = "analytics",
-            produces = "application/json",
-            consumes = "application/json",
-            httpMethod = "GET",
-            response = Map.class
+    @Operation(
+            method = "GET",
+            summary = "Get overall image usage for the system",
+            description = "Get overall image usage for the system",
+            responses = [
+                    @ApiResponse(content = [
+                            @Content(mediaType='application/json', schema = @Schema(implementation=Map))
+                            ],
+                            responseCode = "200",
+                            headers = [
+                                    @Header(name = 'Access-Control-Allow-Headers', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Methods', description = "CORS header", schema = @Schema(type = "String")),
+                                    @Header(name = 'Access-Control-Allow-Origin', description = "CORS header", schema = @Schema(type = "String"))
+                            ])
+            ],
+            tags = ['Analytics services - image usage tracking']
     )
-    @ApiResponses([
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 405, message = "Method Not Allowed. Only GET is allowed"),
-            @ApiResponse(code = 404, message = "Image Not Found")]
-    )
+    @Produces("application/json")
+    @Path("/ws/analytics")
     def byAll() {
         def results = analyticsService.byAll()
         render (results as JSON)

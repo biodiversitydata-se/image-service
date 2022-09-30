@@ -1,7 +1,7 @@
 package au.org.ala.images
 
 import grails.converters.JSON
-import grails.transaction.Transactional
+import grails.gorm.transactions.Transactional
 import groovy.json.JsonSlurper
 
 class UserPreferencesService {

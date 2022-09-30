@@ -95,16 +95,21 @@ server:
 ---
 flyway:
     enabled: true
+    table: schema_version
     baselineOnMigrate: true
     baselineVersion: 1
     outOfOrder: false
 ---
 hibernate:
+    allow_update_outside_transaction: true # Hibernate 5 made transactions required to flush changes, set to true for backwards compat but should be set to false and bugs fixed in the future
+    show_sql: false
     dialect: net.kaleidos.hibernate.PostgresqlExtensionsDialect
     cache:
         queries: true
         use_second_level_cache: false
         use_query_cache: true
+        region:
+            factory_class: org.hibernate.cache.jcache.internal.JCacheRegionFactory
     jdbc:
         lob:
             #https://stackoverflow.com/questions/49110818/method-org-postgresql-jdbc-pgconnection-createclob-is-not-yet-implemented
@@ -192,19 +197,43 @@ environments:
             driverClassName: org.postgresql.Driver
             url: jdbc:postgresql://localhost/images?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
 security:
+    core:
+        uri-filter-pattern:
+          - '/admin/*'
+          - '/admin'
+          - '/admin/'
+          - '/image/deleteImage/*'
+          - '/storageLocation'
+          - '/storageLocation/*'
+        optional-filter-pattern:
+          - '/ws/createSubimage'
     cas:
+        enabled: false # default for backwards compat with v1
         appServerName: 'http://dev.ala.org.au:8080'
         uriFilterPattern:
-            - '/admin/*'
-            - '/admin'
-            - '/admin/'
-            - '/image/deleteImage/*'
-            - '/storageLocation'
-            - '/storageLocation/*'
+          - '/admin/*'
+          - '/admin'
+          - '/admin/'
+          - '/alaAdmin'
+          - '/alaAdmin/*'
+          - '/image/deleteImage/*'
+          - '/storageLocation'
+          - '/storageLocation/*'
         authenticateOnlyIfLoggedInPattern:
-            - '/ws/createSubimage'
+          - '/ws/createSubimage'
         bypass: false
         disableCAS: false
+    oidc:
+        enabled: true # default for backwards compat with v1
+        scope: openid profile email ala roles
+        clientId: changeme
+        secret: changeme
+        allowUnsignedIdTokens: true # Disable once CAS no longer suggests the none algorithm
+        discoveryUri: https://auth-test.ala.org.au/cas/oidc/.well-known
+    jwt:
+        enabled: true # default for backwards compat with v1
+        fallbackToLegacyKeys: true # Reset to false once legacy api keys no longer supported
+        discoveryUri: ${security.oidc.discoveryUri}
 
 imageservice:
     imagestore:
@@ -223,8 +252,11 @@ imageservice:
 serverName: 'http://devt.ala.org.au:8080'
 
 skin:
-    layout: 'main'
+    layout: 'ala-main'
     fluidLayout: true
+headerAndFooter:
+  version: "2"
+  baseURL: "https://www.ala.org.au/commonui-bs3-2019"
 
 quartz:
     autoStartup: true
@@ -271,30 +303,25 @@ placeholder:
     missing:
         thumbnail: "classpath:images/200px-Document_icon.svg.png"
 
-swagger:
-    info:
-        description: "API Documentation for Image Services"
-        version: "2.0"
-        title: "Image Service API"
-        termsOfServices: "https://www.ala.org.au/who-we-are/terms-of-use/"
-        contact:
-            name: "ALA Support"
-            url: "https://www.ala.org.au"
-            email: "support@ala.org.au"
-        license:
-            name: "MPL 1.1"
-            url: "https://www.mozilla.org/en-US/MPL/"
-    schemes:
-        - "HTTP"
-    consumes:
-        - "application/json"
+openapi:
+    title: Image Service API
+    description: API Documentation for Image Services
+    terms: https://www.ala.org.au/who-we-are/terms-of-use/
+    contact:
+        name: ALA Support
+        url: "https://www.ala.org.au"
+        email: support@ala.org.au
+    license:
+        name: Mozilla Public License 1.1
+        url: https://www.mozilla.org/en-US/MPL/1.1/
+    version: '@info.app.version@'
+    cachetimeoutms: 0
     components:
-        securitySchemes:
-            apiKey:
-                type: "apiKey"
-                description: "Authentication via ALA apikey in request header"
-                in: "header"
-                name: "Authorization"
+      security:
+        oauth2:
+          scopes:
+            image-service/read: Read or list any or all images records
+            image-service/write: Write to an images record
 
 facets: ["recognisedLicence", "dataResourceUid", "creator.keyword", "imageSize", "fileType", "format", "dateUploadedYearMonth"]
 
@@ -341,3 +368,32 @@ http:
     default:
         connectTimeoutMs: 120000
         readTimeoutMs: 120000
+
+export:
+    sql:
+        dataset: |+
+          SELECT
+          i.image_identifier as "imageID",
+          NULLIF(regexp_replace(i.original_filename, '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "identifier",
+          NULLIF(regexp_replace(i.audience,          '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "audience",
+          NULLIF(regexp_replace(i.contributor,       '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "contributor",
+          NULLIF(regexp_replace(i.created,           '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "created",
+          NULLIF(regexp_replace(i.creator,           '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "creator",
+          NULLIF(regexp_replace(i.description,       '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "description",
+          NULLIF(regexp_replace(i.mime_type,         '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "format",
+          NULLIF(regexp_replace(i.license,           '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "license",
+          NULLIF(regexp_replace(i.publisher,         '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "publisher",
+          NULLIF(regexp_replace(i.dc_references,     '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "references",
+          NULLIF(regexp_replace(i.rights_holder,     '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "rightsHolder",
+          NULLIF(regexp_replace(i.source,            '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "source",
+          NULLIF(regexp_replace(i.title,             '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "title",
+          NULLIF(regexp_replace(i.type,              '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '')  AS  "type",
+          NULLIF(regexp_replace(array_to_json(i.alternate_filename)::text, '[\x00-\x1F\x7F-\x9F]',  '', 'g'), '') AS "alternativeFilename"
+          FROM image i
+          WHERE data_resource_uid = ?
+        datasetMapping: |+
+          SELECT
+            image_identifier as "imageID",
+            original_filename as "url"
+            FROM image i
+            WHERE data_resource_uid = ?

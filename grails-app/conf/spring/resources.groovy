@@ -1,4 +1,5 @@
 import org.flywaydb.core.Flyway
+import org.flywaydb.core.api.configuration.ClassicConfiguration
 import org.postgresql.ds.PGSimpleDataSource
 import org.springframework.beans.factory.config.BeanDefinition
 
@@ -6,14 +7,15 @@ import org.springframework.beans.factory.config.BeanDefinition
 beans = {
     if (application.config.flyway.enabled) {
 
-        flyway(Flyway) { bean ->
-            bean.initMethod = 'migrate'
-            dataSource = { PGSimpleDataSource pgds ->
-                url = application.config.flyway.jdbcUrl ?: application.config.dataSource.url
-                user = application.config.flyway.username ?: application.config.dataSource.username
-                password = application.config.flyway.password ?: application.config.dataSource.password
-            }
+        flywayDataSource(PGSimpleDataSource) { bean ->
+            url = application.config.getProperty('flyway.jdbcUrl') ?: application.config.getProperty('dataSource.url')
+            user = application.config.getProperty('flyway.username') ?: application.config.getProperty('dataSource.username')
+            password = application.config.getProperty('flyway.password') ?: application.config.getProperty('dataSource.password')
+        }
 
+        flywayConfiguration(ClassicConfiguration) { bean ->
+            dataSource = ref('flywayDataSource')
+            table = application.config.flyway.table
             baselineOnMigrate = application.config.getProperty('flyway.baselineOnMigrate', Boolean, true)
             def outOfOrderProp = application.config.getProperty('flyway.outOfOrder', Boolean, false)
             outOfOrder = outOfOrderProp
@@ -22,8 +24,12 @@ beans = {
                     'exportRoot': application.config.getProperty('imageservice.imagestore.exportDir', '/data/image-service/exports'),
                     'baseUrl': application.config.getProperty('grails.serverURL')
             ]
-            locations = application.config.flyway.locations ?: 'classpath:db/migration'
+            locationsAsStrings = application.config.flyway.locations ?: 'classpath:db/migration'
             if (application.config.flyway.baselineVersion) baselineVersionAsString = application.config.flyway.baselineVersion.toString()
+        }
+
+        flyway(Flyway, ref('flywayConfiguration')) { bean ->
+            bean.initMethod = 'migrate'
         }
 
         BeanDefinition sessionFactoryBeanDef = getBeanDefinition('sessionFactory')

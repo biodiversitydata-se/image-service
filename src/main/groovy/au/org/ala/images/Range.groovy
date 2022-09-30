@@ -9,7 +9,7 @@ import java.util.regex.Pattern
 /**
  * Represents an HTTP byte range request.
  */
-@Canonical(includes = ['_totalLength', '_start', '_end', '_suffixLength'])
+@Canonical()
 class Range {
 
     private static final String byteRangeSetRegex = '(\\s*((?<byteRangeSpec>(?<firstBytePos>\\d+)-(?<lastBytePos>\\d+)?)|(?<suffixByteRangeSpec>-(?<suffixLength>\\d+)))\\s*(,|$))'
@@ -20,56 +20,56 @@ class Range {
     private static final InvalidRangeHeaderException INVALID_RANGE_HEADER_EXCEPTION = new InvalidRangeHeaderException("Invalid range header")
 
 
-    private Long _totalLength
-    private Long _start // inclusive
-    private Long _end // inclusive
-    private Long _suffixLength
+    private Long totalLength
+    private Long start // inclusive
+    private Long end // inclusive
+    private Long suffixLength
 
     long start() {
-        if (_start != null) {
-            _start
-        } else if (_suffixLength != null) {
-            _totalLength - _suffixLength
+        if (start != null) {
+            start
+        } else if (suffixLength != null) {
+            totalLength - suffixLength
         } else {
             0
         }
     }
 
     long end() {
-        if (_end != null && _end < (_totalLength - 1)) {
-            _end
+        if (end != null && end < (totalLength - 1)) {
+            end
         } else {
-            _totalLength - 1
+            totalLength - 1
         }
     }
 
     boolean validate() {
         boolean valid = true
-        if (_start != null) {
-            valid &= _start >= 0
+        if (start != null) {
+            valid &= start >= 0
         }
-        if (_end != null) {
-            valid &= _end >= 0
+        if (end != null) {
+            valid &= end >= 0
         }
-        if (_suffixLength != null) {
-            valid &= _suffixLength >= 0
-            valid &= _start == null && _end == null
+        if (suffixLength != null) {
+            valid &= suffixLength >= 0
+            valid &= start == null && end == null
         }
-        if (_start != null && _end != null) {
-            valid &= _start <= _end
+        if (start != null && end != null) {
+            valid &= start <= end
         }
         return valid
     }
 
     long length() {
-        if (_end != null && _start != null && _end < _totalLength) {
-            _end - _start + 1
-        } else if (_start != null) {
-            _totalLength - _start
-        } else if (_suffixLength != null) {
-            _suffixLength
+        if (end != null && start != null && end < totalLength) {
+            end - start + 1
+        } else if (start != null) {
+            totalLength - start
+        } else if (suffixLength != null) {
+            suffixLength
         } else {
-            _totalLength
+            totalLength
         }
     }
 
@@ -78,13 +78,13 @@ class Range {
      * @return
      */
     boolean isEmpty() {
-        (_start == null && _suffixLength == null)
+        (start == null && suffixLength == null)
     }
 
     String contentRangeHeader() {
 //        content-range: bytes 5793340-5793343/5793344
         if (!empty) {
-            "bytes ${start()}-${end()}/$_totalLength"
+            "bytes ${start()}-${end()}/$totalLength"
         }
         else {
             null
@@ -102,14 +102,14 @@ class Range {
             Matcher byteRangeSetMatcher = byteRangeSetPattern.matcher(byteRangeSet)
             while (byteRangeSetMatcher.find()) {
                 Range range = new Range()
-                range._totalLength = totalLength
+                range.totalLength = totalLength
                 if (byteRangeSetMatcher.group("byteRangeSpec") != null) {
                     String start = byteRangeSetMatcher.group("firstBytePos")
                     String end = byteRangeSetMatcher.group("lastBytePos")
-                    range._start = Long.valueOf(start)
-                    range._end = end == null ? null : Long.valueOf(end)
+                    range.start = Long.valueOf(start)
+                    range.end = end == null ? null : Long.valueOf(end)
                 } else if (byteRangeSetMatcher.group("suffixByteRangeSpec") != null) {
-                    range._suffixLength = Long.valueOf(byteRangeSetMatcher.group("suffixLength"))
+                    range.suffixLength = Long.valueOf(byteRangeSetMatcher.group("suffixLength"))
                 } else {
                     throw INVALID_RANGE_HEADER_EXCEPTION
                 }
@@ -125,7 +125,7 @@ class Range {
     }
 
     static Range emptyRange(long totalLength) {
-        return new Range(_totalLength: totalLength)
+        return new Range(totalLength: totalLength)
     }
 
     InputStream wrapInputStream(InputStream inputStream) {
@@ -135,7 +135,7 @@ class Range {
             // TODO does this need to be inside a use block?
             inputStream.skip(start)
             def end = this.end()
-            if (end < _totalLength - 1) {
+            if (end < totalLength - 1) {
                 is = new BoundedInputStream(is, this.length())
             }
         }

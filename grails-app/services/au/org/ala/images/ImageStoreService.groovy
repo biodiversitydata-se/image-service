@@ -23,6 +23,8 @@ import java.awt.Rectangle
 import java.awt.image.BufferedImage
 import java.nio.file.Files
 
+import org.grails.orm.hibernate.cfg.GrailsHibernateUtil
+
 class ImageStoreService {
 
     def grailsApplication
@@ -181,7 +183,7 @@ class ImageStoreService {
             new ThumbDefinition(size, true, Color.darkGray, "thumbnail_square_darkGray"),
             new ThumbDefinition(650, false, null, "thumbnail_large"),
         ]
-        def results = t.generateThumbnails(imageBytes, image.storageLocation.thumbnailByteSinkFactory(image.imageIdentifier), thumbDefs as List<ThumbDefinition>)
+        def results = t.generateThumbnails(imageBytes, GrailsHibernateUtil.unwrapIfProxy(image.storageLocation).thumbnailByteSinkFactory(image.imageIdentifier), thumbDefs as List<ThumbDefinition>)
         auditService.log(imageIdentifier, "Thumbnails created", "N/A")
         return results
     }
@@ -210,7 +212,7 @@ class ImageStoreService {
         def config = new ImageTilerConfig(2,2,256, 6, TileFormat.JPEG)
         config.setTileBackgroundColor(new Color(221, 221, 221))
         def tiler = new ImageTiler(config)
-        return tiler.tileImage(image.originalInputStream(), new TilerSink.PathBasedTilerSink(image.storageLocation.tilerByteSinkFactory(image.imageIdentifier)))
+        return tiler.tileImage(image.originalInputStream(), new TilerSink.PathBasedTilerSink(GrailsHibernateUtil.unwrapIfProxy(image.storageLocation).tilerByteSinkFactory(image.imageIdentifier)))
     }
 
     boolean storeTilesArchiveForImage(Image image, MultipartFile zipFile) {
@@ -231,7 +233,7 @@ class ImageStoreService {
                 szf.getInputStream(fh).withStream { stream ->
                     def contentType = tika.detect(stream, fh.fileName)
                     def length = fh.uncompressedSize
-                    image.storageLocation.storeTileZipInputStream(image.imageIdentifier, fh.fileName, contentType, length, szf.getInputStream(fh))
+                    GrailsHibernateUtil.unwrapIfProxy(image.storageLocation).storeTileZipInputStream(image.imageIdentifier, fh.fileName, contentType, length, szf.getInputStream(fh))
                 }
             }
 
