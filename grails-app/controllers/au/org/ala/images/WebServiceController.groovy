@@ -2396,8 +2396,8 @@ class WebServiceController {
 
     @Operation(
             method = "GET",
-            summary = "Export CSV of URL to imageIdentifier mappings",
-            description = "Export CSV of URL to imageIdentifier mappings.",
+            summary = "Export dataset mappings",
+            description = "Export dataset mappings.",
             parameters = [
                     @Parameter(name = "id", in = PATH, required = true, description = "Data Resource UID", schema = @Schema(implementation = String))
             ],
@@ -2416,7 +2416,7 @@ class WebServiceController {
             ],
             tags = ["Export"]
     )
-    @Path("/ws/exportMapping")
+    @Path("/ws/exportMapping/{id}")
     @Consumes("application/json")
     @Produces("application/gzip")
     def exportDatasetMapping(){
@@ -2469,7 +2469,7 @@ class WebServiceController {
             ],
             tags = ["Export"]
     )
-    @Path("/ws/exportMapping")
+    @Path("/ws/exportDataset/{id}")
     @Consumes("application/json")
     @Produces("application/gzip")
     def exportDataset(){
