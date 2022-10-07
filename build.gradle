@@ -119,6 +119,7 @@ dependencies {
     compile 'net.lingala.zip4j:zip4j:2.9.1'
     compile 'com.google.guava:guava:31.1-jre'
     compile 'org.apache.avro:avro:1.11.0'
+    implementation 'org.xerial.snappy:snappy-java:1.1.8.4'
 
     // Swagger
     compile('au.org.ala.plugins:openapi:1.1.0')
