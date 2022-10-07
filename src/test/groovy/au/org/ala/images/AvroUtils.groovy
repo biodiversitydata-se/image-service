@@ -119,7 +119,8 @@ class AvroUtils {
                 DatumWriter<GenericRecord> writer = new GenericDatumWriter<GenericRecord>(recordSchema);
                 DataFileWriter<GenericRecord> dataFileWriter = new DataFileWriter<GenericRecord>(writer);
                 if(setCodec) {
-                    dataFileWriter.setCodec(CodecFactory.snappyCodec());
+                    CodecFactory factory = CodecFactory.fromString("snappy");
+                    dataFileWriter.setCodec(factory);
                 }
                 dataFileWriter.create(recordSchema, zipOut);
                 dataFileWriter.append(record);
