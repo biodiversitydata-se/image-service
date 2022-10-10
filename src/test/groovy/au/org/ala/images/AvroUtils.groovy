@@ -1,5 +1,6 @@
 package au.org.ala.images
 
+import groovy.util.logging.Slf4j
 import org.apache.avro.Schema
 import org.apache.avro.SchemaBuilder
 import org.apache.avro.file.CodecFactory
@@ -12,6 +13,7 @@ import org.apache.avro.io.DatumWriter
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
+@Slf4j
 class AvroUtils {
 
     static final String IDENTIFIER = 'identifier'
@@ -119,6 +121,8 @@ class AvroUtils {
                 DatumWriter<GenericRecord> writer = new GenericDatumWriter<GenericRecord>(recordSchema);
                 DataFileWriter<GenericRecord> dataFileWriter = new DataFileWriter<GenericRecord>(writer);
                 if(setCodec) {
+                    log.info(CodecFactory.REGISTERED as String)
+                    System.out.println(CodecFactory.REGISTERED)
                     CodecFactory factory = CodecFactory.fromString("null");
                     dataFileWriter.setCodec(factory);
                 }
