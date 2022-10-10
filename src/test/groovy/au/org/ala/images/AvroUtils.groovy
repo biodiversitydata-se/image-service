@@ -123,7 +123,7 @@ class AvroUtils {
                 if(setCodec) {
                     log.info(CodecFactory.REGISTERED as String)
                     System.out.println(CodecFactory.REGISTERED)
-                    CodecFactory factory = CodecFactory.fromString("null");
+                    CodecFactory factory = CodecFactory.fromString("snappy");
                     dataFileWriter.setCodec(factory);
                 }
                 dataFileWriter.create(recordSchema, zipOut);
