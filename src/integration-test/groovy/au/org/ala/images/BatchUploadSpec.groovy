@@ -316,6 +316,32 @@ class BatchUploadSpec extends Specification {
 
     }
 
+    /**
+     * Test an AVRO upload with codec in AVRO file
+     */
+    def uploadFileWithCodecAvro() {
+        given:
+        def imageUrl = 'https://www.ala.org.au/app/uploads/2019/05/palm-cockatoo-by-Alan-Pettigrew-1920-1200-CCBY-28072018-640x480.jpg'
+        def imageUrls = [[[(IDENTIFIER): imageUrl, (CREATOR): 'creator', (CREATED): '2021-01-01 00:00:00']]]
+        def avro = AvroUtils.generateTestArchiveWithMetadata(imageUrls, true, true)
+
+        when:
+
+        def request = HttpRequest.create(HttpMethod.POST, "/batch/upload")
+                .contentType("multipart/form-data")
+                .body(MultipartBody.builder()
+                        .addPart("dataResourceUid", TEST_DR_UID)
+                        .addPart('archive', avro)
+                        .build())
+        HttpResponse uploadResponse = rest.exchange(request, String)
+
+        def response = new JsonSlurper().parseText(uploadResponse.body())
+
+        then:
+        response.batchID != null
+
+    }
+
     // TODO Use a notification / event bus to signal that batch / images are complete?
     private BatchFileUpload findBatchFileUpload(int batchFileUploadId, int startTimeSeconds) {
         def upload = BatchFileUpload.get(batchFileUploadId)

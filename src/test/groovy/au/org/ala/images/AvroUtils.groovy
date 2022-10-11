@@ -1,7 +1,9 @@
 package au.org.ala.images
 
+import groovy.util.logging.Slf4j
 import org.apache.avro.Schema
 import org.apache.avro.SchemaBuilder
+import org.apache.avro.file.CodecFactory
 import org.apache.avro.file.DataFileWriter
 import org.apache.avro.generic.GenericDatumWriter
 import org.apache.avro.generic.GenericRecord
@@ -11,6 +13,7 @@ import org.apache.avro.io.DatumWriter
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
+@Slf4j
 class AvroUtils {
 
     static final String IDENTIFIER = 'identifier'
@@ -45,15 +48,15 @@ class AvroUtils {
     ]
 
 
-    static File generateTestArchive() {
-        generateTestArchive([['https://www.ala.org.au/app/uploads/2019/05/palm-cockatoo-by-Alan-Pettigrew-1920-1200-CCBY-28072018-640x480.jpg']])
+    static File generateTestArchive(boolean setCodec = false) {
+        generateTestArchive([['https://www.ala.org.au/app/uploads/2019/05/palm-cockatoo-by-Alan-Pettigrew-1920-1200-CCBY-28072018-640x480.jpg']], setCodec)
     }
 
-    static File generateTestArchive(List<List<String>> urls) {
-        generateTestArchiveWithMetadata(urls.collect { it.collect { url -> ['identifier': url ]}}, false)
+    static File generateTestArchive(List<List<String>> urls, boolean setCodec = false) {
+        generateTestArchiveWithMetadata(urls.collect { it.collect { url -> ['identifier': url ]}}, false, setCodec)
     }
 
-    static File generateTestArchiveWithMetadata(List<List<Map<String,String>>> records, boolean useSingleRecordIfAble) {
+    static File generateTestArchiveWithMetadata(List<List<Map<String,String>>> records, boolean useSingleRecordIfAble, boolean setCodec = false) {
         try {
             File newArchiveDir = new File("/tmp/image-service-avro-test")
             newArchiveDir.mkdir()
@@ -117,6 +120,12 @@ class AvroUtils {
 
                 DatumWriter<GenericRecord> writer = new GenericDatumWriter<GenericRecord>(recordSchema);
                 DataFileWriter<GenericRecord> dataFileWriter = new DataFileWriter<GenericRecord>(writer);
+                if(setCodec) {
+                    log.info(CodecFactory.REGISTERED as String)
+                    System.out.println(CodecFactory.REGISTERED)
+                    CodecFactory factory = CodecFactory.fromString("null");
+                    dataFileWriter.setCodec(factory);
+                }
                 dataFileWriter.create(recordSchema, zipOut);
                 dataFileWriter.append(record);
                 dataFileWriter.flush();
