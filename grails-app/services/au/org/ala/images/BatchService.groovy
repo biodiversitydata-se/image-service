@@ -255,7 +255,7 @@ class BatchService {
                     // Here we can add in data manipulation like anonymization etc
                     multimediaRecords.each { GenericRecord record ->
                         // check URL
-                        if (record.get("identifier")) {
+                        if (record.hasField("identifier")) {
 
                             if (!identifiers.contains(record.get("identifier"))) {
 
@@ -265,7 +265,7 @@ class BatchService {
                                 ]
 
                                 ImageService.SUPPORTED_UPDATE_FIELDS.each { updateField ->
-                                    recordMap[updateField] = record.get(updateField)
+                                    recordMap[updateField] = record.hasField(updateField) ? record.get(updateField) : null
                                 }
 
                                 batch << recordMap
@@ -287,7 +287,7 @@ class BatchService {
                         ]
 
                         ImageService.SUPPORTED_UPDATE_FIELDS.each { updateField ->
-                            recordMap[updateField] = currRecord.get(updateField)
+                            recordMap[updateField] = currRecord.hasField(updateField) ? currRecord.get(updateField) : null
                         }
 
                         batch << recordMap
