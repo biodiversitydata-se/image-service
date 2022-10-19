@@ -255,7 +255,7 @@ class BatchService {
                     // Here we can add in data manipulation like anonymization etc
                     multimediaRecords.each { GenericRecord record ->
                         // check URL
-                        if (record.hasField("identifier")) {
+                        if (record.get("identifier")) {
 
                             if (!identifiers.contains(record.get("identifier"))) {
 
