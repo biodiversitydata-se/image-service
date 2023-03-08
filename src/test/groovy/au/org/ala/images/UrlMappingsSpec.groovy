@@ -1,5 +1,7 @@
-import au.org.ala.images.ImageController
+package au.org.ala.images
 
+import au.org.ala.images.ImageController
+import au.org.ala.images.UrlMappings
 import grails.testing.web.UrlMappingsUnitTest
 import spock.lang.Specification
 

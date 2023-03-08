@@ -10,8 +10,6 @@ import org.elasticsearch.action.bulk.BulkRequest
 import org.elasticsearch.action.bulk.BulkResponse
 import org.elasticsearch.action.delete.DeleteRequest
 import org.elasticsearch.action.search.SearchScrollRequest
-import org.elasticsearch.common.unit.TimeValue
-import org.elasticsearch.common.xcontent.XContentType
 import groovy.json.JsonOutput
 import grails.web.servlet.mvc.GrailsParameterMap
 import org.apache.http.HttpHost
@@ -28,6 +26,7 @@ import org.elasticsearch.action.search.SearchType
 import org.elasticsearch.client.RequestOptions
 import org.elasticsearch.client.RestClient
 import org.elasticsearch.client.RestHighLevelClient
+import org.elasticsearch.core.TimeValue
 import org.elasticsearch.index.query.BoolQueryBuilder
 import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.index.query.QueryStringQueryBuilder
@@ -39,6 +38,7 @@ import org.elasticsearch.search.aggregations.BucketOrder
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder
 import org.elasticsearch.search.sort.SortOrder
+import org.elasticsearch.xcontent.XContentType
 
 import javax.annotation.PreDestroy
 import java.util.regex.Pattern

@@ -23,8 +23,6 @@ import org.apache.commons.io.FilenameUtils
 import org.apache.commons.lang.StringUtils
 import org.apache.tika.mime.MimeType
 import org.apache.tika.mime.MimeTypes
-import org.grails.plugins.codecs.MD5CodecExtensionMethods
-import org.grails.plugins.codecs.SHA1CodecExtensionMethods
 import org.hibernate.FlushMode
 import org.hibernate.ScrollMode
 import org.springframework.beans.factory.annotation.Value
@@ -514,14 +512,14 @@ SELECT
         try {
             lock.lock()
 
-            def md5Hash = MD5CodecExtensionMethods.encodeAsMD5(bytes)
+            def md5Hash = bytes.encodeAsMD5()
 
             //check for existing image using MD5 hash
             def image = Image.findByContentMD5Hash(md5Hash)
             def preExisting = false
             def isDuplicate = false
             if (!image) {
-                def sha1Hash = SHA1CodecExtensionMethods.encodeAsSHA1(bytes)
+                def sha1Hash = bytes.encodeAsSHA1()
 
                 Long defaultStorageLocationID = settingService.getStorageLocationDefault()
 
