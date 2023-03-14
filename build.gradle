@@ -76,11 +76,11 @@ dependencies {
     implementation group: 'com.googlecode.owasp-java-html-sanitizer', name: 'owasp-java-html-sanitizer', version: '20211018.1'
 
     // ALA plugins
-    implementation group: 'org.grails.plugins', name: 'ala-ws-plugin', version: '3.2.0-SNAPSHOT', changing: true
+    implementation group: 'org.grails.plugins', name: 'ala-auth', version: alaSecurityLibsVersion, changing: true
+    implementation group: 'org.grails.plugins', name: 'ala-ws-plugin', version: alaSecurityLibsVersion, changing: true
+    implementation group: 'org.grails.plugins', name: 'ala-ws-security-plugin', version: alaSecurityLibsVersion, changing: true
     implementation group: 'org.grails.plugins', name: 'ala-bootstrap3', version: '4.1.0', changing: true
     implementation group: 'org.grails.plugins', name: 'ala-admin-plugin', version: '2.3.0', changing: true
-    implementation group: 'org.grails.plugins', name: 'ala-auth', version: '5.2.0-SNAPSHOT', changing: true
-    implementation group: 'org.grails.plugins', name: 'ala-ws-security-plugin', version: '4.4.0-SNAPSHOT', changing: true
     implementation group: 'au.org.ala.plugins.grails', name:'images-client-plugin', version: '1.1', changing: true
 
     // Added dependencies
@@ -174,11 +174,12 @@ dependencies {
 //    testCompile 'io.micronaut:micronaut-http-client'
 
     // Testing
+    testImplementation 'ru.vyarus:spock-junit5:1.0.1'
     testImplementation 'org.grails.plugins:embedded-postgres:1.1.2'
     testImplementation "com.opentable.components:otj-pg-embedded:0.13.0" // required transitive dependency from the plugin.
-    testImplementation 'cloud.localstack:localstack-utils:0.2.20'
+    testImplementation 'cloud.localstack:localstack-utils:0.2.22'
     testImplementation "com.amazonaws:aws-java-sdk:$amazonAwsSdkVersion" // full AWS SDK included in test scope for localstack config
-    testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:1.7.0'
+    testImplementation 'com.palantir.docker.compose:docker-compose-junit-jupiter:1.8.0'
 }
 
 bootJar {

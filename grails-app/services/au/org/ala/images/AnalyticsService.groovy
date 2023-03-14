@@ -3,12 +3,9 @@ package au.org.ala.images
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.services.analytics.AnalyticsScopes
 import groovy.json.JsonSlurper
-import groovyx.net.http.HTTPBuilder
 
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executors
-
-import static groovyx.net.http.ContentType.URLENC
-import static groovyx.net.http.Method.POST
 
 class AnalyticsService {
 
@@ -113,25 +110,29 @@ class AnalyticsService {
             ]
 
             analyticsExecutor.execute {
-                def http = new HTTPBuilder(queryURL)
                 try {
-                    http.request( POST ) {
-                        uri.path = '/collect'
-                        requestContentType = URLENC
-                        body =  requestBody
-
-                        response.success = { resp ->
-                            log.debug("Analytics POST response status: {}", resp.statusLine)
-                        }
-
-                        response.failure = { resp ->
-                            log.error("analytics request failed = {}", resp.status)
-                        }
+                    HttpURLConnection connection = (HttpURLConnection) queryURL.toString().toURL().openConnection()
+                    connection.requestMethod = 'POST'
+                    connection.setRequestProperty('Content-Type', 'application/x-www-form-urlencoded')
+                    def formBody = toFormBody(requestBody).getBytes(StandardCharsets.UTF_8)
+                    connection.doOutput = true
+                    connection.outputStream.withStream {
+                        it.write(formBody)
+                    }
+                    def responseCode = connection.responseCode
+                    if (responseCode < 300) {
+                        log.debug("Analytics POST response status: {}", connection.responseMessage)
+                    } else {
+                        log.error("analytics request failed = {}", connection.responseMessage)
                     }
                 } catch (Exception e) {
                     log.error('Unable to send analytics for {}', requestBody, e)
                 }
             }
         }
+    }
+
+    private String toFormBody(Map<String, Serializable> form) {
+        form.collect { k,v -> URLEncoder.encode(k, "UTF-8")+'='+URLEncoder.encode(v, "UTF-8") }.join('&')
     }
 }
