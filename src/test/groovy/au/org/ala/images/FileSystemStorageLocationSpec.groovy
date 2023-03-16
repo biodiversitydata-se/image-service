@@ -2,8 +2,6 @@ package au.org.ala.images
 
 import grails.testing.gorm.DomainUnitTest
 import groovy.util.logging.Slf4j
-import org.junit.ClassRule
-import org.junit.rules.TemporaryFolder
 import spock.lang.Shared
 import spock.lang.TempDir
 

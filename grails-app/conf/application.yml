@@ -172,27 +172,6 @@ environments:
                 inbox: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-incoming'
             exportDir: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-exports'
             batchUpload: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-uploads'
-#    travis:
-#        flyway:
-#            baselineOnMigrate: false
-#        dataSource:
-#            dbCreate: update
-#            embeddedPostgres: false
-#            logSql: false
-#            embeddedPort: 5432
-#            url: jdbc:postgresql://localhost/images_travis?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
-#            username: "postgres"
-#            password: "postgres"
-#            type: "com.zaxxer.hikari.HikariDataSource"
-#            properties:
-#                maximumPoolSize: 30
-#                registerMbeans: true
-#                connectionTimeout: 5000
-#        imageservice:
-#            imagestore:
-#                root: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-store'
-#                inbox: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-incoming'
-#            exportDir: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-exports'
     production:
         hibernate:
             dialect: net.kaleidos.hibernate.PostgresqlExtensionsDialect

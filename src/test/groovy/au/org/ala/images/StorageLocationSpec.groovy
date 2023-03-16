@@ -4,8 +4,6 @@ import com.google.common.io.Resources
 import grails.testing.gorm.DomainUnitTest
 import net.lingala.zip4j.ZipFile
 import org.apache.commons.io.FileUtils
-import org.junit.Rule
-import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 import spock.lang.TempDir
 import spock.lang.Unroll
