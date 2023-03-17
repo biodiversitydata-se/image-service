@@ -13,8 +13,7 @@ import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
-import groovyx.net.http.HTTPBuilder
-import groovyx.net.http.Method
+
 import spock.lang.Specification
 
 import java.security.MessageDigest
@@ -121,12 +120,12 @@ class ContentNegotiationSpec extends Specification {
     void "Test accept: image/jpeg"() {
         when:
 
-        def imageInBytes = new HTTPBuilder("${baseUrl}/image/${imageId}").request(Method.GET, "image/jpeg") {
-            requestContentType = "image/jpeg"
-            response.success = { resp, binary ->
-                return binary.bytes
-            }
-        }
+        def request = HttpRequest.create(HttpMethod.GET, "${baseUrl}/image/${imageId}")
+                .accept("image/jpeg")
+
+        def resp = rest.exchange(request, byte[])
+        def imageInBytes = resp.body()
+
         MessageDigest md = MessageDigest.getInstance("MD5")
         def md5Hash = md.digest(imageInBytes)
 
@@ -145,15 +144,13 @@ class ContentNegotiationSpec extends Specification {
      */
     void "Test accept: image/jpeg - 404"() {
         when:
-        def failresp
-        def imageInBytes = new HTTPBuilder("${baseUrl}/image/ABC").request(Method.GET, "image/jpeg") {
-            requestContentType = "image/jpeg"
-            response.failure = { failresp_inner ->
-                failresp = failresp_inner
-            }
-        }
+
+        def request = HttpRequest.create(HttpMethod.GET, "${baseUrl}/image/${imageId}")
+                .accept("image/jpeg")
+
+        def resp = rest.exchange(request, byte[])
 
         then:
-        assert failresp.status == 404
+        assert resp.status.code == 404
     }
 }
