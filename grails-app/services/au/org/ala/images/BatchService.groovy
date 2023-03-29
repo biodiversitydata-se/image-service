@@ -128,7 +128,7 @@ class BatchService {
         try {
             new ZipFile(uploadedFile).extractAll(uploadedFile.parentFile.absolutePath)
 
-            File newDir = new File(grailsApplication.config.imageservice.batchUpload + "/" + upload.getId() + "/")
+            File newDir = new File(grailsApplication.config.getProperty('imageservice.batchUpload') + "/" + upload.getId() + "/")
             if (!newDir.deleteDir()) {
                 log.warn("Couldn't delete existing directory {} for batch upload {}", newDir)
             }

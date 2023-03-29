@@ -255,14 +255,10 @@ SELECT
         return imageID
     }
 
-    boolean isImageServiceUrl(String url){
-        boolean isRecognised = false
-        grailsApplication.config.imageServiceUrls.each { imageServiceUrl ->
-            if (url.startsWith(imageServiceUrl)) {
-                isRecognised = true
-            }
-        }
-        isRecognised
+    boolean isImageServiceUrl(String url) {
+        def imageServiceUrls = grailsApplication.config.getProperty('imageServiceUrls', List, [])
+        boolean isRecognised = imageServiceUrls.any { imageServiceUrl -> url.startsWith(imageServiceUrl) }
+        return isRecognised
     }
 
     /**
