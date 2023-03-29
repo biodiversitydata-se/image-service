@@ -3,17 +3,12 @@ package au.org.ala.images.helper
 import grails.config.Config
 import groovy.transform.CompileStatic
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
-import io.zonky.test.db.postgres.junit5.EmbeddedPostgresExtension
-import io.zonky.test.db.postgres.junit5.PreparedDbExtension
-import io.zonky.test.db.postgres.junit5.SingleInstancePostgresExtension
 import org.flywaydb.core.Flyway
-import org.flywaydb.core.api.configuration.FluentConfiguration
 import org.grails.config.PropertySourcesConfig
 import org.grails.orm.hibernate.HibernateDatastore
 import org.grails.orm.hibernate.cfg.Settings
 import org.hibernate.Session
 import org.hibernate.SessionFactory
-import org.junit.jupiter.api.extension.RegisterExtension
 import org.springframework.boot.env.PropertySourceLoader
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.env.MutablePropertySources
