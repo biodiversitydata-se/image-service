@@ -4,6 +4,7 @@ import au.org.ala.images.utils.ImagesIntegrationSpec
 import grails.testing.mixin.integration.Integration
 import grails.gorm.transactions.Rollback
 import groovy.json.JsonSlurper
+import io.micronaut.core.type.Argument
 import io.micronaut.http.HttpMethod
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
@@ -146,12 +147,13 @@ class ContentNegotiationSpec extends ImagesIntegrationSpec {
     void "Test accept: image/jpeg - 404"() {
         when:
 
-        def request = HttpRequest.create(HttpMethod.GET, "${baseUrl}/image/${imageId}")
+        def request = HttpRequest.create(HttpMethod.GET, "${baseUrl}/image/ABC")
                 .accept("image/jpeg")
 
         def resp = rest.exchange(request, byte[])
 
         then:
-        assert resp.status.code == 404
+        def e = thrown(HttpClientResponseException)
+        assert e.status.code == 404
     }
 }
