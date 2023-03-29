@@ -1,5 +1,6 @@
 package au.org.ala.images
 
+import au.org.ala.images.utils.ImagesIntegrationSpec
 import grails.testing.mixin.integration.Integration
 import grails.gorm.transactions.Rollback
 import groovy.json.JsonSlurper
@@ -23,7 +24,7 @@ import java.security.MessageDigest
  */
 @Integration(applicationClass = Application.class)
 @Rollback
-class ContentNegotiationSpec extends Specification {
+class ContentNegotiationSpec extends ImagesIntegrationSpec {
 
     def imageId
     def grailsApplication

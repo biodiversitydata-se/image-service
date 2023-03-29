@@ -1,6 +1,7 @@
 package au.org.ala.images.utils
 
 import grails.config.Config
+import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import org.grails.config.PropertySourcesConfig
 import org.grails.orm.hibernate.cfg.Settings
 import org.springframework.boot.env.PropertySourceLoader
@@ -11,12 +12,20 @@ import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.core.io.Resource
 import org.springframework.core.io.ResourceLoader
 import org.springframework.core.io.support.SpringFactoriesLoader
+import spock.lang.AutoCleanup
+import spock.lang.Shared
+import spock.lang.Specification
 
-class ConfigUtils {
+abstract class ImagesIntegrationSpec extends Specification {
+
+    @Shared @AutoCleanup EmbeddedPostgres embeddedPostgres = EmbeddedPostgres.builder()
+            .setPort(ImagesIntegrationSpec.config.getProperty('dataSource.embeddedPort',  Integer.class, 6543))
+            .setCleanDataDirectory(true)
+            .start()
 
     static Config getConfig() { // CHANGED extracted from setupSpec so postgresRule can access
 
-        List<PropertySourceLoader> propertySourceLoaders = SpringFactoriesLoader.loadFactories(PropertySourceLoader.class, ConfigUtils.class.getClassLoader())
+        List<PropertySourceLoader> propertySourceLoaders = SpringFactoriesLoader.loadFactories(PropertySourceLoader.class, ImagesIntegrationSpec.class.getClassLoader())
         ResourceLoader resourceLoader = new DefaultResourceLoader()
         MutablePropertySources propertySources = new MutablePropertySources()
         PropertySourceLoader ymlLoader = propertySourceLoaders.find { it.getFileExtensions().toList().contains("yml") }

@@ -1,5 +1,6 @@
 package au.org.ala.images
 
+import au.org.ala.images.utils.ImagesIntegrationSpec
 import grails.testing.mixin.integration.Integration
 import grails.gorm.transactions.Rollback
 import groovy.json.JsonSlurper
@@ -20,7 +21,7 @@ import java.time.Duration
 
 @Integration(applicationClass = Application.class)
 @Rollback
-class TagSpec extends Specification {
+class TagSpec extends ImagesIntegrationSpec {
 
     def grailsApplication
 

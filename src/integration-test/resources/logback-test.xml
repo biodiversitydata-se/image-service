@@ -11,10 +11,10 @@
         </encoder>
     </appender>
 
-    <logger name="grails.plugins.DefaultGrailsPluginManager" level="OFF" />
+    <logger name="org.hibernate.orm.deprecation" level="OFF" />
     <logger name="au.org.ala.images" level="INFO" />
 
-    <root level="ERROR">
+    <root level="WARN">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>

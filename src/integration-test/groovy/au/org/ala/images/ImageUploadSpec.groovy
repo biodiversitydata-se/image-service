@@ -1,5 +1,6 @@
 package au.org.ala.images
 
+import au.org.ala.images.utils.ImagesIntegrationSpec
 import grails.core.GrailsApplication
 import grails.testing.mixin.integration.Integration
 import grails.gorm.transactions.*
@@ -22,7 +23,7 @@ import java.time.Duration
 
 @Integration(applicationClass = Application.class)
 @Rollback
-class ImageUploadSpec extends Specification {
+class ImageUploadSpec extends ImagesIntegrationSpec {
 
     GrailsApplication grailsApplication
 
