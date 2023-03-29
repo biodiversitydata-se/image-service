@@ -220,6 +220,11 @@ security:
     apikey:
         auth:
             serviceUrl: https://auth.ala.org.au/apikey/
+    ip:
+        whitelist:
+        - 127.0.0.1
+        - 0:0:0:0:0:0:0:1
+        - ::1
 imageservice:
     imagestore:
         root: '/data/image-service/store'
