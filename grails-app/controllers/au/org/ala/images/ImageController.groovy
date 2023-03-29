@@ -804,7 +804,7 @@ class ImageController {
     }
 
     private getUserIdForRequest(HttpServletRequest request) {
-        if (grailsApplication.config.security.cas.disableCAS.toBoolean()){
+        if (grailsApplication.config.getProperty('security.cas.disableCAS', Boolean, false)){
             return "-1"
         }
         authService.getUserId()

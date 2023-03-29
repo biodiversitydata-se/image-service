@@ -1261,7 +1261,7 @@ class WebServiceController {
     private getUserIdForRequest(HttpServletRequest request) {
 
         //check for API access
-        if (grailsApplication.config.security.cas.disableCAS.toBoolean()){
+        if (grailsApplication.config.getProperty('security.cas.disableCAS', Boolean, false)){
             return "-1"
         }
 
