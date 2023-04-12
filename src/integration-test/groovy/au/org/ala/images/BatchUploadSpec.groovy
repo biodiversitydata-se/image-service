@@ -240,7 +240,7 @@ class BatchUploadSpec extends ImagesIntegrationSpec {
         originalImage != null
         originalImage.mimeType == 'image/png'
         originalImage.dateDeleted == null
-        originalImage.audience == 'audience'
+        originalImage.audience == 'audience2'
         originalImage.zoomLevels > 0 // Indicates that the tiler ran
         originalImage.alternateFilename != null
         originalImage.alternateFilename.size() == 2
@@ -248,7 +248,7 @@ class BatchUploadSpec extends ImagesIntegrationSpec {
 
         when: "uploading a duplicate image again, the duplicate is detected before it is downloaded again"
 
-        uploadResponse = rest.exchange(HttpRequest.create(HttpMethod.POST, "/batch/upload")
+        uploadResponse = rest.exchange(HttpRequest.create(HttpMethod.POST, "batch/upload")
                 .contentType("multipart/form-data")
                 .body(MultipartBody.builder()
                         .addPart("dataResourceUid", TEST_DR_UID)
@@ -273,7 +273,7 @@ class BatchUploadSpec extends ImagesIntegrationSpec {
         originalImage != null
         originalImage.mimeType == 'image/png'
         originalImage.dateDeleted == null
-        originalImage.audience == 'audience'
+        originalImage.audience == 'audience2'
         originalImage.zoomLevels > 0 // Indicates that the tiler ran
         originalImage.alternateFilename != null
         originalImage.alternateFilename.size() == 2 // Check the number of alternate filenames has not increased.
