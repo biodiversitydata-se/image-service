@@ -243,6 +243,10 @@ tasks.withType(Test) {
     }
 }
 
+test {
+    testLogging.showStandardStreams = true
+}
+
 assets {
     minifyJs = true
     minifyCss = true
