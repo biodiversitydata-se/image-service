@@ -240,7 +240,7 @@ class BatchUploadSpec extends ImagesIntegrationSpec {
         originalImage != null
         originalImage.mimeType == 'image/png'
         originalImage.dateDeleted == null
-        originalImage.audience == 'audience2'
+        originalImage.audience == 'audience'
         originalImage.zoomLevels > 0 // Indicates that the tiler ran
         originalImage.alternateFilename != null
         originalImage.alternateFilename.size() == 2
@@ -273,7 +273,7 @@ class BatchUploadSpec extends ImagesIntegrationSpec {
         originalImage != null
         originalImage.mimeType == 'image/png'
         originalImage.dateDeleted == null
-        originalImage.audience == 'audience2'
+        originalImage.audience == 'audience'
         originalImage.zoomLevels > 0 // Indicates that the tiler ran
         originalImage.alternateFilename != null
         originalImage.alternateFilename.size() == 2 // Check the number of alternate filenames has not increased.
