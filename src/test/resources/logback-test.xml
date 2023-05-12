@@ -13,7 +13,7 @@
 
     <logger name="grails.plugins.DefaultGrailsPluginManager" level="OFF" />
     <logger name="au.org.ala.images" level="INFO" />
-    <logger name="com.palantir.docker.compos" level="DEBUG" />
+    <logger name="com.palantir.docker.compose" level="DEBUG" />
 
     <root level="ERROR">
         <appender-ref ref="STDOUT" />
