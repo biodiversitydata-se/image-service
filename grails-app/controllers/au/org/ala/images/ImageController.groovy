@@ -766,7 +766,7 @@ class ImageController {
             response.sendError(404)
             return
         }
-        if (grailsApplication.config.analytics.trackLargeViewer.toBoolean()) {
+        if (grailsApplication.config.getProperty('analytics.trackLargeViewer', Boolean)) {
             analyticsService.sendAnalytics(imageInstance, 'imagelargeviewer', request.getHeader("User-Agent"))
         }
         [imageInstance: imageInstance, auxDataUrl: params.infoUrl]

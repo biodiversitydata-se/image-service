@@ -455,7 +455,7 @@ class ElasticSearchService {
         SearchSourceBuilder source = pagenateQuery(params).query(boolQueryBuilder)
 
         // request aggregations (facets)
-        grailsApplication.config.facets.each { facet ->
+        grailsApplication.config.getProperty('facets', List).each { facet ->
             source.aggregation(AggregationBuilders.terms(facet as String).field(facet as String).size(10))
         }
 
@@ -526,7 +526,7 @@ class ElasticSearchService {
         SearchSourceBuilder source = pagenateQuery(params).query(boolQueryBuilder)
 
         // request aggregations (facets)
-        source.aggregation(AggregationBuilders.terms(facet as String).field(facet as String).size(grailsApplication.config.elasticsearch.maxFacetSize.toInteger()).order(BucketOrder.key(true)))
+        source.aggregation(AggregationBuilders.terms(facet as String).field(facet as String).size(grailsApplication.config.getProperty('elasticsearch.maxFacetSize', Integer)).order(BucketOrder.key(true)))
 
         //ask for the total
         source.trackTotalHits(false)
@@ -538,9 +538,9 @@ class ElasticSearchService {
 
     private SearchSourceBuilder pagenateQuery(Map params) {
 
-        int maxOffset = grailsApplication.config.elasticsearch.maxOffset as int
-        int maxPageSize = grailsApplication.config.elasticsearch.maxPageSize as int
-        int defaultPageSize = grailsApplication.config.elasticsearch.defaultPageSize as int
+        int maxOffset = grailsApplication.config.getProperty('elasticsearch.maxOffset', Integer)
+        int maxPageSize = grailsApplication.config.getProperty('elasticsearch.maxPageSize', Integer)
+        int defaultPageSize = grailsApplication.config.getProperty('elasticsearch.defaultPageSize', Integer)
 
         SearchSourceBuilder source = new SearchSourceBuilder()
 
@@ -738,7 +738,7 @@ class ElasticSearchService {
             if (params?.max) {
                 searchSourceBuilder.size(params.int("max"))
             } else {
-                searchSourceBuilder.size(grailsApplication.config.elasticsearch.maxPageSize) // probably way too many!
+                searchSourceBuilder.size(grailsApplication.config.getProperty('elasticsearch.maxPageSize', Integer)) // probably way too many!
             }
 
             if (params?.sort) {

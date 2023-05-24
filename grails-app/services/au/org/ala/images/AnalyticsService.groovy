@@ -28,8 +28,8 @@ class AnalyticsService {
 
             def now = (new Date() + 1 ).format( 'yyyy-MM-dd' )
             //do authentication....
-            def googleApiBaseUrl = grailsApplication.config.analytics.baseURL
-            def googleViewID = URLEncoder.encode(grailsApplication.config.analytics.viewID, "UTF-8")
+            def googleApiBaseUrl = grailsApplication.config.getProperty('analytics.baseURL')
+            def googleViewID = URLEncoder.encode(grailsApplication.config.getProperty('analytics.viewID'), "UTF-8")
 
             REPORT_PERIODS.each { label, period ->
                 def lastMonth = "${googleApiBaseUrl}?ids=${googleViewID}&start-date=30daysAgo&end-date=${now}&dimensions=ga%3AeventCategory&metrics=ga%3AuniqueEvents&filters=ga%3AeventAction%3D%3D${dataResourceUID}&access_token=${accessToken}"
@@ -50,8 +50,8 @@ class AnalyticsService {
         if (getAccessToken()) {
             def now = (new Date() + 1).format('yyyy-MM-dd')
 
-            def googleApiBaseUrl = grailsApplication.config.analytics.baseURL
-            def googleViewID = URLEncoder.encode(grailsApplication.config.analytics.viewID, "UTF-8")
+            def googleApiBaseUrl = grailsApplication.config.getProperty('analytics.baseURL')
+            def googleViewID = URLEncoder.encode(grailsApplication.config.getProperty('analytics.viewID'), "UTF-8")
 
             REPORT_PERIODS.each { label, period ->
                 def lastMonth = "${googleApiBaseUrl}?ids=${googleViewID}&start-date=${period}&end-date=${now}&dimensions=ga%3AeventAction&metrics=ga%3AuniqueEvents&&access_token=${getAccessToken()}"
@@ -76,10 +76,10 @@ class AnalyticsService {
     }
 
     String getAccessToken(){
-        def credentialFile = new File(grailsApplication.config.analytics.credentialsJson)
+        def credentialFile = new File(grailsApplication.config.getProperty('analytics.credentialsJson'))
         if (credentialFile.exists()) {
             GoogleCredential credential = GoogleCredential
-                    .fromStream(new FileInputStream(grailsApplication.config.analytics.credentialsJson))
+                    .fromStream(new FileInputStream(grailsApplication.config.getProperty('analytics.credentialsJson')))
                     .createScoped(Collections.singleton(AnalyticsScopes.ANALYTICS_READONLY));
             credential.refreshToken()
             return credential.getAccessToken()

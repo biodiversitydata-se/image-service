@@ -1015,7 +1015,7 @@ SELECT
 
     List<File> listStagedImages() {
         def files = []
-        def inboxLocation = grailsApplication.config.imageservice.imagestore.inbox as String
+        def inboxLocation = grailsApplication.config.getProperty('imageservice.imagestore.inbox') as String
         def inboxDirectory = new File(inboxLocation)
         inboxDirectory.eachFile { File file ->
             files << file
@@ -1071,7 +1071,7 @@ SELECT
     }
 
     def pollInbox(String batchId, String userId) {
-        def inboxLocation = grailsApplication.config.imageservice.imagestore.inbox as String
+        def inboxLocation = grailsApplication.config.getProperty('imageservice.imagestore.inbox') as String
         def inboxDirectory = new File(inboxLocation)
 
         inboxDirectory.eachFile { File file ->
@@ -1593,8 +1593,8 @@ SELECT
      * @return
      */
     File exportIndexToFile(){
-        FileUtils.forceMkdir(new File(grailsApplication.config.imageservice.exportDir))
-        def exportFile = grailsApplication.config.imageservice.exportDir + "/images-index.csv"
+        FileUtils.forceMkdir(new File(grailsApplication.config.getProperty('imageservice.exportDir')))
+        def exportFile = grailsApplication.config.getProperty('imageservice.exportDir') + "/images-index.csv"
         def file = new File(exportFile)
         file.withWriter("UTF-8") { writer ->
             eachRowToCSV(writer, """SELECT * FROM export_index;""", [])
