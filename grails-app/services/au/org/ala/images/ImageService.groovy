@@ -165,7 +165,7 @@ SELECT
                     return new ImageStoreResult(image, true, image.alternateFilename?.contains(imageUrl) ?: false)
                 }
                 def url = new URL(imageUrl)
-                def bytes = url.getBytes(connectTimeout: connectTimeoutMs, readTimeout: readTimeoutMs, requestProperties: [USER_AGENT: userAgent()])
+                def bytes = url.getBytes(connectTimeout: connectTimeoutMs, readTimeout: readTimeoutMs, requestProperties: [(USER_AGENT): userAgent()])
 
                 def contentType = null
 
@@ -296,7 +296,7 @@ SELECT
                             def result = [success: false, alreadyStored: false]
                             try {
                                 def url = new URL(imageUrl)
-                                def bytes = url.getBytes(connectTimeout: connectTimeoutMs, readTimeout: readTimeoutMs, requestProperties: [USER_AGENT: userAgent()])
+                                def bytes = url.getBytes(connectTimeout: connectTimeoutMs, readTimeout: readTimeoutMs, requestProperties: [(USER_AGENT): userAgent()])
                                 def contentType = detectMimeTypeFromBytes(bytes, imageUrl)
                                 ImageStoreResult storeResult = storeImageBytes(bytes, imageUrl, bytes.length,
                                         contentType, uploader, true, imageSource)
@@ -388,7 +388,7 @@ SELECT
                 def bytes
                 try {
                     def url = new URL(imageUrl)
-                    bytes = url.getBytes(connectTimeout: connectTimeoutMs, readTimeout: readTimeoutMs, requestProperties: [USER_AGENT: userAgent()])
+                    bytes = url.getBytes(connectTimeout: connectTimeoutMs, readTimeout: readTimeoutMs, requestProperties: [(USER_AGENT): userAgent()])
                 } catch (Exception e){
                     log.error("Unable to load image from URL: {}. Logging as failed URL", imageUrl)
                     logBadUrl(imageUrl)
