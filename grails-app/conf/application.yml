@@ -159,22 +159,25 @@ environments:
             exportDir: '/tmp/image-service/exports'
             batchUpload: '/tmp/image-service/uploads'
     travis:
-        flyway:
-            baselineOnMigrate: false
-        dataSource:
-            embeddedPostgres: true
-            pooled: true
-            jmxExport: true
-            embeddedPort: 6543
-            username: postgres
-            password: postgres
-            url: jdbc:postgresql://localhost:6543/postgres?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
-        imageservice:
-            imagestore:
-                root: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-store'
-                inbox: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-incoming'
-            exportDir: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-exports'
-            batchUpload: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-uploads'
+      grails:
+        config:
+          locations: [ ]
+      flyway:
+          baselineOnMigrate: false
+      dataSource:
+          embeddedPostgres: true
+          pooled: true
+          jmxExport: true
+          embeddedPort: 6543
+          username: postgres
+          password: postgres
+          url: jdbc:postgresql://localhost:6543/postgres?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
+      imageservice:
+          imagestore:
+              root: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-store'
+              inbox: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-incoming'
+          exportDir: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-exports'
+          batchUpload: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-uploads'
     production:
         hibernate:
             dialect: net.kaleidos.hibernate.PostgresqlExtensionsDialect
