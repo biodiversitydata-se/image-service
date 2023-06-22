@@ -790,7 +790,7 @@ class ElasticSearchService {
         GetMappingsRequest request = new GetMappingsRequest();
         request.indices("images")
         GetMappingsResponse getMappingResponse = client.indices().getMapping(request, RequestOptions.DEFAULT)
-        Map properties = getMappingResponse.mappings().values().first().value.first().value.sourceAsMap().properties
+        Map properties = getMappingResponse.mappings().values().first().values().first().sourceAsMap().properties
         properties.keySet()
     }
 }
