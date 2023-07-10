@@ -97,6 +97,10 @@ abstract class FlybernateSpec extends Specification {
         transactionManager = hibernateDatastore.getTransactionManager()
     }
 
+    void cleanupSpec() {
+        flyway.clean()
+    }
+
     /**
      * The transaction status
      */
