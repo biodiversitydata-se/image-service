@@ -357,7 +357,7 @@ class AdminController {
     def reindexImages() {
         flash.message = "Reindexing scheduled. Monitor progress using the search interface."
         imageService.scheduleBackgroundTask(new ScheduleReindexAllImagesTask(imageService, elasticSearchService,
-                grailsApplication.config.getProperty('elasticsearch.batchIndexSize')))
+                grailsApplication.config.getProperty('elasticsearch.batchIndexSize', Integer)))
         redirect(action:'tools')
     }
 
