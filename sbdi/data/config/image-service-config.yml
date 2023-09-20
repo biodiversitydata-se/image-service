@@ -1,0 +1,114 @@
+grails:
+  serverURL: "http://localhost:8080"
+
+server:
+  #port: {{image_service_port}}
+  contextPath:
+
+security:
+  cas:
+    enabled: true
+    appServerName: "http://localhost:8080"
+    bypass: false
+    disableCAS: false
+    casServerName: https://auth.biodiversitydata.se
+    casServerUrlPrefix: https://auth.biodiversitydata.se/cas
+    casServerLoginUrl: https://auth.biodiversitydata.se/cas/login
+    casServerLogoutUrl: https://auth.biodiversitydata.se/cas/logout
+    loginUrl: https://auth.biodiversitydata.se/cas/login
+    logoutUrl: https://auth.biodiversitydata.se/cas/logout
+  oidc:
+    enabled: false
+    clientId:
+    secret:
+    discoveryUri:
+  jwt:
+    enabled: false
+    discoveryUri:
+  apikey:
+    ip:
+      whitelist:
+    check:
+      serviceUrl: https://auth.biodiversitydata.se/apikey/ws/check?apikey=
+
+userDetails:
+  url: https://auth.biodiversitydata.se/userdetails/
+
+#info:
+#  app:
+#    name: 'image-service'
+#    version: '{{ image_service_version }}'
+#    grailsVersion: '4.1.1'
+
+flyway:
+  baselineOnMigrate: true
+
+dataSource:
+  url: "jdbc:postgresql://localhost/images?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8"
+  driverClassName: org.postgresql.Driver
+  username: images
+  password: images
+  dbCreate: validate
+
+imageservice:
+  imagestore:
+    root: "/data/image-service/store"
+    inbox: "/data/image-service/incoming"
+    staging: "/data/image-service/store/staging"
+  apache:
+    root: "http://localhost:8080/store/"
+    #root: 'https://images.biodiversitydata.se/store/'
+    multiple_roots: "http://localhost:8080/store/"
+
+    exportDir: "/data/image-service/exports"
+
+# skin
+skin:
+  layout: main
+  favicon: "https://static.biodiversitydata.se/favicon.ico"
+  orgNameLong: Swedish Biodiversity Data Infrastructure
+  orgNameShort: SBDI
+  homeUrl: "https://tools.biodiversitydata.se"
+
+# external links
+collectory:
+  baseURL: "https://collections.biodiversitydata.se"
+biocache:
+  baseURL: "https://records.biodiversitydata.se"
+  service:
+    baseURL: "https://records.biodiversitydata.se/ws"
+  
+# header block
+headerAndFooter:
+  version: "2"
+  baseURL: "https://static.biodiversitydata.se"
+ala:
+  baseURL: "https://biodiversitydata.se"
+bie:
+  baseURL: "https://species.biodiversitydata.se"
+  searchPath: "/search"
+
+# swagger configuration
+swagger:
+  info:
+    description: "API Documentation for Image Services"
+    version: "2.0"
+    title:  "Image Service API"
+    termsOfServices: "https://docs.biodiversitydata.se/sbdi-data/sbdi-atlas-terms-of-use/"
+    contact:
+      name:  "Support"
+      url: "https://docs.biodiversitydata.se/support/"
+      email: "gbif@nrm.se"
+    license:
+      name: "MPL 1.1"
+      url: "https://www.mozilla.org/en-US/MPL/"
+  schemes:
+    - "HTTPS"
+  consumes:
+    - "application/json"
+
+elasticsearch:
+  hosts:
+    - host: "127.0.0.1"
+      scheme: "http"
+      port: 9200
