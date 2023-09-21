@@ -1,0 +1,36 @@
+version: '3.7'
+
+services:
+
+  elasticsearch:
+    image: "docker.elastic.co/elasticsearch/elasticsearch:7.0.0"
+    environment:
+      - cluster.name=docker-cluster
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+    volumes:
+      - data_images_elasticsearch:/usr/share/elasticsearch/data
+
+  pgsql:
+    image: postgres:9.6-alpine
+    environment:
+      POSTGRES_USER: images
+      POSTGRES_PASSWORD: images
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data_imageservice:/var/lib/postgresql/data
+
+  image-service:
+    image: sbdi/image-service-dev
+    build:
+      context: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./sbdi/data/config/image-service-config.yml:/data/dashboard/config/image-service.yml
+
+volumes:
+  db_data_imageservice:
+  data_images_elasticsearch:
