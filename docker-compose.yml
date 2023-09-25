@@ -13,10 +13,11 @@ services:
       - data_images_elasticsearch:/usr/share/elasticsearch/data
 
   pgsql:
-    image: postgres:9.6-alpine
+    image: postgres:15.4
     environment:
       POSTGRES_USER: images
       POSTGRES_PASSWORD: images
+      POSTGRES_HOST_AUTH_METHOD: md5
     ports:
       - "5432:5432"
     volumes:
@@ -39,8 +40,3 @@ volumes:
 #      o: bind
 #      device: "/home/mats/Documents/sbdi/image-service/db_data_imageservice"
   data_images_elasticsearch:
-#    driver: local
-#    driver_opts:
-#      type: none
-#      o: bind
-#      device: "/home/mats/Documents/sbdi/image-service/data_images_elasticsearch"
