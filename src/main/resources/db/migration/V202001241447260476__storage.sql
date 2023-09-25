@@ -36,7 +36,7 @@ update image set storage_location_id = (select id from storage_location limit 1)
 CREATE INDEX image_datetaken_idx ON image USING btree (date_taken DESC);
 CREATE INDEX image_dateuploaded ON image USING btree (date_uploaded, id);
 CREATE INDEX image_md5hash_idx ON image USING btree (id, contentmd5hash);
-CREATE INDEX image_originalfilename_idx ON image USING btree (original_filename_old);
+--CREATE INDEX image_originalfilename_idx ON image USING btree (original_filename_old);
 CREATE INDEX imageidentifier_idx ON image USING btree (image_identifier);
 CREATE INDEX new_image_originalfilename_idx ON image USING btree (original_filename);
 
