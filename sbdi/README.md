@@ -18,6 +18,8 @@ mats@xps-13:/data/image-service$ tree
 ### Database and search index
 An empty database will be created the first time the application starts. You can then export the database from production and import it.
 
+You can also copy the actual images from production and put them in `/data/image-service/store`.
+
 ## Usage
 Run locally:
 ```
@@ -37,3 +39,9 @@ Current version: 1.0.1. Enter the new version (or press Enter for 1.0.2):
 Updating to version 1.0.2
 Tag 1.0.2 created and pushed.
 ```
+
+## Rebuild image index
+
+- Go to /admin
+- Select **Tools**
+- Click **Reindex all images**
