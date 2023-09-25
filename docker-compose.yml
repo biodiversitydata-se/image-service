@@ -3,12 +3,12 @@ version: '3.7'
 services:
 
   elasticsearch:
-    image: "docker.elastic.co/elasticsearch/elasticsearch:7.0.0"
+    image: elasticsearch:7.17.13
     environment:
-      - cluster.name=docker-cluster
       - discovery.type=single-node
     ports:
       - "9200:9200"
+      - "9300:9300"
     volumes:
       - data_images_elasticsearch:/usr/share/elasticsearch/data
 
@@ -33,4 +33,14 @@ services:
 
 volumes:
   db_data_imageservice:
+#    driver: local
+#    driver_opts:
+#      type: none
+#      o: bind
+#      device: "/home/mats/Documents/sbdi/image-service/db_data_imageservice"
   data_images_elasticsearch:
+#    driver: local
+#    driver_opts:
+#      type: none
+#      o: bind
+#      device: "/home/mats/Documents/sbdi/image-service/data_images_elasticsearch"
