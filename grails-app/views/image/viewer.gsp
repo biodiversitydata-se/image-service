@@ -26,7 +26,11 @@
         <div id="imageViewerContainer" class="container-fluid">
             <div id="imageViewer"> </div>
         </div>
-        <asset:javascript src="head.js"/>
+        <%-- SBDI: replaced asset:javascript src="head.js" because it crashes --%>
+        <script type="text/javascript"
+                src="${grailsApplication.config.headerAndFooter.baseURL}/js/jquery.min.js"></script>
+        <script type="text/javascript"
+                src="${grailsApplication.config.headerAndFooter.baseURL}/js/autocomplete.min.js"></script>
         <asset:javascript src="ala/images-client.js"/>
         <script>
             $(document).ready(function() {
