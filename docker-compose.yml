@@ -30,7 +30,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./sbdi/data/config/image-service-config.yml:/data/dashboard/config/image-service.yml
+      - ./sbdi/data/config/image-service-config.yml:/data/image-service/config/image-service-config.yml
 
 volumes:
   db_data_imageservice:

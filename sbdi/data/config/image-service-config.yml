@@ -57,7 +57,6 @@ imageservice:
     staging: "/data/image-service/store/staging"
   apache:
     root: "http://localhost:8080/store/"
-    #root: 'https://images.biodiversitydata.se/store/'
     multiple_roots: "http://localhost:8080/store/"
 
     exportDir: "/data/image-service/exports"
@@ -110,6 +109,6 @@ swagger:
 
 elasticsearch:
   hosts:
-    - host: "127.0.0.1"
+    - host: "localhost"
       scheme: "http"
       port: 9200
