@@ -108,13 +108,15 @@ if (Environment.isDevelopmentMode() && targetDir != null) {
 root(INFO, ['STDOUT'])
 
 final error = [
-        'org.hibernate.orm.deprecation'
+        'org.hibernate.orm.deprecation',
+        'org.elasticsearch.client.RestClient'
 ]
 final warn = [
         'au.org.ala',
         'au.org.ala.ws',
         'au.org.ala.web.config',
         'au.org.ala.cas',
+        'au.org.ala.images',
         'org.springframework',
         'grails.app',
         'grails.plugins.mail',
@@ -123,8 +125,7 @@ final warn = [
         'asset.pipeline'
 ]
 final info = [
-        'org.flywaydb',
-        'au.org.ala.images'
+        'org.flywaydb'
 ]
 
 final debug = []
