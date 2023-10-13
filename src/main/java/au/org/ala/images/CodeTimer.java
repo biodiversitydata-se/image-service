@@ -123,7 +123,7 @@ public class CodeTimer {
     }
 
     private void writeln(String msg) {
-        logger.info(msg);
+        logger.fine(msg);
     }
 
     /**

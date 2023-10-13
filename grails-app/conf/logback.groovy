@@ -109,7 +109,8 @@ root(INFO, ['STDOUT'])
 
 final error = [
         'org.hibernate.orm.deprecation',
-        'org.elasticsearch.client.RestClient'
+        'org.elasticsearch.client.RestClient',
+        'com.zaxxer.hikari.pool.PoolBase'
 ]
 final warn = [
         'au.org.ala',
