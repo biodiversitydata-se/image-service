@@ -96,6 +96,14 @@ dependencies {
     compile 'org.grails.plugins:quartz:2.0.13'
     implementation 'org.quartz-scheduler:quartz:2.2.1' // Is not pulled in by default
 
+    // Remove this for grails 5
+    compile 'org.grails.plugins:http-builder-helper:1.1.0'
+    compile('org.codehaus.groovy.modules.http-builder:http-builder:0.7.1') {
+        exclude module: "commons-logging"
+        exclude module: "groovy"
+    }
+    // end remove this from grails 5
+
     compile group: 'org.locationtech.spatial4j', name: 'spatial4j', version: '0.7'
     compile group: 'org.locationtech.jts', name: 'jts-core', version: '1.15.0'
     compile "com.amazonaws:aws-java-sdk-s3:$amazonAwsSdkVersion"
