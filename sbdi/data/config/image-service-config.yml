@@ -2,7 +2,7 @@ grails:
   serverURL: "http://localhost:8080"
 
 server:
-  #port: {{image_service_port}}
+  #port: 8080
   contextPath:
 
 security:
