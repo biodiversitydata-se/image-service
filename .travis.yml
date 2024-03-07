@@ -12,6 +12,7 @@ branches:
     - /^hotfix\/.*$/
 services:
   - docker
+  - postgresql
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
 
@@ -23,9 +24,11 @@ cache:
 
 before_install:
   - sudo rm /usr/local/bin/docker-compose
-  - curl -L https://github.com/docker/compose/releases/download/1.29.1/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/v2.17.3/docker-compose-`uname -s`-`uname -m` > docker-compose
   - chmod +x docker-compose
-  - sudo mv docker-compose /usr/local/bin
+  - mkdir -p ~/.docker/cli-plugins/
+  - cp docker-compose ~/.docker/cli-plugins/docker-compose
+  - sudo cp docker-compose /usr/local/bin
   - docker-compose -f elastic.yml up -d
   - 'export GRADLE_OPTS="-Dgrails.env=travis"'
 

@@ -159,6 +159,7 @@ SELECT
     ImageStoreResult storeImageFromUrl(String imageUrl, String uploader, Map metadata = [:]) {
         if (imageUrl) {
             try {
+                log.info("${Image.count()}")
                 def image = Image.byOriginalFileOrAlternateFilename(imageUrl) // findByOriginalFilename(imageUrl)
                 if (image && image.stored()) {
                     scheduleMetadataUpdate(image.imageIdentifier, metadata)
