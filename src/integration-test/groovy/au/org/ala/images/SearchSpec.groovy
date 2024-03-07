@@ -1,10 +1,6 @@
 package au.org.ala.images
 
 import au.org.ala.images.utils.ImagesIntegrationSpec
-import au.org.ala.ws.security.client.AlaAuthClient
-import au.org.ala.ws.security.profile.AlaOidcUserProfile
-import com.nimbusds.oauth2.sdk.Scope
-import com.nimbusds.oauth2.sdk.token.BearerAccessToken
 import grails.testing.mixin.integration.Integration
 import grails.gorm.transactions.Rollback
 import groovy.json.JsonSlurper
@@ -14,10 +10,6 @@ import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.BlockingHttpClient
 import io.micronaut.http.client.HttpClient
-import org.pac4j.core.client.BaseClient
-import org.pac4j.oidc.credentials.OidcCredentials
-import org.slf4j.LoggerFactory
-import spock.lang.Specification
 
 @Integration(applicationClass = Application.class)
 @Rollback
@@ -30,21 +22,6 @@ class SearchSpec extends ImagesIntegrationSpec {
         def url = "http://localhost:${serverPort}${serverContextPath}"
         return url.toURL()
     }
-
-    def setup() {
-        def logger = LoggerFactory.getLogger(getClass())
-        alaAuthClient = Mock(AlaAuthClient)
-        profileCreator = Mock()
-        alaAuthClient.getCredentials(_,_) >> Optional.of(new OidcCredentials(userProfile: new AlaOidcUserProfile("1"), accessToken:
-                new BearerAccessToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-                        2l, new Scope("image-service/write"))))
-        alaSecurityInterceptor.alaAuthClient = alaAuthClient
-        profileCreator.create(_,_,_) >> Optional.of(new AlaOidcUserProfile("1"))
-        setNewValue(BaseClient.class.getDeclaredField("logger"), logger, alaAuthClient)
-        setNewValue(BaseClient.class.getDeclaredField("profileCreator"), profileCreator, alaAuthClient)
-    }
-
-    def cleanup() {}
 
     private BlockingHttpClient getRest() {
         HttpClient.create(baseUrl).toBlocking()
