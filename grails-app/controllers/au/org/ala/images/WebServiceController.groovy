@@ -1962,7 +1962,9 @@ class WebServiceController {
 
             if (url) {
                 // Image is located at an endpoint, and we need to download it first.
+                log.info("Came here1")
                 storeResult = imageService.storeImageFromUrl(url, userId, metadata)
+                log.info("Came here2")
                 if (!storeResult || !storeResult.image) {
                     renderResults([success: false, message: "Unable to retrieve image from ${url}"], HttpStatus.SC_BAD_REQUEST)
                 }

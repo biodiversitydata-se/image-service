@@ -200,6 +200,7 @@ SELECT
                 auditService.log(result.image, "Image downloaded from ${imageUrl}", uploader ?: "<unknown>")
                 return result
             } catch (Exception ex) {
+                log.info("Error1")
                 log.error(ex.getMessage(), ex)
             }
         }
