@@ -87,7 +87,6 @@ class WebServiceController {
     def deleteImageService() {
 
         def success = false
-
         def userId = request.remoteUser ?: request.getHeader(LEGACY_API_KEY_HEADER_NAME)
 
         if(!userId) {
@@ -1260,7 +1259,7 @@ class WebServiceController {
     private getUserIdForRequest(HttpServletRequest request) {
 
         //check for API access
-        if (grailsApplication.config.security.cas.disableCAS.toBoolean()){
+        if (grailsApplication.config.getProperty('security.cas.disableCAS', Boolean, false)){
             return "-1"
         }
 
