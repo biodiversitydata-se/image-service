@@ -232,15 +232,15 @@ assets {
     minifyCss = true
 }
 
-//bootJar {
-//    enabled = true
-//    classifier = 'exec'
-//    launchScript()
-//}
-//
-//bootWar {
-//    enabled = false
-//}
+bootJar {
+    enabled = true
+    classifier = 'exec'
+    launchScript()
+}
+
+bootWar {
+    enabled = false
+}
 
 springBoot {
     buildInfo()
