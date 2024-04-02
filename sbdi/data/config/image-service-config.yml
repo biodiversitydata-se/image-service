@@ -7,7 +7,7 @@ server:
 
 security:
   cas:
-    enabled: true
+    enabled: false
     appServerName: "http://localhost:8080"
     bypass: false
     disableCAS: false
@@ -18,10 +18,10 @@ security:
     loginUrl: https://auth.biodiversitydata.se/cas/login
     logoutUrl: https://auth.biodiversitydata.se/cas/logout
   oidc:
-    enabled: false
-    clientId:
-    secret:
-    discoveryUri:
+    enabled: true
+    clientId: replace_with_real_value
+    secret: replace_with_real_value
+    discoveryUri: https://auth.biodiversitydata.se/cas/oidc/.well-known
   jwt:
     enabled: false
     discoveryUri:
@@ -118,3 +118,7 @@ openapi:
   contact:
     name:
     email:
+  components:
+    security:
+      oauth2:
+        baseUrl: https://auth.biodiversitydata.se/cas/oidc
