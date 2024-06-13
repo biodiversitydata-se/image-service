@@ -6,6 +6,14 @@ server:
   contextPath:
 
 security:
+  core:
+    authCookieName: ALA-Auth
+    roleAttribute: role
+    affiliation-survey:
+      enabled: false
+  cookie:
+    enabled: false
+    domain: '.biodiversitydata.se'
   cas:
     enabled: false
     appServerName: "http://localhost:8080"
@@ -17,26 +25,48 @@ security:
     casServerLogoutUrl: https://auth.biodiversitydata.se/cas/logout
     loginUrl: https://auth.biodiversitydata.se/cas/login
     logoutUrl: https://auth.biodiversitydata.se/cas/logout
+    authenticateOnlyIfLoggedInFilterPattern:
   oidc:
     enabled: true
     clientId: replace_with_real_value
     secret: replace_with_real_value
     discoveryUri: https://auth.biodiversitydata.se/cas/oidc/.well-known
+    scope: openid profile email ala roles
+    alaUseridClaim: userid
   jwt:
     enabled: false
+    fallback-to-legacy-behaviour: true
     discoveryUri:
+    #client-id:
+    #secret:
+    allowed-scopes: users/read
+    role-claims: role
+    roles-from-access-token: false
+    user-id-claim: userid
   apikey:
     ip:
       whitelist:
     check:
       serviceUrl: https://auth.biodiversitydata.se/apikey/ws/check?apikey=
+    enabled: true
+    auth:
+      serviceUrl: https://auth.biodiversitydata.se/apikey/
+    userdetails:
+      serviceUrl: https://auth.biodiversitydata.se/userdetails/
+
+#websevice jwt
+webservice:
+  jwt: false
+  jwt-scopes:
+  client-id:
+  client-secret:
 
 userDetails:
   url: https://auth.biodiversitydata.se/userdetails/
 
-#info:
-#  app:
-#    name: 'image-service'
+info:
+  app:
+    name: 'image-service'
 #    version: '{{ image_service_version }}'
 #    grailsVersion: '4.1.1'
 
@@ -106,6 +136,13 @@ swagger:
     - "HTTPS"
   consumes:
     - "application/json"
+userdetails:
+  url: https://auth.biodiversitydata.se/userdetails
+userdetails.web.url: https://auth.biodiversitydata.se/userdetails/
+userdetails.api.url: https://auth.biodiversitydata.se/userdetails/
+
+#aws:
+#  region:
 
 elasticsearch:
   hosts:
