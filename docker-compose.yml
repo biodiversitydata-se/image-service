@@ -3,7 +3,7 @@ version: '3.7'
 services:
 
   elasticsearch:
-    image: elasticsearch:7.17.13
+    image: elasticsearch:7.17.21
     environment:
       - discovery.type=single-node
     ports:
@@ -13,7 +13,7 @@ services:
       - data_images_elasticsearch:/usr/share/elasticsearch/data
 
   pgsql:
-    image: postgres:15.4
+    image: postgres:15.7
     environment:
       POSTGRES_USER: images
       POSTGRES_PASSWORD: images
