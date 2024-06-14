@@ -82,6 +82,8 @@
     </logger>
 
     <logger name="org.hibernate.orm.deprecation" level="ERROR" />
+    <logger name="org.grails.config.NavigableMap" level="ERROR"/>
+    <logger name="org.elasticsearch.client.RestClient" level="ERROR"/>
 
     <logger name="au.org.ala" level="WARN" />
     <logger name="au.org.ala.ws" level="WARN" />
