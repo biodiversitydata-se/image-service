@@ -41,6 +41,7 @@ class S3StorageLocation extends StorageLocation {
     // for testing only, not exposed to UI
     boolean pathStyleAccess = false
     String hostname = ''
+    String tenantId
 
     static transients = ['_s3Client']
 
@@ -48,6 +49,7 @@ class S3StorageLocation extends StorageLocation {
         prefix nullable: false, blank: true
         pathStyleAccess nullable: true
         hostname nullable: true
+        tenantId nullable: true
     }
 
     static mapping = {
@@ -86,7 +88,8 @@ class S3StorageLocation extends StorageLocation {
 //            grant.grantee == GroupGrantee.AllUsers && [Permission.Read, Permission.Write, Permission.FullControl].contains(grant.permission)
 //        }
         if (publicRead) {
-            s3Client.getUrl(bucket, path).toURI()
+            String publicBucketPrefix = tenantId ? "${tenantId}:" : ""
+            s3Client.getUrl(publicBucketPrefix + bucket, path).toURI()
         } else {
             // Set the presigned URL to expire after one hour.
             Date expiration = new Date()
