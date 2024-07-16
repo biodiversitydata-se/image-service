@@ -37,10 +37,8 @@ class S3StorageLocation extends StorageLocation {
     String secretKey
     boolean publicRead
     boolean redirect
-
-    // for testing only, not exposed to UI
-    boolean pathStyleAccess = false
-    String hostname = ''
+    boolean pathStyleAccess
+    String hostname
     String tenantId
 
     static transients = ['_s3Client']
