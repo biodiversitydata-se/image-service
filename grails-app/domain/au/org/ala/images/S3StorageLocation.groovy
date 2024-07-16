@@ -335,7 +335,7 @@ class S3StorageLocation extends StorageLocation {
     }
 
     ByteSinkFactory byteSinkFactory(String uuid, String... prefixes) {
-        return new S3ByteSinkFactory(s3Client, storagePathStrategy(), bucket, uuid, prefixes)
+        return new S3ByteSinkFactory(s3Client, storagePathStrategy(), bucket, publicRead, uuid, prefixes)
     }
 
     @Override
