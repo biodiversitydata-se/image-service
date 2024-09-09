@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta name="layout" content="${grailsApplication.config.getProperty('skin.layout')}"/>
+        <link rel="canonical" href="${grailsApplication.config.getProperty('grails.serverURL')}" />
         <title><g:message code="list.title.images" /></title>
         <asset:stylesheet src="application.css" />
         <asset:stylesheet src="search.css" />
