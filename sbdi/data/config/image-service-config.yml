@@ -94,7 +94,7 @@ imageservice:
 # skin
 skin:
   layout: _main
-  fluidLayout: false
+  fluidLayout: true
   favicon: "https://static.biodiversitydata.se/favicon.ico"
   orgNameLong: Swedish Biodiversity Data Infrastructure
   orgNameShort: SBDI
