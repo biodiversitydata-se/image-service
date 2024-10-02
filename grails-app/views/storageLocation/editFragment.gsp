@@ -46,6 +46,19 @@
                 <label for="secretKey">Secret Key</label>
                 <g:textField class="form-control" name="secretKey" value="${s3StorageLocation.secretKey}" placeholder="" />
             </div>
+            <div class="form-group">
+                <label for="hostname">Hostname</label>
+                <g:textField class="form-control" name="hostname" value="${s3StorageLocation.hostname}" placeholder="" />
+            </div>
+            <div class="form-group">
+                <label for="tenantId">Public bucket prefix (TenantID)</label>
+                <g:textField class="form-control" name="tenantId" value="${s3StorageLocation.tenantId}" placeholder="" />
+            </div>
+            <div class="checkbox">
+                <label>
+                    <g:checkBox name="pathStyleAccess" value="${s3StorageLocation.pathStyleAccess}" /> Path style access
+                </label>
+            </div>
             <div class="checkbox">
                 <label>
                     <g:checkBox name="publicRead" value="${s3StorageLocation.publicRead}" /> Public read
