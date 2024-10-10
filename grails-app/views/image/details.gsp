@@ -4,7 +4,7 @@
 <html>
     <head>
         <meta name="layout" content="${grailsApplication.config.getProperty('skin.layout')}"/>
-        <title>${mediaTitle} - ${imageInstance.title ? imageInstance.title : imageInstance.imageIdentifier}</title>
+        <title>${mediaTitle} from ${resourceLevel.name} (${imageInstance.title ?: imageInstance.imageIdentifier})</title>
         <meta name="breadcrumbs" content="${g.createLink( controller: 'search', action: 'list')}, Images"/>
         <asset:stylesheet src="application.css" />
         <asset:stylesheet src="ala/images-client.css" />

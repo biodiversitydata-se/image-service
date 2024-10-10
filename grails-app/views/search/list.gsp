@@ -3,7 +3,7 @@
     <head>
         <meta name="layout" content="${grailsApplication.config.getProperty('skin.layout')}"/>
         <link rel="canonical" href="${grailsApplication.config.getProperty('grails.serverURL')}" />
-        <title><g:message code="list.title.images" /></title>
+        <title><g:message code="list.title.images" /> - ${grailsApplication.config.skin.orgNameLong}</title>
         <asset:stylesheet src="application.css" />
         <asset:stylesheet src="search.css" />
         <asset:javascript src="search.js" />
