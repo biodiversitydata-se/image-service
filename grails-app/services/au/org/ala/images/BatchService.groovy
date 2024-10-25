@@ -153,7 +153,7 @@ class BatchService {
                         def result = validateAvro(avroFile)
                         batchFile.filePath = avroFile.getAbsolutePath()
                         batchFile.recordCount = result.recordCount
-                        batchFile.status = batchFile.recordCount > 0 ? QUEUED : INVALID
+                        batchFile.status = QUEUED
                         batchFile.batchFileUpload = upload
                         batchFile.md5Hash = md5HashBatchFile
                         batchFiles << batchFile
@@ -237,6 +237,7 @@ class BatchService {
         final Long batchThrottleInMillis = settingService.getBatchServiceThrottleInMillis()
         final int batchReadSize = settingService.getBatchServiceReadSize().intValue()
 
+        boolean isEmpty = !reader.hasNext()
         boolean completed = false
 
         while (reader.hasNext() && batchEnabled()){
@@ -335,13 +336,13 @@ class BatchService {
             completed = !reader.hasNext()
         }
 
-        if (completed) {
+        if (completed || isEmpty) {
             log.info("Completed loading of batch file ${batchFile.id}: ${batchFile.filePath}")
             // TODO Delete .avro / .zip files?
         } else {
             log.info("Exiting the loading of batch file ${batchFile.id}:  ${batchFile.filePath}, complete: ${completed}")
         }
-        completed
+        completed || isEmpty
     }
 
     Map execute(Map imageSource,  String _userId) {
@@ -446,6 +447,7 @@ class BatchService {
                 batchFile.batchFileUpload.message = "Some files processed"
                 batchFile.batchFileUpload.status = PARTIALLY__COMPLETE
             }
+            batchFile.batchFileUpload.save(flush: true)
         } else {
             log.debug("No jobs to run.")
         }
