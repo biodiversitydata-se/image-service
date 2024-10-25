@@ -71,6 +71,7 @@
     <logger name="au.org.ala.images.CodeTimer" level="INFO" additivity="false">
             <appender-ref ref="TIMING_LOG"/>
     </logger>
+    <!--
     <logger name="au.org.ala.images.ScheduleReindexAllImagesTask" level="INFO" additivity="false">
         <appender-ref ref="INDEXING_LOG"/>
     </logger>
@@ -80,7 +81,7 @@
     <logger name="au.org.ala.images.BatchController" level="INFO" additivity="false">
         <appender-ref ref="BATCH_LOG"/>
     </logger>
-
+    -->
     <logger name="org.hibernate.orm.deprecation" level="ERROR" />
     <logger name="org.grails.config.NavigableMap" level="ERROR"/>
     <logger name="org.elasticsearch.client.RestClient" level="ERROR"/>
