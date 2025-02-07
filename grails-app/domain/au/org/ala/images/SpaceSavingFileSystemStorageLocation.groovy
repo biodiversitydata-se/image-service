@@ -1,5 +1,7 @@
 package au.org.ala.images
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
 
@@ -15,8 +17,20 @@ class SpaceSavingFileSystemStorageLocation extends FileSystemStorageLocation {
     @Override
     InputStream originalInputStream(String uuid, Range range) throws FileNotFoundException {
         def image = Image.findByImageIdentifier(uuid, [cache: true])
-        def inputStream= new URL(image.originalFilename).openStream()
         log.debug("originalInputStream: $uuid -> $image.originalFilename")
+
+        def client = new OkHttpClient.Builder()
+            .followRedirects(true)
+            .followSslRedirects(true)
+            .build()
+        def request = new Request.Builder().url(image.originalFilename).build()
+        def response = client.newCall(request).execute()
+
+        if (!response.isSuccessful()) {
+            throw new IOException("Failed to fetch image, url: $image.originalFilename, code: $response.code()")
+        }
+
+        def inputStream = response.body().byteStream()
         range?.wrapInputStream(inputStream) ?: inputStream
     }
 
