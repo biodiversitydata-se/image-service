@@ -32,10 +32,5 @@ services:
 
 volumes:
   db_data_imageservice:
-#  db_data_imageservice-local:
-#    driver: local
-#    driver_opts:
-#      type: none
-#      o: bind
-#      device: "/home/mats/Documents/sbdi/image-service/db_data_image-service__231012"
+  #db_data_imageservice_prod:
   data_images_elasticsearch:
