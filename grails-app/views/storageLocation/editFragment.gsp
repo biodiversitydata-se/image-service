@@ -1,11 +1,15 @@
-<%@ page import="org.javaswift.joss.client.factory.AuthenticationMethod; au.org.ala.images.SwiftStorageLocation; au.org.ala.images.S3StorageLocation; au.org.ala.images.FileSystemStorageLocation" %>
+<%@ page import="org.javaswift.joss.client.factory.AuthenticationMethod; au.org.ala.images.SwiftStorageLocation; au.org.ala.images.S3StorageLocation; au.org.ala.images.FileSystemStorageLocation; au.org.ala.images.SpaceSavingFileSystemStorageLocation" %>
 <form id="update-storage-location-form">
-    <g:hiddenField name="id" value="${fileSystemStorageLocation?.id ?: s3StorageLocation?.id ?: swiftStorageLocation?.id}" />
+    <g:hiddenField name="id" value="${fileSystemStorageLocation?.id ?: spaceSavingFileSystemStorageLocation?.id ?: s3StorageLocation?.id ?: swiftStorageLocation?.id}" />
 
     <div class="form-group">
         <label class="radio-inline">
             <g:radio disabled="true" name="class" value="${FileSystemStorageLocation}" checked="${fileSystemStorageLocation?.class}" />
             File system
+        </label>
+        <label class="radio-inline">
+            <g:radio disabled="true" name="class" value="${SpaceSavingFileSystemStorageLocation}" checked="${spaceSavingFileSystemStorageLocation?.class}" />
+            File system (don't store original)
         </label>
         <label class="radio-inline">
             <g:radio disabled="true" name="class" value="${S3StorageLocation}" checked="${s3StorageLocation?.class}" />
@@ -24,6 +28,14 @@
             </div>
         </div>
     </g:if>
+    <g:elseif test="${spaceSavingFileSystemStorageLocation}">
+        <div id="fs-form">
+            <div class="form-group">
+                <label for="basePath">Base Path</label>
+                <g:textField class="form-control" name="basePath" value="${spaceSavingFileSystemStorageLocation.basePath}" placeholder="/data/images/storage" />
+            </div>
+        </div>
+    </g:elseif>
     <g:elseif test="${s3StorageLocation}">
         <div id="s3-form">
             <div class="form-group">

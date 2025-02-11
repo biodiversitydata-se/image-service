@@ -1,4 +1,4 @@
-<%@ page import="au.org.ala.images.SwiftStorageLocation; au.org.ala.images.S3StorageLocation; au.org.ala.images.FileSystemStorageLocation" %>
+<%@ page import="au.org.ala.images.SwiftStorageLocation; au.org.ala.images.S3StorageLocation; au.org.ala.images.FileSystemStorageLocation; au.org.ala.images.SpaceSavingFileSystemStorageLocation" %>
 <table class="table">
     <thead>
         <tr>
@@ -18,9 +18,12 @@
                 ${sl.id}
             </td>
             <td>
-                <g:if test="${sl instanceof FileSystemStorageLocation}">
-                    FS
+                <g:if test="${sl instanceof SpaceSavingFileSystemStorageLocation}">
+                    FS (don't store original)
                 </g:if>
+                <g:elseif test="${sl instanceof FileSystemStorageLocation}">
+                    FS
+                </g:elseif>
                 <g:elseif test="${sl instanceof S3StorageLocation}">
                     S3
                 </g:elseif>
@@ -32,9 +35,12 @@
                 </g:else>
             </td>
             <td>
-                <g:if test="${sl instanceof FileSystemStorageLocation}">
+                <g:if test="${sl instanceof SpaceSavingFileSystemStorageLocation}">
                     ${sl.basePath}
                 </g:if>
+                <g:elseif test="${sl instanceof FileSystemStorageLocation}">
+                    ${sl.basePath}
+                </g:elseif>
                 <g:elseif test="${sl instanceof S3StorageLocation}">
                     ${sl.region}:${sl.bucket}/${sl.prefix}
                 </g:elseif>
@@ -76,9 +82,12 @@
                         <select class="form-control" id="destination" name="destination">
                             <g:each in="${storageLocationList}" var="sl">
                                 <option value="${sl.id}">
-                                    <g:if test="${sl instanceof FileSystemStorageLocation}">
-                                        FS:${sl.basePath}
+                                    <g:if test="${sl instanceof SpaceSavingFileSystemStorageLocation}">
+                                        FS (don't store original):${sl.basePath}
                                     </g:if>
+                                    <g:elseif test="${sl instanceof FileSystemStorageLocation}">
+                                        FS:${sl.basePath}
+                                    </g:elseif>
                                     <g:elseif test="${sl instanceof S3StorageLocation}">
                                         S3:${sl.region}:${sl.bucket}/${sl.prefix}
                                     </g:elseif>

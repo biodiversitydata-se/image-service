@@ -21,6 +21,12 @@ class StorageLocationService {
                 }
                 storageLocation = new FileSystemStorageLocation(basePath: json.basePath)
                 break
+            case 'fs-save-space':
+                if (SpaceSavingFileSystemStorageLocation.countByBasePath(json.saveSpaceBasePath) > 0) {
+                    throw new AlreadyExistsException("FS $json.saveSpaceBasePath already exists")
+                }
+                storageLocation = new SpaceSavingFileSystemStorageLocation(basePath: json.saveSpaceBasePath)
+                break
             case 's3':
                 if (S3StorageLocation.countByRegionAndBucketAndPrefix(json.region, json.bucket, json.prefix ?: '') > 0) {
                     throw new AlreadyExistsException("S3 $json.region $json.bucket $json.prefix already exists")

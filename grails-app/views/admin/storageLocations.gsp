@@ -40,6 +40,10 @@
                                     File system
                                 </label>
                                 <label class="radio-inline">
+                                    <input type="radio" name="type" id="fs-save-space-type" value="fs-save-space">
+                                    File system (don't store original)
+                                </label>
+                                <label class="radio-inline">
                                     <input type="radio" name="type" id="s3-type" value="s3">
                                     AWS S3 Bucket
                                 </label>
@@ -52,6 +56,12 @@
                                 <div class="form-group">
                                     <label for="basePath">Base Path</label>
                                     <input type="text" class="form-control" id="basePath" name="basePath" placeholder="/data/images/storage">
+                                </div>
+                            </div>
+                            <div id="fs-save-space-form" class="type-form hidden">
+                                <div class="form-group">
+                                    <label for="saveSpaceBasePath">Base Path</label>
+                                    <input type="text" class="form-control" id="saveSpaceBasePath" name="saveSpaceBasePath" placeholder="/data/images/storage">
                                 </div>
                             </div>
                             <div id="s3-form" class="type-form hidden">
