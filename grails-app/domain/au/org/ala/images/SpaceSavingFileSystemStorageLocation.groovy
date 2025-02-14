@@ -5,6 +5,8 @@ import okhttp3.Request;
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
 
+import java.time.Duration
+
 class SpaceSavingFileSystemStorageLocation extends FileSystemStorageLocation {
 
     static constraints = {
@@ -20,14 +22,27 @@ class SpaceSavingFileSystemStorageLocation extends FileSystemStorageLocation {
         log.debug("originalInputStream: $uuid -> $image.originalFilename")
 
         def client = new OkHttpClient.Builder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .readTimeout(Duration.ofSeconds(60))
             .followRedirects(true)
             .followSslRedirects(true)
             .build()
         def request = new Request.Builder().url(image.originalFilename).build()
-        def response = client.newCall(request).execute()
 
+        def response
+        try {
+            response = client.newCall(request).execute()
+        } catch (IOException e) {
+            log.error("Failed to fetch original image, " +
+                    "$image.dataResourceUid, $image.originalFilename, error: $e.message, (original_failed)")
+            throw e
+        }
         if (!response.isSuccessful()) {
-            throw new IOException("Failed to fetch image, url: $image.originalFilename, code: $response.code()")
+            def msg = "Failed to fetch original image, " +
+                    "$image.dataResourceUid, $image.originalFilename, http status: $response.code"
+            log.error("$msg, (original_failed)")
+            response.close()
+            throw new IOException(msg)
         }
 
         def inputStream = response.body().byteStream()
