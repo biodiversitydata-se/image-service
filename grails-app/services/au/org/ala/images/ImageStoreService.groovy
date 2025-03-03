@@ -208,8 +208,12 @@ class ImageStoreService {
         ct.stop(true)
     }
 
-    private static ImageTilerResults tileImage(Image image) {
-        def config = new ImageTilerConfig(2,2,256, 6, TileFormat.JPEG)
+    private ImageTilerResults tileImage(Image image) {
+        def tileSize = grailsApplication.config.getProperty('tiling.tileSize', Integer, 256)
+        def maxColsPerStrip = grailsApplication.config.getProperty('tiling.maxColsPerStrip', Integer, 6)
+        def levelThreads = grailsApplication.config.getProperty('tiling.levelThreads', Integer, 2)
+        def ioThreads = grailsApplication.config.getProperty('tiling.ioThreads', Integer, 2)
+        def config = new ImageTilerConfig(ioThreads,levelThreads,tileSize, maxColsPerStrip, TileFormat.JPEG)
         config.setTileBackgroundColor(new Color(221, 221, 221))
         def tiler = new ImageTiler(config)
         return tiler.tileImage(image.originalInputStream(), new TilerSink.PathBasedTilerSink(GrailsHibernateUtil.unwrapIfProxy(image.storageLocation).tilerByteSinkFactory(image.imageIdentifier)))

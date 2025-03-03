@@ -16,7 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import static cloud.localstack.deprecated.TestUtils.DEFAULT_REGION
 
 @ExtendWith(LocalstackDockerExtension.class)
-@LocalstackDockerProperties(services = [ "s3" ], imageTag = '0.12.11')
+@LocalstackDockerProperties(services = [ "s3" ], imageTag = '4.1.1')
 class S3StorageLocationSpec extends StorageLocationSpec implements DomainUnitTest<S3StorageLocation> {
 
     List<S3StorageLocation> getStorageLocations() {[
