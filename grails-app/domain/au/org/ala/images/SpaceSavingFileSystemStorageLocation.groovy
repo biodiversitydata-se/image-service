@@ -34,12 +34,12 @@ class SpaceSavingFileSystemStorageLocation extends FileSystemStorageLocation {
             response = client.newCall(request).execute()
         } catch (IOException e) {
             log.error("Failed to fetch original image, " +
-                    "$image.dataResourceUid, $image.originalFilename, error: $e.message, (original_failed)")
+                    "$image.dataResourceUid, $uuid, $image.originalFilename, error: $e.message, (original_failed)")
             throw e
         }
         if (!response.isSuccessful()) {
             def msg = "Failed to fetch original image, " +
-                    "$image.dataResourceUid, $image.originalFilename, http status: $response.code"
+                    "$image.dataResourceUid, $uuid, $image.originalFilename, http status: $response.code"
             log.error("$msg, (original_failed)")
             response.close()
             throw new IOException(msg)
