@@ -85,6 +85,19 @@
                                     <label for="secretKey">Secret Key</label>
                                     <input type="text" class="form-control" id="secretKey" name="secretKey" placeholder="asdfasdfasdf">
                                 </div>
+                                <div class="form-group">
+                                    <label for="hostname">Hostname</label>
+                                    <g:textField class="form-control" name="hostname" placeholder="" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="tenantId">Public bucket prefix (TenantID)</label>
+                                    <g:textField class="form-control" name="tenantId" placeholder="" />
+                                </div>
+                                <div class="checkbox">
+                                    <label>
+                                        <g:checkBox name="pathStyleAccess" /> Path style access
+                                    </label>
+                                </div>
                                 <div class="checkbox">
                                     <label>
                                         <input type="checkbox" id="publicRead" name="publicRead"> Public read

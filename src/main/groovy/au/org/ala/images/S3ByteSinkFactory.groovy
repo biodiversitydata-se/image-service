@@ -2,6 +2,7 @@ package au.org.ala.images
 
 import au.org.ala.images.util.ByteSinkFactory
 import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.model.CannedAccessControlList
 import com.google.common.io.ByteSink
 
 import java.nio.file.Files
@@ -13,11 +14,13 @@ class S3ByteSinkFactory implements ByteSinkFactory {
     private final String uuid
     private final String[] prefixes
     private final String bucket
+    private final Boolean publicRead
 
-    S3ByteSinkFactory(AmazonS3Client s3Client, StoragePathStrategy storagePathStrategy, String bucket, String uuid, String... prefixes) {
+    S3ByteSinkFactory(AmazonS3Client s3Client, StoragePathStrategy storagePathStrategy, String bucket, Boolean publicRead, String uuid, String... prefixes) {
         this.bucket = bucket
         this.s3Client = s3Client
         this.storagePathStrategy = storagePathStrategy
+        this.publicRead = publicRead
         this.uuid = uuid
         this.prefixes = prefixes
     }
@@ -45,6 +48,8 @@ class S3ByteSinkFactory implements ByteSinkFactory {
                         super.close()
                         // once the file output is closed we can send it to S3 and then delete the temp file
                         s3Client.putObject(bucket, path, file)
+                        s3Client.setObjectAcl(bucket, path,
+                                publicRead ? CannedAccessControlList.PublicRead : CannedAccessControlList.Private)
                         Files.deleteIfExists(tempPath)
                     }
                 }
