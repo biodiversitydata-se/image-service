@@ -10,7 +10,7 @@ RUN mkdir -p  \
 
 COPY build/libs/image-service-*.war $CATALINA_HOME/webapps/ROOT.war
 
-ENV DOCKERIZE_VERSION=v0.9.3
+ENV DOCKERIZE_VERSION=v0.9.6
 
 RUN apt-get update \
     && apt-get install -y wget \
