@@ -95,10 +95,10 @@ imageservice:
 skin:
   layout: _main
   fluidLayout: true
-  favicon: "https://static.biodiversitydata.se/favicon.ico"
+  favicon: "https://bioatlas.biodiversitydata.se/favicon.ico"
   orgNameLong: Swedish Biodiversity Data Infrastructure
   orgNameShort: SBDI
-  homeUrl: "https://tools.biodiversitydata.se"
+  homeUrl: "https://bioatlas.biodiversitydata.se"
 
 # external links
 collectory:
@@ -111,7 +111,7 @@ biocache:
 # header block
 headerAndFooter:
   version: "2"
-  baseURL: "https://static.biodiversitydata.se"
+  baseURL: "https://bioatlas.biodiversitydata.se"
 ala:
   baseURL: "https://biodiversitydata.se"
 bie:
