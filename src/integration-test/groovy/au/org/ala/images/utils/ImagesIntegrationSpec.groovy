@@ -1,7 +1,9 @@
 package au.org.ala.images.utils
 
+import au.org.ala.images.StorageOperationsRegistry
 import au.org.ala.ws.security.AlaSecurityInterceptor
 import au.org.ala.ws.security.client.AlaAuthClient
+import au.org.ala.ws.security.client.AlaDirectClient
 import au.org.ala.ws.security.profile.AlaOidcUserProfile
 import com.nimbusds.oauth2.sdk.Scope
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken
@@ -14,6 +16,7 @@ import org.pac4j.core.client.BaseClient
 import org.pac4j.core.profile.creator.ProfileCreator
 import org.pac4j.oidc.credentials.OidcCredentials
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.env.PropertySourceLoader
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.env.MutablePropertySources
@@ -27,19 +30,18 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 import java.lang.reflect.Field
+import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 
 abstract class ImagesIntegrationSpec extends Specification {
 
-    AlaSecurityInterceptor alaSecurityInterceptor
-    AlaAuthClient alaAuthClient
-    ProfileCreator profileCreator
 
-    @Shared @AutoCleanup EmbeddedPostgres embeddedPostgres = EmbeddedPostgres.builder()
-            .setPort(ImagesIntegrationSpec.config.getProperty('dataSource.embeddedPort',  Integer.class, 6543))
-            .setCleanDataDirectory(true)
-            .start()
-    @Shared Flyway flyway = null
+    @Autowired
+    StorageOperationsRegistry storageOperationsRegistry
+
+    AlaSecurityInterceptor alaSecurityInterceptor
+    AlaDirectClient alaAuthClient
+    ProfileCreator profileCreator
 
     static Config getConfig() { // CHANGED extracted from setupSpec so postgresRule can access
 
@@ -96,49 +98,88 @@ abstract class ImagesIntegrationSpec extends Specification {
      */
     static void setNewValue(Field field, Object newValue, obj) throws Exception {
         field.setAccessible(true)
-        Field modifiersField = Field.class.getDeclaredField("modifiers")
+        Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class)
+        getDeclaredFields0.setAccessible(true)
+//        Field modifiersField = Field.class.getDeclaredField("modifiers")
+        Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false)
+        Field modifiersField = null
+        for (Field each : fields) {
+            if ("modifiers".equals(each.getName())) {
+                modifiersField = each;
+                break;
+            }
+        }
         modifiersField.setAccessible(true)
         modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL)
         field.set(obj, newValue)
     }
 
+    def setupSpec() {
+        System.setProperty("http.agent", "ala-image-service/4.0")
+    }
+
     def setup() {
         def logger = LoggerFactory.getLogger(getClass())
-        alaAuthClient = Mock(AlaAuthClient)
+        alaAuthClient = Mock(AlaDirectClient)
         profileCreator = Mock()
-        alaAuthClient.getCredentials(_,_) >> Optional.of(new OidcCredentials(userProfile: new AlaOidcUserProfile("1"), accessToken:
-                new BearerAccessToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-                        2l, new Scope("image-service/write"))))
-        alaSecurityInterceptor.alaAuthClient = alaAuthClient
-        profileCreator.create(_,_,_) >> Optional.of(new AlaOidcUserProfile("1"))
+        def creds = new OidcCredentials(
+                userProfile: new AlaOidcUserProfile("1"),
+                accessTokenObject: new BearerAccessToken(
+                        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+                        2l,
+                        new Scope("image-service/write")
+                )
+        )
+        alaAuthClient.getCredentials(_) >> Optional.of(creds)
+        alaAuthClient.validateCredentials(_ , _) >> Optional.of(creds)
+        alaAuthClient.internalValidateCredentials(_ , _) >> Optional.of(creds)
+        alaSecurityInterceptor.clientList = [alaAuthClient]
+        profileCreator.create(_,_) >> Optional.of(new AlaOidcUserProfile("1"))
         setNewValue(BaseClient.class.getDeclaredField("logger"), logger, alaAuthClient)
         setNewValue(BaseClient.class.getDeclaredField("profileCreator"), profileCreator, alaAuthClient)
     }
 
-    void setupSpec() {
-        Config config = getConfig()
-        // CHANGED added flyway migrate
-        this.flyway = Flyway.configure()
-                .cleanDisabled(false)
-                .table(config.getProperty('flyway.table'))
-                .baselineOnMigrate(config.getProperty('flyway.baselineOnMigrate', Boolean))
-                .baselineVersion(config.getProperty('flyway.baselineVersion'))
-                .outOfOrder(config.getProperty('flyway.outOfOrder', Boolean))
-                .placeholders([
-                        'imageRoot': config.getProperty('imageservice.imagestore.root'),
-                        'exportRoot': config.getProperty('imageservice.imagestore.exportDir', '/data/image-service/exports'),
-                        'baseUrl': config.getProperty('grails.serverURL', 'https://devt.ala.org.au/image-service')
-                ])
-                .locations('db/migration')
-                .dataSource(embeddedPostgres.getPostgresDatabase())
-                .load()
-        flyway.clean()
-        flyway.migrate()
-        // END CHANGED
+    def userAgent() {
+        return "image-service-integration-test/${config.getProperty('info.app.version', String, '1.0')}"
     }
 
-    void cleanupSpec() {
-        //flyway.clean()
+    void setupStorageLocation(storageType) {
+        def configValue
+        if (storageType == 'default') {
+            // basically take the config that will have been used to create the database version and
+            // create our own config-based version
+            def root = storageOperationsRegistry.grailsApplication.config.getProperty('imageservice.imagestore.root')
+            def name = root.replace('/','_')
+            configValue = [
+                    "fs_$name": [
+                            'type': 'fs',
+                            'basePath': root
+                    ]
+            ]
+        } else if (storageType == 'named') {
+            // create two named storage locations and set one as default
+            def root = storageOperationsRegistry.grailsApplication.config.getProperty('imageservice.imagestore.root')
+            def name = root.replace('/','_')
+            configValue = [
+                    "fs_$name": [
+                            'type': 'fs',
+                            'basePath': root,
+                            'default': true
+                    ],
+                    'fs__tmp_secondary': [
+                            'type': 'fs',
+                            'basePath': '/tmp/imagestore/secondary'
+                    ]
+            ]
+
+        }
+        storageOperationsRegistry.grailsApplication.config.imageservice.storage.locations = configValue
+        storageOperationsRegistry.init()
+    }
+
+    void clearStorageLocation() {
+        storageOperationsRegistry.grailsApplication.config.imageservice.storage.locations = null
+        storageOperationsRegistry.init()
     }
 
 }

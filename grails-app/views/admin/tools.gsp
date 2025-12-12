@@ -29,22 +29,6 @@
         </tr>
         <tr>
             <td>
-                <button id="btnRegenArtifacts" class="btn btn-default">Regenerate Image Artifacts</button>
-            </td>
-            <td>
-                Regenerate all tiles and thumbnails for all images in the repository. Progress can be tracked on the dashboard.
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <button id="btnRegenThumbnails" class="btn btn-default">Regenerate Image Thumbnails</button>
-            </td>
-            <td>
-                Regenerate just thumbnails for all images in the repository. Progress can be tracked on the dashboard.
-            </td>
-        </tr>
-        <tr>
-            <td>
                 <button id="btnRebuildKeywords" class="btn btn-default">Rebuild Keywords</button>
             </td>
             <td>
@@ -104,10 +88,34 @@
         </tr>
         <tr>
             <td>
+                <button id="btnClearS3Cache" class="btn btn-default">Clear S3 Client cache</button>
+            </td>
+            <td>
+                Clear any cached S3 clients and close all connections associated with them
+            </td>
+        </tr>
+        <tr>
+            <td>
                 <button id="btnClearHibernateCache" class="btn btn-default">Clear hibernate query cache</button>
             </td>
             <td>
                 Clear the hibernate query cache of cached data
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <button id="btnClearThumbnailLookupCache" class="btn btn-default">Clear thumbnail existence cache</button>
+            </td>
+            <td>
+                Clear the thumbnail lookup cache, useful if thumbnails need to be regenerated
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <button id="btnClearTileLookupCache" class="btn btn-default">Clear tile existence cache</button>
+            </td>
+            <td>
+                Clear the tile lookup cache, useful if tiles need to be regenerated
             </td>
         </tr>
         <tr>
@@ -126,6 +134,23 @@
                 This will run a background task that will remove deleted images from the filesystem and the database.
             </td>
         </tr>
+        <tr>
+            <td>
+                <button id="btnClearFailedUploads" class="btn btn-default">Clear Failed Uploads by Regex</button>
+            </td>
+            <td>
+                Delete failed upload entries based on a regular expression pattern that matches the URL.
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <button id="btnRunCheckFailedUploads" class="btn btn-default">Run Failed Uploads Check</button>
+            </td>
+            <td>
+                Manually trigger the failed uploads check job to verify if previously failed URLs are now accessible.
+                This will override the time interval check and run immediately.
+            </td>
+        </tr>
     </table>
 <script>
 
@@ -134,20 +159,6 @@
         $("#btnMissingImagesCheck").on('click', function(e) {
             e.preventDefault();
             window.location = "${createLink(action:'checkForMissingImages')}";
-        });
-
-        $("#btnRegenArtifacts").on('click', function(e) {
-            e.preventDefault();
-            $.ajax("${createLink(controller:'webService', action:'scheduleArtifactGeneration')}").done(function() {
-                window.location = "${createLink(action:'tools')}";
-            });
-        });
-
-        $("#btnRegenThumbnails").on('click', function(e) {
-            e.preventDefault();
-            $.ajax("${createLink(controller:'webService', action:'scheduleThumbnailGeneration')}").done(function() {
-                window.location = "${createLink(action:'tools')}";
-            });
         });
 
         $("#btnRebuildKeywords").on('click', function(e) {
@@ -198,9 +209,35 @@
             window.location = "${createLink(action:'clearHibernateCache')}";
         });
 
+        $("#btnClearS3Cache").on('click', function(e) {
+            e.preventDefault();
+            window.location = "${createLink(action:'clearS3Cache')}";
+        });
+
+        $("#btnClearThumbnailLookupCache").on('click', function(e) {
+            e.preventDefault();
+            window.location = "${createLink(action:'clearThumbnailLookupCache')}";
+        });
+        $("#btnClearTileLookupCache").on('click', function(e) {
+            e.preventDefault();
+            window.location = "${createLink(action:'clearTileLookupCache')}";
+        });
+
         $("#btnPurgeDeletedImages").on('click', function(e) {
             e.preventDefault();
             window.location = "${createLink(action:'scheduleDeletedImagesPurge')}";
+        });
+        
+        $("#btnClearFailedUploads").on('click', function(e) {
+            e.preventDefault();
+            window.location = "${createLink(action:'clearFailedUploads')}";
+        });
+
+        $("#btnRunCheckFailedUploads").on('click', function(e) {
+            e.preventDefault();
+            if (confirm('This will manually trigger the failed uploads check job. Are you sure?')) {
+                window.location = "${createLink(action:'runCheckFailedUploadsJob')}";
+            }
         });
     });
 

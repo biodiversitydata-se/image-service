@@ -96,6 +96,50 @@ server:
     servlet:
       context-path: ''
 
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,metrics,prometheus
+            base-path: /actuator
+    metrics:
+        enable:
+            jvm: true
+            process: true
+            system: true
+            tomcat: true
+            logback: true
+            hikaricp: true
+        export:
+            datadog:
+                enabled: false
+                apiKey: 'changeme'
+                uri: https://api.datadoghq.com
+                step: 1m
+                descriptions: true
+                applicationKey: 'changeme'
+            cloudwatch:
+                enabled: false
+                namespace: 'ImageService'
+                region: ${AWS_REGION:ap-southeast-2}
+                step: 1m
+                batchSize: 20
+            statsd:
+              enabled: false
+              flavor: datadog
+            simple:
+                enabled: true
+                mode: step
+                step: 1m
+        tags:
+            application: 'image-service'
+            environment: 'development'
+        distribution:
+            percentiles-histogram:
+                http.server.requests: true
+                storage.operations: true
+                image.processing: true
+
 ---
 flyway:
     enabled: true
@@ -178,6 +222,26 @@ environments:
               inbox: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-incoming'
           exportDir: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-exports'
           batchUpload: '/home/travis/build/AtlasOfLivingAustralia/image-service/temp-uploads'
+    ghactions:
+      grails:
+        config:
+          locations: [ ]
+      flyway:
+        baselineOnMigrate: false
+      dataSource:
+        embeddedPostgres: true
+        pooled: true
+        jmxExport: true
+        embeddedPort: 6543
+        username: postgres
+        password: postgres
+        url: jdbc:postgresql://localhost:6543/postgres?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8
+      imageservice:
+        imagestore:
+          root: '${RUNNER_TEMP}/temp-store'
+          inbox: '${RUNNER_TEMP}/temp-incoming'
+        exportDir: '${RUNNER_TEMP}/temp-exports'
+        batchUpload: '${RUNNER_TEMP}/temp-uploads'
     production:
         hibernate:
             dialect: net.kaleidos.hibernate.PostgresqlExtensionsDialect
@@ -296,6 +360,9 @@ placeholder:
     document:
         thumbnail: "classpath:images/200px-Document_icon.svg.png"
         large: "classpath:images/500px-Document_icon.svg.png"
+    image:
+        thumbnail: "classpath:images/no-image-thumbnail.png"
+        original: "classpath:images/no-image-fullsize.png"
     missing:
         thumbnail: "classpath:images/200px-Document_icon.svg.png"
 
@@ -350,6 +417,11 @@ purgeCompletedAgeInDays: 3
 # URLs for images (to avoid re-downloading the images)
 imageServiceUrls: ["http://dev.ala.org.au:8080","https://images.ala.org.au"]
 
+images:
+  # When true, disable all HTTP caching for image responses and bypass
+  # in-memory Caffeine caches for thumbnails and tiles. Default: false
+  disableCache: false
+
 # External links
 collectory:
     baseURL: "https://collections.ala.org.au"
@@ -364,3 +436,9 @@ http:
     default:
         connectTimeoutMs: 120000
         readTimeoutMs: 120000
+
+tiling:
+    tileSize: 256
+    maxColsPerStrip: 6
+    levelThreads: 2
+    ioThreads: 2

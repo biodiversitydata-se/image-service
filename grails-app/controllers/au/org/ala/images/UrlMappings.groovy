@@ -56,7 +56,16 @@ class UrlMappings {
 
         // homogeneous URLs
         "/image/$id/thumbnail"(controller: "image", action: "proxyImageThumbnail")
-        "/image/$id/large"(controller: "image", action: "proxyImageThumbnailType", params: ['thumbnailType': 'large'])
+        "/image/$id/$type"(controller: "image", action: "proxyImageThumbnailType") {
+                constraints {
+                        type(inList: ['xlarge', 'large','square','square_white','square_black','square_darkGrey','square_darkGray', 'centre_crop', 'centre_crop_large'])
+                }
+        }
+        "/image/$id/thumbnail_$type"(controller: "image", action: "proxyImageThumbnailType") {
+                constraints {
+                        type(inList: ['xlarge', 'large','square','square_white','square_black','square_darkGrey','square_darkGray', 'centre_crop', 'centre_crop_large'])
+                }
+        }
         "/image/$id/tms/$z/$x/${y}.png"(controller: "image", action: "proxyImageTile")
         "/image/$id/original"(controller: "image", action: "getOriginalFile")
 
@@ -105,5 +114,9 @@ class UrlMappings {
 
         "/"(controller:'search', action:'list')
         "500"(view:'/error')
+
+        // IIIF Image API 3.0
+        "/iiif/$identifier/info.json"(controller: "iiif", action: "info")
+        "/iiif/$identifier/$region/$size/$rotation/$quality.$format"(controller: "iiif", action: "renderImage")
 	}
 }
