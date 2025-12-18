@@ -90,6 +90,13 @@ imageservice:
     multiple_roots: "http://localhost:8082/store/"
 
     exportDir: "/data/image-service/exports"
+  storage:
+    locations:
+      # SpaceSavingFileSystem Storage Locations
+      fs-save-space__data_image-service_store:
+        default: true
+        type: fs-save-space
+        basePath: '/data/image-service/store'
 
 # skin
 skin:
@@ -143,6 +150,10 @@ userdetails.api.url: https://auth.biodiversitydata.se/userdetails/
 
 #aws:
 #  region:
+
+tiling:
+  levelThreads: 2
+  ioThreads: 2
 
 elasticsearch:
   hosts:
