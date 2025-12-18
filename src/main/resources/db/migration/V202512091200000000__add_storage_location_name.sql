@@ -13,6 +13,14 @@ WHERE i.storage_location_id = sl.id
   AND sl.class = 'au.org.ala.images.FileSystemStorageLocation'
   AND i.storage_location_name IS NULL;
 
+-- For SpaceSavingFileSystem: use sanitized basePath
+UPDATE image i
+SET storage_location_name = 'fs-save-space_' || REPLACE(REPLACE(sl.base_path, '/', '_'), '.', '_')
+FROM storage_location sl
+WHERE i.storage_location_id = sl.id
+  AND sl.class = 'au.org.ala.images.SpaceSavingFileSystemStorageLocation'
+  AND i.storage_location_name IS NULL;
+
 -- For S3StorageLocation: use region_bucket_prefix
 UPDATE image i
 SET storage_location_name = 's3_' || sl.region || '_' || sl.bucket ||

@@ -1,6 +1,7 @@
 package au.org.ala.images
 
 import au.org.ala.images.storage.FileSystemStorageOperations
+import au.org.ala.images.storage.SpaceSavingFileSystemStorageOperations
 import au.org.ala.images.storage.S3StorageOperations
 import au.org.ala.images.storage.StorageOperations
 import au.org.ala.images.storage.SwiftStorageOperations
@@ -113,7 +114,10 @@ class StorageOperationsRegistry {
             case 'fs':
             case 'filesystem':
                 return new FileSystemStorageOperations(basePath: config.basePath as String, probeFilesForImageInfo: true)
-                
+
+            case 'fs-save-space':
+                return new SpaceSavingFileSystemStorageOperations(basePath: config.basePath as String)
+
             case 's3':
                 return new S3StorageOperations(
                     bucket: config.bucket as String,

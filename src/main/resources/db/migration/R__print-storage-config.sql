@@ -34,6 +34,20 @@ SELECT '      ' ||
 FROM storage_location
 WHERE class = 'au.org.ala.images.FileSystemStorageLocation'
 
+-- SpaceSavingFileSystem Storage Locations
+UNION ALL
+SELECT CASE WHEN EXISTS (SELECT 1 FROM storage_location WHERE class = 'au.org.ala.images.SpaceSavingFileSystemStorageLocation')
+                THEN '      # SpaceSavingFileSystem Storage Locations'
+            ELSE NULL END
+    WHERE EXISTS (SELECT 1 FROM storage_location WHERE class = 'au.org.ala.images.SpaceSavingFileSystemStorageLocation')
+UNION ALL
+SELECT '      ' ||
+       'fs-save-space_' || REPLACE(REPLACE(base_path, '/', '_'), '.', '_') || ':' || E'\n' ||
+    '        type: fs-save-space' || E'\n' ||
+    '        basePath: ''' || base_path || ''''
+FROM storage_location
+WHERE class = 'au.org.ala.images.SpaceSavingFileSystemStorageLocation'
+
 -- S3 Storage Locations
 UNION ALL
 SELECT CASE WHEN EXISTS (SELECT 1 FROM storage_location WHERE class = 'au.org.ala.images.S3StorageLocation')
@@ -134,6 +148,8 @@ SELECT '#   Total storage locations: ' ||
        (SELECT COUNT(*)::text FROM storage_location)
 UNION ALL
 SELECT '#   FileSystem: ' || (SELECT COUNT(*)::text FROM storage_location WHERE class = 'au.org.ala.images.FileSystemStorageLocation')
+UNION ALL
+SELECT '#   SpaceSavingFileSystem: ' || (SELECT COUNT(*)::text FROM storage_location WHERE class = 'au.org.ala.images.SpaceSavingFileSystemStorageLocation')
 UNION ALL
 SELECT '#   S3: ' || (SELECT COUNT(*)::text FROM storage_location WHERE class = 'au.org.ala.images.S3StorageLocation')
 UNION ALL
