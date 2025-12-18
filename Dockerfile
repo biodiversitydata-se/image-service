@@ -1,4 +1,4 @@
-FROM tomcat:9.0-jdk11-temurin
+FROM tomcat:9.0-jdk21-temurin
 
 ENV TZ=Europe/Stockholm
 
@@ -10,7 +10,7 @@ RUN mkdir -p  \
 
 COPY build/libs/image-service-*.war $CATALINA_HOME/webapps/ROOT.war
 
-ENV DOCKERIZE_VERSION=v0.9.6
+ENV DOCKERIZE_VERSION=v0.9.9
 
 RUN apt-get update \
     && apt-get install -y wget \
